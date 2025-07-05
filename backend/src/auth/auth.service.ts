@@ -45,13 +45,9 @@ export class AuthService {
 
   async loginMerchant(email: string, password: string) {
     const merchant = await this.validateMerchant(email, password);
-    
     if (!merchant) {
       throw new UnauthorizedException('Invalid credentials');
     }
-
-    // Update last login
-    await this.merchantRepository.update(merchant.id, { lastLoginAt: new Date() });
 
     const payload: JwtPayload = {
       sub: merchant.id,
@@ -61,36 +57,62 @@ export class AuthService {
 
     return {
       access_token: this.jwtService.sign(payload),
-      user: merchant,
-      type: 'merchant',
+      user: {
+        id: merchant.id,
+        email: merchant.email,
+        type: 'merchant',
+      },
     };
   }
 
   async loginOnboardingManager(email: string, password: string) {
     const manager = await this.validateOnboardingManager(email, password);
-    
     if (!manager) {
       throw new UnauthorizedException('Invalid credentials');
     }
-
-    if (!manager.isActive) {
-      throw new UnauthorizedException('Account is deactivated');
-    }
-
-    // Update last login
-    await this.onboardingManagerRepository.update(manager.id, { lastLoginAt: new Date() });
 
     const payload: JwtPayload = {
       sub: manager.id,
       email: manager.email,
       type: 'onboarding_manager',
-      role: manager.role,
     };
 
     return {
       access_token: this.jwtService.sign(payload),
-      user: manager,
-      type: 'onboarding_manager',
+      user: {
+        id: manager.id,
+        email: manager.email,
+        type: 'onboarding_manager',
+      },
+    };
+  }
+
+  async refreshToken(userId: string, userType: 'merchant' | 'onboarding_manager') {
+    let user;
+    
+    if (userType === 'merchant') {
+      user = await this.merchantRepository.findOne({ where: { id: userId } });
+    } else {
+      user = await this.onboardingManagerRepository.findOne({ where: { id: userId } });
+    }
+
+    if (!user) {
+      throw new UnauthorizedException('User not found');
+    }
+
+    const payload: JwtPayload = {
+      sub: user.id,
+      email: user.email,
+      type: userType,
+    };
+
+    return {
+      access_token: this.jwtService.sign(payload),
+      user: {
+        id: user.id,
+        email: user.email,
+        type: userType,
+      },
     };
   }
 
@@ -111,68 +133,20 @@ export class AuthService {
     });
 
     const savedMerchant = await this.merchantRepository.save(merchant);
-    const { password: _, ...result } = savedMerchant;
-
-    return result;
-  }
-
-  async refreshToken(userId: string, userType: 'merchant' | 'onboarding_manager') {
-    let user;
-    
-    if (userType === 'merchant') {
-      user = await this.merchantRepository.findOne({ where: { id: userId } });
-    } else {
-      user = await this.onboardingManagerRepository.findOne({ where: { id: userId } });
-    }
-
-    if (!user) {
-      throw new UnauthorizedException('User not found');
-    }
-
-    const payload: JwtPayload = {
-      sub: user.id,
-      email: user.email,
-      type: userType,
-      role: userType === 'onboarding_manager' ? (user as OnboardingManager).role : undefined,
-    };
-
-    return {
-      access_token: this.jwtService.sign(payload),
-    };
-  }
-}
-
-  async registerOnboardingManager(email: string, password: string) {
-    // Check if manager already exists
-    const existingManager = await this.onboardingManagerRepository.findOne({ where: { email } });
-    if (existingManager) {
-      throw new ConflictException('Onboarding manager with this email already exists');
-    }
-
-    // Hash password
-    const hashedPassword = await bcrypt.hash(password, 10);
-
-    // Create new onboarding manager
-    const manager = this.onboardingManagerRepository.create({
-      email,
-      password: hashedPassword,
-    });
-
-    const savedManager = await this.onboardingManagerRepository.save(manager);
 
     // Return JWT token
     const payload: JwtPayload = {
-      sub: savedManager.id,
-      email: savedManager.email,
-      type: 'onboarding_manager',
+      sub: savedMerchant.id,
+      email: savedMerchant.email,
+      type: 'merchant',
     };
 
     return {
       access_token: this.jwtService.sign(payload),
       user: {
-        id: savedManager.id,
-        email: savedManager.email,
-        type: 'onboarding_manager',
+        id: savedMerchant.id,
+        email: savedMerchant.email,
+        type: 'merchant',
       },
     };
   }
@@ -192,7 +166,7 @@ export class AuthService {
       manager = this.onboardingManagerRepository.create({
         email: googleUser.email,
         fullName: googleUser.displayName,
-        oauthProvider: "google",
+        oauthProvider: 'google',
         // No password needed for Google OAuth
       });
       manager = await this.onboardingManagerRepository.save(manager);
@@ -220,3 +194,4 @@ export class AuthService {
     // User is already validated by Google strategy
     return user;
   }
+}

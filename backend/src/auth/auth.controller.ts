@@ -1,4 +1,4 @@
-import { Controller, Post, Body, Request, UseGuards } from '@nestjs/common';
+import { Controller, Post, Body, Request, UseGuards, Get } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { AuthGuard } from '@nestjs/passport';
 import { AuthService } from './auth.service';
@@ -30,29 +30,10 @@ export class AuthController {
   @ApiOperation({ summary: 'Onboarding manager login' })
   @ApiResponse({ status: 200, description: 'Login successful' })
   @ApiResponse({ status: 401, description: 'Invalid credentials' })
-
-  @Post("onboarding-manager/register")
-  @ApiOperation({ summary: "Onboarding manager registration" })
-  @ApiResponse({ status: 201, description: "Registration successful" })
-  @ApiResponse({ status: 409, description: "Manager already exists" })
-  async registerOnboardingManager(@Body() registerDto: RegisterMerchantDto) {
-    return this.authService.registerOnboardingManager(registerDto.email, registerDto.password);
-  }
   async loginOnboardingManager(@Body() loginDto: LoginDto) {
     return this.authService.loginOnboardingManager(loginDto.email, loginDto.password);
   }
 
-  @Post('refresh')
-  @UseGuards(AuthGuard('jwt'))
-  @ApiBearerAuth()
-  @ApiOperation({ summary: 'Refresh JWT token' })
-  @ApiResponse({ status: 200, description: 'Token refreshed successfully' })
-  @ApiResponse({ status: 401, description: 'Invalid token' })
-  async refreshToken(@Request() req) {
-    const { sub: userId, type } = req.user;
-    return this.authService.refreshToken(userId, type);
-  }
-} 
   @Get('google')
   @UseGuards(AuthGuard('google'))
   @ApiOperation({ summary: 'Initiate Google OAuth login for onboarding managers' })
@@ -66,3 +47,15 @@ export class AuthController {
   async googleCallback(@Request() req) {
     return this.authService.loginWithGoogle(req.user);
   }
+
+  @Post('refresh')
+  @UseGuards(AuthGuard('jwt'))
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Refresh JWT token' })
+  @ApiResponse({ status: 200, description: 'Token refreshed successfully' })
+  @ApiResponse({ status: 401, description: 'Invalid token' })
+  async refreshToken(@Request() req) {
+    const { sub: userId, type } = req.user;
+    return this.authService.refreshToken(userId, type);
+  }
+}
