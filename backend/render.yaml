@@ -17,29 +17,5 @@ services:
         value: 30d
       - key: FRONTEND_URL
         value: https://storehub-merchant-onboarding-frontend.onrender.com
-      - key: DB_HOST
-        fromDatabase:
-          name: storehub-postgres
-          property: host
-      - key: DB_PORT
-        fromDatabase:
-          name: storehub-postgres
-          property: port
-      - key: DB_USERNAME
-        fromDatabase:
-          name: storehub-postgres
-          property: user
-      - key: DB_PASSWORD
-        fromDatabase:
-          name: storehub-postgres
-          property: password
-      - key: DB_NAME
-        fromDatabase:
-          name: storehub-postgres
-          property: database
-
-databases:
-  - name: storehub-postgres
-    databaseName: storehub_onboarding
-    user: storehub_user
-    plan: starter 
+      - key: DATABASE_URL
+        value: # You'll need to set this in Render dashboard
