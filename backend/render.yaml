@@ -1,0 +1,45 @@
+services:
+  - type: web
+    name: storehub-backend
+    env: node
+    plan: starter
+    buildCommand: npm install && npm run build
+    startCommand: npm run start:prod
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 3001
+      - key: JWT_SECRET
+        generateValue: true
+      - key: JWT_EXPIRES_IN
+        value: 30d
+      - key: FRONTEND_URL
+        value: https://storehub-merchant-onboarding-frontend.onrender.com
+      - key: DB_HOST
+        fromDatabase:
+          name: storehub-postgres
+          property: host
+      - key: DB_PORT
+        fromDatabase:
+          name: storehub-postgres
+          property: port
+      - key: DB_USERNAME
+        fromDatabase:
+          name: storehub-postgres
+          property: user
+      - key: DB_PASSWORD
+        fromDatabase:
+          name: storehub-postgres
+          property: password
+      - key: DB_NAME
+        fromDatabase:
+          name: storehub-postgres
+          property: database
+
+databases:
+  - name: storehub-postgres
+    databaseName: storehub_onboarding
+    user: storehub_user
+    plan: starter 
