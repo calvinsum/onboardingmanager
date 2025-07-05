@@ -5,6 +5,7 @@ import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import MerchantDashboard from './pages/MerchantDashboard';
 import OnboardingManagerDashboard from './pages/OnboardingManagerDashboard';
+import GoogleCallback from './pages/GoogleCallback';
 import ProtectedRoute from './components/ProtectedRoute';
 import Layout from './components/Layout';
 import './App.css';
@@ -18,6 +19,7 @@ function App() {
             {/* Public routes */}
             <Route path="/login" element={<LoginPage />} />
             <Route path="/register" element={<RegisterPage />} />
+            <Route path="/auth/callback" element={<GoogleCallback />} />
             
             {/* Protected routes */}
             <Route 

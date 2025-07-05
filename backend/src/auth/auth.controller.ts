@@ -1,6 +1,7 @@
-import { Controller, Post, Body, Request, UseGuards, Get } from '@nestjs/common';
+import { Controller, Post, Body, Request, UseGuards, Get, Res } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { AuthGuard } from '@nestjs/passport';
+import { Response } from 'express';
 import { AuthService } from './auth.service';
 import { LoginDto } from './dto/login.dto';
 import { RegisterMerchantDto } from './dto/register-merchant.dto';
@@ -44,8 +45,16 @@ export class AuthController {
   @Get('google/callback')
   @UseGuards(AuthGuard('google'))
   @ApiOperation({ summary: 'Google OAuth callback' })
-  async googleCallback(@Request() req) {
-    return this.authService.loginWithGoogle(req.user);
+  async googleCallback(@Request() req, @Res() res: Response) {
+    try {
+      const result = await this.authService.loginWithGoogle(req.user);
+      // Redirect to frontend with token
+      const frontendUrl = process.env.FRONTEND_URL || 'https://onboardingmanager-1.onrender.com';
+      res.redirect(`${frontendUrl}/auth/callback?token=${result.access_token}`);
+    } catch (error) {
+      const frontendUrl = process.env.FRONTEND_URL || 'https://onboardingmanager-1.onrender.com';
+      res.redirect(`${frontendUrl}/login?error=oauth_failed`);
+    }
   }
 
   @Post('refresh')
