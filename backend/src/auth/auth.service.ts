@@ -156,40 +156,44 @@ export class AuthService {
     displayName: string;
     picture?: string;
   }) {
-    // Check if onboarding manager already exists
-    let manager = await this.onboardingManagerRepository.findOne({ 
-      where: { email: googleUser.email } 
-    });
-
-    // If not exists, create new onboarding manager
-    if (!manager) {
-      manager = this.onboardingManagerRepository.create({
-        email: googleUser.email,
-        fullName: googleUser.displayName,
-        oauthProvider: 'google',
-        // No password needed for Google OAuth
+    try {
+      // Check if onboarding manager already exists
+      let manager = await this.onboardingManagerRepository.findOne({ 
+        where: { email: googleUser.email } 
       });
-      manager = await this.onboardingManagerRepository.save(manager);
-    }
 
-    // Return JWT token
-    const payload: JwtPayload = {
-      sub: manager.id,
-      email: manager.email,
-      type: 'onboarding_manager',
-    };
+      // If not exists, create new onboarding manager
+      if (!manager) {
+        manager = this.onboardingManagerRepository.create({
+          email: googleUser.email,
+          fullName: googleUser.displayName || googleUser.email.split("@")[0],
+          oauthProvider: "google",
+          // No password needed for Google OAuth
+        });
+        manager = await this.onboardingManagerRepository.save(manager);
+      }
 
-    return {
-      access_token: this.jwtService.sign(payload),
-      user: {
-        id: manager.id,
+      // Return JWT token
+      const payload: JwtPayload = {
+        sub: manager.id,
         email: manager.email,
-        fullName: manager.fullName,
-        type: 'onboarding_manager',
-      },
-    };
-  }
+        type: "onboarding_manager",
+      };
 
+      return {
+        access_token: this.jwtService.sign(payload),
+        user: {
+          id: manager.id,
+          email: manager.email,
+          fullName: manager.fullName,
+          type: "onboarding_manager",
+        },
+      };
+    } catch (error) {
+      console.error("Error in validateGoogleUser:", error);
+      throw new Error("Failed to validate Google user");
+    }
+  }
   async loginWithGoogle(user: any) {
     // User is already validated by Google strategy
     return user;

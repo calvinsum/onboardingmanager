@@ -24,20 +24,35 @@ export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {
     profile: any,
     done: VerifyCallback,
   ): Promise<any> {
-    const { emails, displayName, photos } = profile;
-    const email = emails[0].value;
+    try {
+      const { emails, displayName, photos, name } = profile;
+      
+      if (!emails || !emails[0] || !emails[0].value) {
+        return done(new Error('No email found in Google profile'), null);
+      }
 
-    // Only allow @storehub.com emails
-    if (!email.endsWith('@storehub.com')) {
-      return done(new Error('Only @storehub.com emails are allowed'), null);
+      const email = emails[0].value;
+
+      // Only allow @storehub.com emails
+      if (!email.endsWith('@storehub.com')) {
+        return done(new Error('Only @storehub.com emails are allowed'), null);
+      }
+
+      // Ensure we have a display name
+      const fullName = displayName || 
+                      (name ? `${name.givenName || ''} ${name.familyName || ''}`.trim() : '') || 
+                      email.split('@')[0];
+
+      const user = await this.authService.validateGoogleUser({
+        email,
+        displayName: fullName,
+        picture: photos && photos[0] ? photos[0].value : undefined,
+      });
+
+      done(null, user);
+    } catch (error) {
+      console.error('Google OAuth validation error:', error);
+      done(error, null);
     }
-
-    const user = await this.authService.validateGoogleUser({
-      email,
-      displayName,
-      picture: photos[0]?.value,
-    });
-
-    done(null, user);
   }
 }
