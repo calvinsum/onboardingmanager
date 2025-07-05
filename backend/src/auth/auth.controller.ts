@@ -30,6 +30,14 @@ export class AuthController {
   @ApiOperation({ summary: 'Onboarding manager login' })
   @ApiResponse({ status: 200, description: 'Login successful' })
   @ApiResponse({ status: 401, description: 'Invalid credentials' })
+
+  @Post("onboarding-manager/register")
+  @ApiOperation({ summary: "Onboarding manager registration" })
+  @ApiResponse({ status: 201, description: "Registration successful" })
+  @ApiResponse({ status: 409, description: "Manager already exists" })
+  async registerOnboardingManager(@Body() registerDto: RegisterMerchantDto) {
+    return this.authService.registerOnboardingManager(registerDto.email, registerDto.password);
+  }
   async loginOnboardingManager(@Body() loginDto: LoginDto) {
     return this.authService.loginOnboardingManager(loginDto.email, loginDto.password);
   }
@@ -45,3 +53,16 @@ export class AuthController {
     return this.authService.refreshToken(userId, type);
   }
 } 
+  @Get('google')
+  @UseGuards(AuthGuard('google'))
+  @ApiOperation({ summary: 'Initiate Google OAuth login for onboarding managers' })
+  async googleAuth() {
+    // Initiates Google OAuth flow
+  }
+
+  @Get('google/callback')
+  @UseGuards(AuthGuard('google'))
+  @ApiOperation({ summary: 'Google OAuth callback' })
+  async googleCallback(@Request() req) {
+    return this.authService.loginWithGoogle(req.user);
+  }

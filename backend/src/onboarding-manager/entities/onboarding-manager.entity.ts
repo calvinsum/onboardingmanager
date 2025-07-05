@@ -18,8 +18,8 @@ export class OnboardingManager {
   @Column({ unique: true })
   email: string;
 
-  @ApiProperty({ description: 'Manager password hash' })
-  @Column()
+  @ApiProperty({ description: 'Manager password hash (optional for Google OAuth)' })
+  @Column({ nullable: true })
   password: string;
 
   @ApiProperty({ description: 'Manager full name' })
@@ -42,6 +42,10 @@ export class OnboardingManager {
   @Column({ type: 'timestamp', nullable: true })
   lastLoginAt: Date;
 
+  @ApiProperty({ description: 'OAuth provider (google, null for password)' })
+  @Column({ nullable: true })
+  oauthProvider: string;
+
   @ApiProperty({ description: 'Created timestamp' })
   @CreateDateColumn()
   createdAt: Date;
@@ -49,4 +53,4 @@ export class OnboardingManager {
   @ApiProperty({ description: 'Updated timestamp' })
   @UpdateDateColumn()
   updatedAt: Date;
-} 
+}

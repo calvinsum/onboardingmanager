@@ -141,3 +141,82 @@ export class AuthService {
     };
   }
 }
+
+  async registerOnboardingManager(email: string, password: string) {
+    // Check if manager already exists
+    const existingManager = await this.onboardingManagerRepository.findOne({ where: { email } });
+    if (existingManager) {
+      throw new ConflictException('Onboarding manager with this email already exists');
+    }
+
+    // Hash password
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    // Create new onboarding manager
+    const manager = this.onboardingManagerRepository.create({
+      email,
+      password: hashedPassword,
+    });
+
+    const savedManager = await this.onboardingManagerRepository.save(manager);
+
+    // Return JWT token
+    const payload: JwtPayload = {
+      sub: savedManager.id,
+      email: savedManager.email,
+      type: 'onboarding_manager',
+    };
+
+    return {
+      access_token: this.jwtService.sign(payload),
+      user: {
+        id: savedManager.id,
+        email: savedManager.email,
+        type: 'onboarding_manager',
+      },
+    };
+  }
+
+  async validateGoogleUser(googleUser: {
+    email: string;
+    displayName: string;
+    picture?: string;
+  }) {
+    // Check if onboarding manager already exists
+    let manager = await this.onboardingManagerRepository.findOne({ 
+      where: { email: googleUser.email } 
+    });
+
+    // If not exists, create new onboarding manager
+    if (!manager) {
+      manager = this.onboardingManagerRepository.create({
+        email: googleUser.email,
+        fullName: googleUser.displayName,
+        oauthProvider: "google",
+        // No password needed for Google OAuth
+      });
+      manager = await this.onboardingManagerRepository.save(manager);
+    }
+
+    // Return JWT token
+    const payload: JwtPayload = {
+      sub: manager.id,
+      email: manager.email,
+      type: 'onboarding_manager',
+    };
+
+    return {
+      access_token: this.jwtService.sign(payload),
+      user: {
+        id: manager.id,
+        email: manager.email,
+        fullName: manager.fullName,
+        type: 'onboarding_manager',
+      },
+    };
+  }
+
+  async loginWithGoogle(user: any) {
+    // User is already validated by Google strategy
+    return user;
+  }
