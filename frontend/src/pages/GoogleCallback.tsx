@@ -1,11 +1,9 @@
 import React, { useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { useAuth } from '../hooks/useAuth';
 
 const GoogleCallback: React.FC = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const { setUser } = useAuth();
 
   useEffect(() => {
     const handleCallback = async () => {
@@ -21,20 +19,14 @@ const GoogleCallback: React.FC = () => {
 
       if (token) {
         // Store token and redirect to dashboard
-        localStorage.setItem('token', token);
-        // Decode token to get user info
-        try {
-          const payload = JSON.parse(atob(token.split('.')[1]));
-          setUser({
-            id: payload.sub,
-            email: payload.email,
-            type: payload.type,
-          });
-          navigate('/onboarding-manager');
-        } catch (error) {
-          console.error('Token parsing error:', error);
-          navigate('/login?error=token_invalid');
-        }
+        localStorage.setItem('authToken', token);
+        localStorage.setItem('userType', 'onboarding_manager');
+        
+        // Redirect to onboarding manager dashboard
+        navigate('/onboarding-manager');
+        
+        // Reload the page to trigger auth context refresh
+        window.location.reload();
       } else {
         // Redirect back to login if no token
         navigate('/login');
@@ -42,7 +34,7 @@ const GoogleCallback: React.FC = () => {
     };
 
     handleCallback();
-  }, [navigate, searchParams, setUser]);
+  }, [navigate, searchParams]);
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50">
