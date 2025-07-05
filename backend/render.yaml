@@ -18,4 +18,12 @@ services:
       - key: FRONTEND_URL
         value: https://storehub-merchant-onboarding-frontend.onrender.com
       - key: DATABASE_URL
-        value: # You'll need to set this in Render dashboard
+        fromDatabase:
+          name: storehub-postgres
+          property: connectionString
+
+databases:
+  - name: storehub-postgres
+    databaseName: storehub_onboarding
+    user: storehub_user
+    plan: starter
