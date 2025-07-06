@@ -205,7 +205,18 @@ export class AuthService {
     }
   }
   async loginWithGoogle(user: any) {
-    // User is already validated by Google strategy
-    return user;
+    try {
+      // Process the Google user and create/update onboarding manager
+      const result = await this.validateGoogleUser({
+        email: user.email,
+        displayName: user.displayName || user.name,
+        picture: user.picture
+      });
+      
+      return result;
+    } catch (error) {
+      console.error('Error in loginWithGoogle:', error);
+      throw new UnauthorizedException('Failed to authenticate with Google');
+    }
   }
 }
