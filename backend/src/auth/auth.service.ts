@@ -66,25 +66,35 @@ export class AuthService {
   }
 
   async loginOnboardingManager(email: string, password: string) {
-    const manager = await this.validateOnboardingManager(email, password);
-    if (!manager) {
-      throw new UnauthorizedException('Invalid credentials');
-    }
+    try {
+      const manager = await this.validateOnboardingManager(email, password);
+      if (!manager) {
+        throw new UnauthorizedException('Invalid credentials');
+      }
 
-    const payload: JwtPayload = {
-      sub: manager.id,
-      email: manager.email,
-      type: 'onboarding_manager',
-    };
+      // Check if manager is active
+      if (!manager.isActive) {
+        throw new UnauthorizedException('Account is deactivated');
+      }
 
-    return {
-      access_token: this.jwtService.sign(payload),
-      user: {
-        id: manager.id,
+      const payload: JwtPayload = {
+        sub: manager.id,
         email: manager.email,
         type: 'onboarding_manager',
-      },
-    };
+      };
+
+      return {
+        access_token: this.jwtService.sign(payload),
+        user: {
+          id: manager.id,
+          email: manager.email,
+          type: 'onboarding_manager',
+        },
+      };
+    } catch (error) {
+      console.error('Onboarding manager login error:', error);
+      throw error;
+    }
   }
 
   async refreshToken(userId: string, userType: 'merchant' | 'onboarding_manager') {

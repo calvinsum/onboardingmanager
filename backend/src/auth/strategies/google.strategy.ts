@@ -33,9 +33,13 @@ export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {
 
       const email = emails[0].value;
 
-      // Only allow @storehub.com emails
-      if (!email.endsWith('@storehub.com')) {
-        return done(new Error('Only @storehub.com emails are allowed'), null);
+      // Allow configurable domain patterns for onboarding managers
+      const allowedDomainsEnv = this.configService.get('ALLOWED_OAUTH_DOMAINS', '@storehub.com');
+      const allowedDomains = allowedDomainsEnv.split(',').map(domain => domain.trim());
+      const isAllowedDomain = allowedDomains.some(domain => email.endsWith(domain));
+      
+      if (!isAllowedDomain) {
+        return done(new Error(`Email domain not authorized. Allowed domains: ${allowedDomains.join(', ')}`), null);
       }
 
       // Ensure we have a display name

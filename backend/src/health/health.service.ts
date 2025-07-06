@@ -1,11 +1,11 @@
 import { Injectable } from '@nestjs/common';
-import { InjectConnection } from '@nestjs/typeorm';
-import { Connection } from 'typeorm';
+import { InjectDataSource } from '@nestjs/typeorm';
+import { DataSource } from 'typeorm';
 
 @Injectable()
 export class HealthService {
   constructor(
-    @InjectConnection() private connection: Connection,
+    @InjectDataSource() private dataSource: DataSource,
   ) {}
 
   async check() {
@@ -13,7 +13,7 @@ export class HealthService {
     
     try {
       // Check database connectivity
-      await this.connection.query('SELECT 1');
+      await this.dataSource.query('SELECT 1');
       
       return {
         status: 'ok',
@@ -38,7 +38,7 @@ export class HealthService {
   async readiness() {
     try {
       // Check if database is ready
-      await this.connection.query('SELECT 1');
+      await this.dataSource.query('SELECT 1');
       
       return {
         status: 'ready',
