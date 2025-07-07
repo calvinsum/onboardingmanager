@@ -1,109 +1,151 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import apiService from '../services/api';
+import React, { useState, useEffect } from 'react';
+import { getOnboardingByToken } from '../services/api';
 
 const DebugAuth: React.FC = () => {
-  const [results, setResults] = useState<any[]>([]);
+  const [localStorageData, setLocalStorageData] = useState<any>({});
+  const [testToken, setTestToken] = useState('');
+  const [testResult, setTestResult] = useState<any>(null);
   const [loading, setLoading] = useState(false);
 
-  const addResult = useCallback((name: string, result: any, error?: any) => {
-    const newResult = {
-      name,
-      timestamp: new Date().toISOString(),
-      success: !error,
-      result: error ? null : result,
-      error: error ? error.message : null,
-      status: error?.response?.status || 'success',
-      url: error?.config?.url || 'N/A'
+  useEffect(() => {
+    // Check localStorage data
+    const data = {
+      merchantAccessToken: localStorage.getItem('merchantAccessToken'),
+      userType: localStorage.getItem('userType'),
+      onboardingRecord: localStorage.getItem('onboardingRecord'),
+      authToken: localStorage.getItem('authToken'),
     };
-    setResults(prev => [...prev, newResult]);
+    setLocalStorageData(data);
   }, []);
 
-  const testEndpoints = useCallback(async () => {
+  const handleTestToken = async () => {
+    if (!testToken) return;
+    
     setLoading(true);
-    setResults([]);
-
-    // Test basic health check
+    setTestResult(null);
+    
     try {
-      const health = await apiService.healthCheck();
-      addResult('Health Check', health);
-    } catch (error) {
-      addResult('Health Check', null, error);
+      const result = await getOnboardingByToken(testToken);
+      setTestResult({ success: true, data: result });
+    } catch (error: any) {
+      setTestResult({ 
+        success: false, 
+        error: error.message,
+        status: error.response?.status,
+        data: error.response?.data 
+      });
+    } finally {
+      setLoading(false);
     }
+  };
 
-    // Check localStorage
-    const token = localStorage.getItem('authToken');
-    const userType = localStorage.getItem('userType');
-    addResult('LocalStorage', { token: token ? 'exists' : 'missing', userType });
+  const handleClearStorage = () => {
+    localStorage.clear();
+    setLocalStorageData({});
+    setTestResult(null);
+  };
 
-    // Test onboarding manager profile
-    try {
-      const profile = await apiService.getOnboardingManagerProfile();
-      addResult('Onboarding Manager Profile', profile);
-    } catch (error) {
-      addResult('Onboarding Manager Profile', null, error);
-    }
-
-    // Test get all merchants
-    try {
-      const merchants = await apiService.getAllMerchants();
-      addResult('Get All Merchants', merchants);
-    } catch (error) {
-      addResult('Get All Merchants', null, error);
-    }
-
-    setLoading(false);
-  }, [addResult]);
-
-  useEffect(() => {
-    testEndpoints();
-  }, [testEndpoints]);
+  const handleSetTestData = () => {
+    const testData = {
+      id: 'test-id',
+      picName: 'Test User',
+      picEmail: 'test@example.com',
+      businessName: 'Test Business'
+    };
+    
+    localStorage.setItem('merchantAccessToken', 'test-token');
+    localStorage.setItem('userType', 'merchant');
+    localStorage.setItem('onboardingRecord', JSON.stringify(testData));
+    
+    // Refresh the display
+    const data = {
+      merchantAccessToken: localStorage.getItem('merchantAccessToken'),
+      userType: localStorage.getItem('userType'),
+      onboardingRecord: localStorage.getItem('onboardingRecord'),
+      authToken: localStorage.getItem('authToken'),
+    };
+    setLocalStorageData(data);
+  };
 
   return (
-    <div className="p-6 max-w-4xl mx-auto">
-      <h1 className="text-2xl font-bold mb-4">Auth Debug Page</h1>
-      
-      <div className="mb-4">
-        <button
-          onClick={testEndpoints}
-          disabled={loading}
-          className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 disabled:opacity-50"
-        >
-          {loading ? 'Testing...' : 'Test Endpoints'}
-        </button>
-      </div>
+    <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-4xl mx-auto">
+        <div className="bg-white shadow rounded-lg p-6">
+          <h1 className="text-2xl font-bold text-gray-900 mb-6">Debug Authentication</h1>
+          
+          {/* LocalStorage Debug */}
+          <div className="mb-8">
+            <h2 className="text-lg font-semibold text-gray-800 mb-4">LocalStorage Data</h2>
+            <div className="bg-gray-100 p-4 rounded-md">
+              <pre className="text-sm text-gray-700 whitespace-pre-wrap">
+                {JSON.stringify(localStorageData, null, 2)}
+              </pre>
+            </div>
+            <div className="mt-4 space-x-4">
+              <button
+                onClick={handleClearStorage}
+                className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700"
+              >
+                Clear Storage
+              </button>
+              <button
+                onClick={handleSetTestData}
+                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+              >
+                Set Test Data
+              </button>
+            </div>
+          </div>
 
-      <div className="space-y-4">
-        {results.map((result, index) => (
-          <div
-            key={index}
-            className={`p-4 rounded-lg border ${
-              result.success ? 'border-green-500 bg-green-50' : 'border-red-500 bg-red-50'
-            }`}
-          >
-            <h3 className="font-semibold text-lg mb-2">
-              {result.name} - {result.success ? '✅' : '❌'}
-            </h3>
-            <p className="text-sm text-gray-600 mb-2">
-              {result.timestamp} | Status: {result.status} | URL: {result.url}
-            </p>
-            
-            {result.success && (
-              <div className="bg-white p-3 rounded border">
-                <h4 className="font-medium text-green-700">Success Result:</h4>
-                <pre className="text-sm overflow-x-auto">
-                  {JSON.stringify(result.result, null, 2)}
-                </pre>
+          {/* Token Test */}
+          <div className="mb-8">
+            <h2 className="text-lg font-semibold text-gray-800 mb-4">Test Token API</h2>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Test Token
+                </label>
+                <input
+                  type="text"
+                  value={testToken}
+                  onChange={(e) => setTestToken(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="Enter a token to test"
+                />
               </div>
-            )}
+              <button
+                onClick={handleTestToken}
+                disabled={loading || !testToken}
+                className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 disabled:opacity-50"
+              >
+                {loading ? 'Testing...' : 'Test Token'}
+              </button>
+            </div>
             
-            {!result.success && (
-              <div className="bg-white p-3 rounded border">
-                <h4 className="font-medium text-red-700">Error:</h4>
-                <p className="text-sm">{result.error}</p>
+            {testResult && (
+              <div className="mt-4">
+                <h3 className="text-md font-medium text-gray-800 mb-2">Test Result</h3>
+                <div className={`p-4 rounded-md ${testResult.success ? 'bg-green-100' : 'bg-red-100'}`}>
+                  <pre className="text-sm whitespace-pre-wrap">
+                    {JSON.stringify(testResult, null, 2)}
+                  </pre>
+                </div>
               </div>
             )}
           </div>
-        ))}
+
+          {/* Environment Info */}
+          <div className="mb-8">
+            <h2 className="text-lg font-semibold text-gray-800 mb-4">Environment Info</h2>
+            <div className="bg-gray-100 p-4 rounded-md">
+              <pre className="text-sm text-gray-700">
+                API URL: {process.env.REACT_APP_API_URL || 'https://onboardingmanager.onrender.com/api'}
+                {'\n'}User Agent: {navigator.userAgent}
+                {'\n'}Local Storage Available: {typeof(Storage) !== "undefined" ? 'Yes' : 'No'}
+              </pre>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );

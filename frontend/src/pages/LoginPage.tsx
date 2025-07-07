@@ -24,10 +24,23 @@ const LoginPage: React.FC = () => {
       localStorage.setItem('userType', 'merchant');
       localStorage.setItem('onboardingRecord', JSON.stringify(onboardingRecord));
       
+      // Verify data was stored correctly
+      const storedToken = localStorage.getItem('merchantAccessToken');
+      const storedRecord = localStorage.getItem('onboardingRecord');
+      
+      // Double-check that data is actually stored
+      if (!storedToken || !storedRecord) {
+        throw new Error('Failed to store authentication data. Please try again.');
+      }
+      
+      // Small delay to ensure localStorage is written
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
       // Navigate to merchant dashboard
       navigate('/merchant-schedule');
     } catch (error: any) {
-      setError('Invalid or expired access token. Please check your token and try again.');
+      console.error('Login error:', error);
+      setError(error.message || 'Invalid or expired access token. Please check your token and try again.');
     } finally {
       setLoading(false);
     }

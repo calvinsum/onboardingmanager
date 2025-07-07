@@ -562,17 +562,31 @@ const MerchantSchedulePage: React.FC = () => {
 
   useEffect(() => {
     const fetchData = async () => {
+      // Add a small delay to ensure localStorage is available
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
       const token = localStorage.getItem('merchantAccessToken');
       const recordData = localStorage.getItem('onboardingRecord');
       
       if (!token || !recordData) {
-        navigate('/login');
+        // Add a delay before redirect to ensure this isn't a timing issue
+        setTimeout(() => {
+          navigate('/login');
+        }, 500);
         return;
       }
 
       setAccessToken(token);
-      const record = JSON.parse(recordData);
-      setOnboardingRecord(record);
+      
+      let record;
+      try {
+        record = JSON.parse(recordData);
+        setOnboardingRecord(record);
+      } catch (parseError) {
+        console.error('Error parsing onboarding record:', parseError);
+        navigate('/login');
+        return;
+      }
 
       try {
         setLoading(true);
