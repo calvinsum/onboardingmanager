@@ -47,13 +47,25 @@ export class AuthController {
   @ApiOperation({ summary: 'Google OAuth callback' })
   async googleCallback(@Request() req, @Res() res: Response) {
     try {
+      console.log('Google callback initiated for user:', req.user?.email);
       const result = await this.authService.loginWithGoogle(req.user);
+      console.log('Successfully processed Google login for:', req.user?.email);
+
       // Redirect to frontend with token
       const frontendUrl = process.env.FRONTEND_URL || 'https://onboardingmanager-1.onrender.com';
       res.redirect(`${frontendUrl}/auth/callback?token=${result.access_token}`);
     } catch (error) {
+      // --- DETAILED ERROR LOGGING ---
+      console.error('!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!');
+      console.error('!!! GOOGLE OAUTH CALLBACK FAILED !!!');
+      console.error('User Profile from Google:', req.user);
+      console.error('Error Object:', error);
+      console.error('Error Message:', error.message);
+      console.error('!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!');
+
       const frontendUrl = process.env.FRONTEND_URL || 'https://onboardingmanager-1.onrender.com';
-      res.redirect(`${frontendUrl}/login?error=oauth_failed`);
+      const errorMessage = encodeURIComponent(error.message || 'An unknown error occurred.');
+      res.redirect(`${frontendUrl}/login?error=oauth_failed&message=${errorMessage}`);
     }
   }
 
