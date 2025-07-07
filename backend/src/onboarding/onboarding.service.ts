@@ -38,6 +38,7 @@ export class OnboardingService {
     // Create onboarding record
     const onboarding = this.onboardingRepository.create({
       ...createOnboardingDto,
+      expectedGoLiveDate: new Date(createOnboardingDto.expectedGoLiveDate),
       accessToken,
       tokenExpiryDate,
       createdByManagerId: managerId,
@@ -56,10 +57,10 @@ export class OnboardingService {
 
     const savedOnboarding = await this.onboardingRepository.save(onboarding);
 
-    // Return onboarding with relationships
+    // Return onboarding with relationships loaded separately to avoid circular dependency issues
     return this.onboardingRepository.findOne({
       where: { id: savedOnboarding.id },
-      relations: ['createdByManager', 'merchant'],
+      relations: ['createdByManager'],
     });
   }
 
