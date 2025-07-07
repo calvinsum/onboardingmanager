@@ -1,6 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { toast } from 'react-hot-toast';
-import { createMerchantOnboarding } from '../services/api';
 
 interface CreateMerchantFormProps {
   onSubmit: (data: any) => Promise<void>;

@@ -27,6 +27,18 @@ const OnboardingManagerDashboard = () => {
     fetchRecords();
   }, []);
 
+  const calculateExpiry = (expiryDate: string) => {
+    const now = new Date();
+    const expiry = new Date(expiryDate);
+    const diffTime = expiry.getTime() - now.getTime();
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+    if (diffDays <= 0) {
+      return <span className="text-red-600 font-semibold">Expired</span>;
+    }
+    return `${diffDays} days left`;
+  };
+
   const handleLogout = () => {
     logout();
     toast.success('Logged out successfully');
@@ -85,6 +97,7 @@ const OnboardingManagerDashboard = () => {
                   <th className="py-2 px-4 border-b text-left">Status</th>
                   <th className="py-2 px-4 border-b text-left">EGLD</th>
                   <th className="py-2 px-4 border-b text-left">Access Token</th>
+                  <th className="py-2 px-4 border-b text-left">Expiry</th>
                   <th className="py-2 px-4 border-b text-left">Actions</th>
                 </tr>
               </thead>
@@ -104,7 +117,14 @@ const OnboardingManagerDashboard = () => {
                     </td>
                     <td className="py-2 px-4 border-b">{new Date(record.expectedGoLiveDate).toLocaleDateString()}</td>
                     <td className="py-2 px-4 border-b font-mono text-sm">{record.accessToken}</td>
+                    <td className="py-2 px-4 border-b">{calculateExpiry(record.tokenExpiryDate)}</td>
                     <td className="py-2 px-4 border-b">
+                      <button 
+                        onClick={() => navigate(`/view-onboarding/${record.id}`)} 
+                        className="text-gray-600 hover:underline mr-4"
+                      >
+                        View
+                      </button>
                       <button 
                         onClick={() => navigate(`/edit-onboarding/${record.id}`)} 
                         className="text-blue-500 hover:underline mr-4"

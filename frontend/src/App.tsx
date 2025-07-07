@@ -12,6 +12,7 @@ import DebugAuth from './pages/DebugAuth';
 import ProtectedRoute from './components/ProtectedRoute';
 import Layout from './components/Layout';
 import EditOnboardingPage from './pages/EditOnboardingPage';
+import ViewOnboardingPage from './pages/ViewOnboardingPage';
 import './App.css';
 
 // Force frontend redeployment to pick up new API URL environment variables
@@ -64,6 +65,15 @@ function App() {
               element={
                 <ProtectedRoute userType="onboarding_manager">
                   <EditOnboardingPage />
+                </ProtectedRoute>
+              }
+            />
+            
+            <Route
+              path="/view-onboarding/:id"
+              element={
+                <ProtectedRoute userType="onboarding_manager">
+                  <ViewOnboardingPage />
                 </ProtectedRoute>
               }
             />
