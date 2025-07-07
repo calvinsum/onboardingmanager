@@ -1,6 +1,5 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, Index, OneToMany } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, Index } from 'typeorm';
 import { ApiProperty } from '@nestjs/swagger';
-import { Onboarding } from '../../onboarding/entities/onboarding.entity';
 
 export enum MerchantStatus {
   PENDING = 'pending',
@@ -83,7 +82,4 @@ export class Merchant {
   @ApiProperty({ description: 'Updated timestamp' })
   @UpdateDateColumn()
   updatedAt: Date;
-
-  @OneToMany(() => Onboarding, (onboarding) => onboarding.merchant)
-  onboardingRecords: Onboarding[];
 } 

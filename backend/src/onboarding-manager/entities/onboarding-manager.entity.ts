@@ -1,6 +1,5 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, Index, OneToMany } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, Index } from 'typeorm';
 import { ApiProperty } from '@nestjs/swagger';
-import { Onboarding } from '../../onboarding/entities/onboarding.entity';
 
 export enum OnboardingManagerRole {
   ADMIN = 'admin',
@@ -54,7 +53,4 @@ export class OnboardingManager {
   @ApiProperty({ description: 'Updated timestamp' })
   @UpdateDateColumn()
   updatedAt: Date;
-
-  @OneToMany(() => Onboarding, (onboarding) => onboarding.createdByManager)
-  createdOnboardings: Onboarding[];
 }
