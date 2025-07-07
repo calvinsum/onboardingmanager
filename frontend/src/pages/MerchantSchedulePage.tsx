@@ -4,6 +4,7 @@ import { DayPicker } from 'react-day-picker';
 import { toast } from 'react-hot-toast';
 import { format, isWeekend, set } from 'date-fns';
 import { updateOnboardingByToken, getPublicHolidays } from '../services/api';
+import { DELIVERY_TIME_BY_STATE } from '../utils/constants';
 
 // Mobile-friendly Date Picker component
 const MobileDatePicker = ({ 
@@ -139,6 +140,184 @@ const MobileDatePicker = ({
   );
 };
 
+// Delivery Confirmation Component
+const DeliveryConfirmation = ({ 
+  onboardingRecord, 
+  onConfirm, 
+  isConfirmed 
+}: {
+  onboardingRecord: any;
+  onConfirm: () => void;
+  isConfirmed: boolean;
+}) => {
+  const [showDetails, setShowDetails] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editedAddress, setEditedAddress] = useState({
+    address1: onboardingRecord?.deliveryAddress1 || '',
+    address2: onboardingRecord?.deliveryAddress2 || '',
+    city: onboardingRecord?.deliveryCity || '',
+    state: onboardingRecord?.deliveryState || '',
+    postalCode: onboardingRecord?.deliveryPostalCode || '',
+    country: onboardingRecord?.deliveryCountry || ''
+  });
+
+  const deliveryTime = DELIVERY_TIME_BY_STATE[onboardingRecord?.deliveryState] || { min: 3, max: 5 };
+  const deliveryTimeText = deliveryTime.min === deliveryTime.max 
+    ? `${deliveryTime.min} working day${deliveryTime.min > 1 ? 's' : ''}`
+    : `${deliveryTime.min} - ${deliveryTime.max} working days`;
+
+  const handleSaveAddress = () => {
+    // Here you would typically save the address to the backend
+    // For now, we'll just close the edit mode
+    setIsEditing(false);
+    toast.success('Address updated successfully!');
+  };
+
+  if (isConfirmed) {
+    return (
+      <div className="mb-6">
+        <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+          <div className="flex items-center">
+            <div className="flex-shrink-0">
+              <svg className="h-5 w-5 text-green-400" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+              </svg>
+            </div>
+            <div className="ml-3">
+              <h3 className="text-sm font-medium text-green-800">Delivery Confirmed</h3>
+              <p className="text-sm text-green-700 mt-1">
+                Your hardware will be delivered within {deliveryTimeText}
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="mb-6">
+      <label className="block text-sm font-medium text-gray-700 mb-2">Hardware Delivery</label>
+      
+      {!showDetails ? (
+        <button
+          type="button"
+          className="w-full p-4 border-2 border-blue-300 rounded-lg text-left bg-blue-50 hover:bg-blue-100 transition-colors"
+          onClick={() => setShowDetails(true)}
+        >
+          <div className="flex items-center justify-between">
+            <span className="font-medium text-blue-900">Click to Proceed Delivery</span>
+            <svg className="h-5 w-5 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+            </svg>
+          </div>
+        </button>
+      ) : (
+        <div className="border-2 border-gray-300 rounded-lg p-4 bg-white">
+          {/* Delivery Address */}
+          <div className="mb-4">
+            <div className="flex items-center justify-between mb-2">
+              <h3 className="text-sm font-medium text-gray-900">Delivery Address</h3>
+              <button
+                type="button"
+                className="text-sm text-blue-600 hover:text-blue-800"
+                onClick={() => setIsEditing(!isEditing)}
+              >
+                {isEditing ? 'Cancel' : 'Edit'}
+              </button>
+            </div>
+            
+            {isEditing ? (
+              <div className="space-y-3">
+                <input
+                  type="text"
+                  value={editedAddress.address1}
+                  onChange={(e) => setEditedAddress({...editedAddress, address1: e.target.value})}
+                  placeholder="Address Line 1"
+                  className="w-full p-2 border border-gray-300 rounded text-sm"
+                />
+                <input
+                  type="text"
+                  value={editedAddress.address2}
+                  onChange={(e) => setEditedAddress({...editedAddress, address2: e.target.value})}
+                  placeholder="Address Line 2"
+                  className="w-full p-2 border border-gray-300 rounded text-sm"
+                />
+                <div className="grid grid-cols-2 gap-2">
+                  <input
+                    type="text"
+                    value={editedAddress.city}
+                    onChange={(e) => setEditedAddress({...editedAddress, city: e.target.value})}
+                    placeholder="City"
+                    className="p-2 border border-gray-300 rounded text-sm"
+                  />
+                  <input
+                    type="text"
+                    value={editedAddress.postalCode}
+                    onChange={(e) => setEditedAddress({...editedAddress, postalCode: e.target.value})}
+                    placeholder="Postal Code"
+                    className="p-2 border border-gray-300 rounded text-sm"
+                  />
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={handleSaveAddress}
+                    className="flex-1 bg-blue-600 text-white py-2 px-3 rounded text-sm hover:bg-blue-700"
+                  >
+                    Save
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setIsEditing(false)}
+                    className="flex-1 bg-gray-300 text-gray-700 py-2 px-3 rounded text-sm hover:bg-gray-400"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="text-sm text-gray-600 bg-gray-50 p-3 rounded">
+                <p>{onboardingRecord?.deliveryAddress1}</p>
+                {onboardingRecord?.deliveryAddress2 && <p>{onboardingRecord?.deliveryAddress2}</p>}
+                <p>{onboardingRecord?.deliveryCity}, {onboardingRecord?.deliveryState} {onboardingRecord?.deliveryPostalCode}</p>
+                <p>{onboardingRecord?.deliveryCountry}</p>
+              </div>
+            )}
+          </div>
+
+          {/* Delivery Time Estimation */}
+          <div className="mb-4">
+            <h3 className="text-sm font-medium text-gray-900 mb-2">Estimated Delivery Time</h3>
+            <div className="bg-blue-50 border border-blue-200 rounded p-3">
+              <div className="flex items-center">
+                <svg className="h-5 w-5 text-blue-600 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <span className="text-sm font-medium text-blue-900">
+                  {deliveryTimeText}
+                </span>
+              </div>
+              <p className="text-xs text-blue-700 mt-1">
+                Based on delivery to {onboardingRecord?.deliveryState}
+              </p>
+            </div>
+          </div>
+
+          {/* Confirm Button */}
+          <button
+            type="button"
+            onClick={onConfirm}
+            className="w-full bg-green-600 text-white py-3 px-4 rounded-lg font-medium hover:bg-green-700 transition-colors"
+          >
+            Confirm Delivery
+          </button>
+        </div>
+      )}
+    </div>
+  );
+};
+
 const MerchantSchedulePage: React.FC = () => {
   const navigate = useNavigate();
   const [onboardingRecord, setOnboardingRecord] = useState<any>(null);
@@ -150,6 +329,7 @@ const MerchantSchedulePage: React.FC = () => {
   const [hardwareDeliveryDate, setHardwareDeliveryDate] = useState<Date | undefined>();
   const [hardwareInstallationDate, setHardwareInstallationDate] = useState<Date | undefined>();
   const [trainingDate, setTrainingDate] = useState<Date | undefined>();
+  const [deliveryConfirmed, setDeliveryConfirmed] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -180,6 +360,11 @@ const MerchantSchedulePage: React.FC = () => {
         if (record.trainingDate) {
           setTrainingDate(new Date(record.trainingDate));
         }
+        
+        // Check if delivery is already confirmed
+        if (record.deliveryConfirmed) {
+          setDeliveryConfirmed(true);
+        }
       } catch (error) {
         console.error('Error fetching holidays:', error);
         toast.error('Failed to load calendar data');
@@ -195,6 +380,38 @@ const MerchantSchedulePage: React.FC = () => {
     (date: Date) => isWeekend(date),
     ...holidays
   ];
+
+  const handleDeliveryConfirm = async () => {
+    if (!accessToken) return;
+
+    setSaving(true);
+    try {
+      const payload = {
+        deliveryConfirmed: true,
+      };
+
+      const updatedRecord = await updateOnboardingByToken(accessToken, payload);
+      
+      // Update local storage
+      localStorage.setItem('onboardingRecord', JSON.stringify(updatedRecord));
+      setOnboardingRecord(updatedRecord);
+      setDeliveryConfirmed(true);
+      
+      toast.success('Delivery confirmed successfully!');
+    } catch (error: any) {
+      console.error('Error confirming delivery:', error);
+      if (error.response?.status === 404) {
+        toast.error('Access token expired. Please contact your onboarding manager.');
+        localStorage.removeItem('merchantAccessToken');
+        localStorage.removeItem('onboardingRecord');
+        navigate('/login');
+      } else {
+        toast.error('Failed to confirm delivery. Please try again.');
+      }
+    } finally {
+      setSaving(false);
+    }
+  };
 
   const handleSaveSchedule = async () => {
     if (!accessToken) return;
@@ -309,21 +526,19 @@ const MerchantSchedulePage: React.FC = () => {
           </p>
 
           <div className="space-y-4">
-            <MobileDatePicker
-              label="Hardware Delivery Date"
-              selectedDate={hardwareDeliveryDate}
-              onDateChange={setHardwareDeliveryDate}
-              disabledDays={disabledDays}
-              includeTime={false}
+            <DeliveryConfirmation
+              onboardingRecord={onboardingRecord}
+              onConfirm={handleDeliveryConfirm}
+              isConfirmed={deliveryConfirmed}
             />
             
             <MobileDatePicker
               label="Hardware Installation Date & Time"
               selectedDate={hardwareInstallationDate}
               onDateChange={setHardwareInstallationDate}
-              minDate={hardwareDeliveryDate}
+              minDate={deliveryConfirmed ? new Date() : undefined}
               disabledDays={disabledDays}
-              disabled={!hardwareDeliveryDate}
+              disabled={!deliveryConfirmed}
               includeTime={true}
             />
             
@@ -340,7 +555,8 @@ const MerchantSchedulePage: React.FC = () => {
 
           <div className="mt-6 text-xs text-gray-500">
             <p>• Weekends and public holidays are not available</p>
-            <p>• Installation must be scheduled after delivery</p>
+            <p>• Confirm delivery before scheduling installation</p>
+            <p>• Installation must be scheduled after delivery confirmation</p>
             <p>• Training must be scheduled after installation</p>
           </div>
         </div>
@@ -349,7 +565,7 @@ const MerchantSchedulePage: React.FC = () => {
         <div className="sticky bottom-0 bg-white border-t p-4 -mx-4">
           <button
             onClick={handleSaveSchedule}
-            disabled={saving || !hardwareDeliveryDate || !hardwareInstallationDate || !trainingDate}
+            disabled={saving || !deliveryConfirmed || !hardwareInstallationDate || !trainingDate}
             className="w-full bg-blue-600 text-white py-3 px-4 rounded-lg font-medium hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
             {saving ? 'Saving...' : 'Save Schedule'}

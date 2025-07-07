@@ -1,6 +1,6 @@
 import { PartialType } from '@nestjs/swagger';
 import { CreateOnboardingDto } from './create-onboarding.dto';
-import { IsOptional, IsDateString, IsString, IsNotEmpty } from 'class-validator';
+import { IsOptional, IsDateString, IsString, IsNotEmpty, IsBoolean } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class UpdateOnboardingDto extends PartialType(CreateOnboardingDto) {
@@ -9,6 +9,11 @@ export class UpdateOnboardingDto extends PartialType(CreateOnboardingDto) {
   @IsString()
   @IsNotEmpty()
   accountName?: string;
+
+  @ApiProperty({ description: 'Delivery confirmation status', required: false })
+  @IsOptional()
+  @IsBoolean()
+  deliveryConfirmed?: boolean;
 
   @ApiProperty({ description: 'Scheduled date for hardware delivery', required: false })
   @IsOptional()

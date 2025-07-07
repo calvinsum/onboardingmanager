@@ -32,6 +32,10 @@ export class Onboarding {
   @Column({ nullable: true })
   accountName: string;
 
+  @ApiProperty({ description: 'Delivery confirmation status' })
+  @Column({ default: false })
+  deliveryConfirmed: boolean;
+
   // Delivery Address
   @ApiProperty({ description: 'Delivery address line 1' })
   @Column()

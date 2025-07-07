@@ -19,6 +19,11 @@ export class CreateOnboardingDto {
   @IsNotEmpty()
   accountName: string;
 
+  @ApiProperty({ description: 'Delivery confirmation status', required: false })
+  @IsOptional()
+  @IsBoolean()
+  deliveryConfirmed?: boolean;
+
   // Delivery Address
   @ApiProperty({ description: 'Delivery address line 1', example: '123 Main Street' })
   @IsString()
