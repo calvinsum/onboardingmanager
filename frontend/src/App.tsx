@@ -15,7 +15,6 @@ import EditOnboardingPage from './pages/EditOnboardingPage';
 import ViewOnboardingPage from './pages/ViewOnboardingPage';
 import ScheduleOnboardingPage from './pages/ScheduleOnboardingPage';
 import './App.css';
-import 'react-day-picker/dist/style.css';
 
 // Force frontend redeployment to pick up new API URL environment variables
 function App() {
