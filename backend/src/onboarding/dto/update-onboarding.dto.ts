@@ -30,6 +30,16 @@ export class UpdateOnboardingDto extends PartialType(CreateOnboardingDto) {
   @IsDateString()
   installationConfirmedDate?: string;
 
+  @ApiProperty({ description: 'Training confirmation status', required: false })
+  @IsOptional()
+  @IsBoolean()
+  trainingConfirmed?: boolean;
+
+  @ApiProperty({ description: 'Date when training was confirmed', required: false })
+  @IsOptional()
+  @IsDateString()
+  trainingConfirmedDate?: string;
+
   @ApiProperty({ description: 'Scheduled date for hardware delivery', required: false })
   @IsOptional()
   @IsDateString()

@@ -48,6 +48,14 @@ export class Onboarding {
   @Column({ type: 'timestamp', nullable: true })
   installationConfirmedDate: Date;
 
+  @ApiProperty({ description: 'Training confirmation status' })
+  @Column({ default: false })
+  trainingConfirmed: boolean;
+
+  @ApiProperty({ description: 'Date when training was confirmed' })
+  @Column({ type: 'timestamp', nullable: true })
+  trainingConfirmedDate: Date;
+
   // Delivery Address
   @ApiProperty({ description: 'Delivery address line 1' })
   @Column()

@@ -64,6 +64,7 @@ export class OnboardingService {
       trainingDate,
       deliveryConfirmedDate,
       installationConfirmedDate,
+      trainingConfirmedDate,
       ...restOfDto 
     } = updateOnboardingDto;
     
@@ -94,6 +95,10 @@ export class OnboardingService {
       updatePayload.installationConfirmedDate = new Date(installationConfirmedDate);
     }
 
+    if (trainingConfirmedDate) {
+      updatePayload.trainingConfirmedDate = new Date(trainingConfirmedDate);
+    }
+
     // Auto-set delivery confirmation date if delivery is being confirmed and no date provided
     if (updateOnboardingDto.deliveryConfirmed && !onboarding.deliveryConfirmed && !deliveryConfirmedDate) {
       updatePayload.deliveryConfirmedDate = new Date();
@@ -102,6 +107,11 @@ export class OnboardingService {
     // Auto-set installation confirmation date if installation is being confirmed and no date provided
     if (updateOnboardingDto.installationConfirmed && !onboarding.installationConfirmed && !installationConfirmedDate) {
       updatePayload.installationConfirmedDate = new Date();
+    }
+
+    // Auto-set training confirmation date if training is being confirmed and no date provided
+    if (updateOnboardingDto.trainingConfirmed && !onboarding.trainingConfirmed && !trainingConfirmedDate) {
+      updatePayload.trainingConfirmedDate = new Date();
     }
     
     // `merge` will update the `onboarding` entity with the new values
@@ -179,6 +189,7 @@ export class OnboardingService {
       trainingDate,
       deliveryConfirmedDate,
       installationConfirmedDate,
+      trainingConfirmedDate,
       ...restOfDto 
     } = updateOnboardingDto;
     
@@ -209,6 +220,10 @@ export class OnboardingService {
       updatePayload.installationConfirmedDate = new Date(installationConfirmedDate);
     }
 
+    if (trainingConfirmedDate) {
+      updatePayload.trainingConfirmedDate = new Date(trainingConfirmedDate);
+    }
+
     // Auto-set delivery confirmation date if delivery is being confirmed and no date provided
     if (updateOnboardingDto.deliveryConfirmed && !onboarding.deliveryConfirmed && !deliveryConfirmedDate) {
       updatePayload.deliveryConfirmedDate = new Date();
@@ -217,6 +232,11 @@ export class OnboardingService {
     // Auto-set installation confirmation date if installation is being confirmed and no date provided
     if (updateOnboardingDto.installationConfirmed && !onboarding.installationConfirmed && !installationConfirmedDate) {
       updatePayload.installationConfirmedDate = new Date();
+    }
+
+    // Auto-set training confirmation date if training is being confirmed and no date provided
+    if (updateOnboardingDto.trainingConfirmed && !onboarding.trainingConfirmed && !trainingConfirmedDate) {
+      updatePayload.trainingConfirmedDate = new Date();
     }
     
     // `merge` will update the `onboarding` entity with the new values

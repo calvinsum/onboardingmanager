@@ -424,6 +424,117 @@ const InstallationConfirmation = ({
   );
 };
 
+// Training Confirmation Component
+const TrainingConfirmation = ({ 
+  onboardingRecord, 
+  onConfirm, 
+  isConfirmed,
+  trainingDate,
+  disabled = false
+}: {
+  onboardingRecord: any;
+  onConfirm: () => void;
+  isConfirmed: boolean;
+  trainingDate: Date | undefined;
+  disabled?: boolean;
+}) => {
+  if (isConfirmed) {
+    return (
+      <div className="mb-6">
+        <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+          <div className="flex items-center">
+            <div className="flex-shrink-0">
+              <svg className="h-5 w-5 text-green-400" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+              </svg>
+            </div>
+            <div className="ml-3">
+              <h3 className="text-sm font-medium text-green-800">Training Confirmed</h3>
+              <p className="text-sm text-green-700 mt-1">
+                Training has been confirmed for {trainingDate ? format(trainingDate, 'PPP p') : 'the scheduled date'}
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!trainingDate) {
+    return (
+      <div className="mb-6">
+        <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
+          <div className="flex items-center">
+            <div className="flex-shrink-0">
+              <svg className="h-5 w-5 text-gray-400" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+              </svg>
+            </div>
+            <div className="ml-3">
+              <h3 className="text-sm font-medium text-gray-800">Training Date Required</h3>
+              <p className="text-sm text-gray-600 mt-1">
+                Please select a training date and time first
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="mb-6">
+      <label className="block text-sm font-medium text-gray-700 mb-2">Training Confirmation</label>
+      <div className="bg-white border border-gray-200 rounded-lg p-4">
+        <div className="space-y-3">
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="text-sm font-medium text-gray-900">Scheduled Training</h3>
+              <p className="text-sm text-gray-600">
+                {format(trainingDate, 'PPP p')}
+              </p>
+              {onboardingRecord?.trainingPreferenceLanguages?.length > 0 && (
+                <p className="text-xs text-gray-500 mt-1">
+                  Languages: {onboardingRecord.trainingPreferenceLanguages.join(', ')}
+                </p>
+              )}
+            </div>
+            <div className="flex-shrink-0">
+              <svg className="h-5 w-5 text-blue-500" viewBox="0 0 20 20" fill="currentColor">
+                <path d="M10.394 2.08a1 1 0 00-.788 0l-7 3a1 1 0 000 1.84L5.25 8.051a.999.999 0 01.356-.257l4-1.714a1 1 0 11.788 1.838L7.667 9.088l1.94.831a1 1 0 00.787 0l7-3a1 1 0 000-1.838l-7-3zM3.31 9.397L5 10.12v4.102a8.969 8.969 0 00-1.05-.174 1 1 0 01-.89-.89 11.115 11.115 0 01.25-3.762zM9.3 16.573A9.026 9.026 0 007 14.935v-3.957l1.818.78a3 3 0 002.364 0l5.508-2.361a11.026 11.026 0 01.25 3.762 1 1 0 01-.89.89 8.968 8.968 0 00-5.35 2.524 1 1 0 01-1.4 0zM6 18a1 1 0 001-1v-2.065a8.935 8.935 0 00-2-.712V17a1 1 0 001 1z" />
+              </svg>
+            </div>
+          </div>
+          
+          <div className="bg-blue-50 border border-blue-200 rounded-md p-3">
+            <div className="flex items-start">
+              <div className="flex-shrink-0">
+                <svg className="h-5 w-5 text-blue-400" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                </svg>
+              </div>
+              <div className="ml-3">
+                <h4 className="text-sm font-medium text-blue-800">Ready to Confirm</h4>
+                <p className="text-sm text-blue-700 mt-1">
+                  Please confirm that the training session is ready to proceed at the scheduled time.
+                </p>
+              </div>
+            </div>
+          </div>
+          
+          <button
+            onClick={onConfirm}
+            disabled={disabled}
+            className="w-full bg-blue-600 text-white py-3 px-4 rounded-lg font-medium hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          >
+            {disabled ? 'Confirming...' : 'Confirm Training'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 const MerchantSchedulePage: React.FC = () => {
   const navigate = useNavigate();
   const [onboardingRecord, setOnboardingRecord] = useState<any>(null);
@@ -440,6 +551,9 @@ const MerchantSchedulePage: React.FC = () => {
   const [installationConfirmed, setInstallationConfirmed] = useState(false);
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [installationConfirmedDate, setInstallationConfirmedDate] = useState<Date | undefined>();
+  const [trainingConfirmed, setTrainingConfirmed] = useState(false);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const [trainingConfirmedDate, setTrainingConfirmedDate] = useState<Date | undefined>();
 
   useEffect(() => {
     const fetchData = async () => {
@@ -483,6 +597,13 @@ const MerchantSchedulePage: React.FC = () => {
           setInstallationConfirmed(true);
           // If installation was confirmed previously, use the confirmation date from record or fallback to current date
           setInstallationConfirmedDate(record.installationConfirmedDate ? new Date(record.installationConfirmedDate) : new Date());
+        }
+        
+        // Check if training is already confirmed
+        if (record.trainingConfirmed) {
+          setTrainingConfirmed(true);
+          // If training was confirmed previously, use the confirmation date from record or fallback to current date
+          setTrainingConfirmedDate(record.trainingConfirmedDate ? new Date(record.trainingConfirmedDate) : new Date());
         }
       } catch (error) {
         console.error('Error fetching holidays:', error);
@@ -564,6 +685,41 @@ const MerchantSchedulePage: React.FC = () => {
         navigate('/login');
       } else {
         toast.error('Failed to confirm installation. Please try again.');
+      }
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleTrainingConfirm = async () => {
+    if (!accessToken) return;
+
+    setSaving(true);
+    try {
+      const confirmationDate = new Date();
+      const payload = {
+        trainingConfirmed: true,
+        trainingConfirmedDate: confirmationDate.toISOString(),
+      };
+
+      const updatedRecord = await updateOnboardingByToken(accessToken, payload);
+      
+      // Update local storage
+      localStorage.setItem('onboardingRecord', JSON.stringify(updatedRecord));
+      setOnboardingRecord(updatedRecord);
+      setTrainingConfirmed(true);
+      setTrainingConfirmedDate(confirmationDate);
+      
+      toast.success('Training confirmed successfully!');
+    } catch (error: any) {
+      console.error('Error confirming training:', error);
+      if (error.response?.status === 404) {
+        toast.error('Access token expired. Please contact your onboarding manager.');
+        localStorage.removeItem('merchantAccessToken');
+        localStorage.removeItem('onboardingRecord');
+        navigate('/login');
+      } else {
+        toast.error('Failed to confirm training. Please try again.');
       }
     } finally {
       setSaving(false);
@@ -711,14 +867,24 @@ const MerchantSchedulePage: React.FC = () => {
               disabled={saving}
             />
             
-            <MobileDatePicker
-              label="Training Date & Time"
-              selectedDate={trainingDate}
-              onDateChange={setTrainingDate}
-              minDate={hardwareInstallationDate}
-              disabledDays={disabledDays}
-              disabled={!installationConfirmed}
-              includeTime={true}
+            {!trainingConfirmed ? (
+              <MobileDatePicker
+                label="Training Date & Time"
+                selectedDate={trainingDate}
+                onDateChange={setTrainingDate}
+                minDate={hardwareInstallationDate}
+                disabledDays={disabledDays}
+                disabled={!installationConfirmed}
+                includeTime={true}
+              />
+            ) : null}
+            
+            <TrainingConfirmation
+              onboardingRecord={onboardingRecord}
+              onConfirm={handleTrainingConfirm}
+              isConfirmed={trainingConfirmed}
+              trainingDate={trainingDate}
+              disabled={saving}
             />
           </div>
 
@@ -728,6 +894,7 @@ const MerchantSchedulePage: React.FC = () => {
             <p>• Installation must be scheduled after delivery confirmation</p>
             <p>• Confirm installation before scheduling training</p>
             <p>• Training must be scheduled after installation confirmation</p>
+            <p>• Confirm training before completing the onboarding</p>
           </div>
         </div>
 
@@ -735,7 +902,7 @@ const MerchantSchedulePage: React.FC = () => {
         <div className="sticky bottom-0 bg-white border-t p-4 -mx-4">
           <button
             onClick={handleSaveSchedule}
-            disabled={saving || !deliveryConfirmed || !installationConfirmed || !trainingDate}
+            disabled={saving || !deliveryConfirmed || !installationConfirmed || !trainingDate || !trainingConfirmed}
             className="w-full bg-blue-600 text-white py-3 px-4 rounded-lg font-medium hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
             {saving ? 'Saving...' : 'Save Schedule'}
