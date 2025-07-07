@@ -19,13 +19,18 @@ export class OnboardingService {
   ) {}
 
   async createOnboarding(createOnboardingDto: CreateOnboardingDto, managerId: string): Promise<Onboarding> {
+    // Debug logging
+    console.log('Creating onboarding with managerId:', managerId);
+    console.log('DTO:', JSON.stringify(createOnboardingDto, null, 2));
+    
     // Verify manager exists
     const manager = await this.onboardingManagerRepository.findOne({
       where: { id: managerId }
     });
 
+    console.log('Found manager:', manager ? 'Yes' : 'No');
     if (!manager) {
-      throw new NotFoundException('Onboarding manager not found');
+      throw new NotFoundException(`Onboarding manager not found with ID: ${managerId}`);
     }
 
     // Generate unique access token
