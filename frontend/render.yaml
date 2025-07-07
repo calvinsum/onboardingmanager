@@ -2,20 +2,11 @@ services:
   - type: web
     name: storehub-merchant-onboarding-frontend
     env: static
-    buildCommand: npm ci && npm run build
+    buildCommand: npm install && npm run build
     staticPublishPath: ./build
-    headers:
-      - path: /*
-        name: X-Frame-Options
-        value: DENY
-      - path: /*
-        name: X-Content-Type-Options
-        value: nosniff
     envVars:
       - key: REACT_APP_API_URL
         value: https://onboardingmanager.onrender.com/api
-      - key: REACT_APP_ENV
-        value: production
     routes:
       - type: rewrite
         source: /*
