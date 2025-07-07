@@ -1,11 +1,12 @@
 import axios, { AxiosInstance, AxiosResponse } from 'axios';
 
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://storehub-backend.onrender.com/api';
+const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://onboardingmanager.onrender.com/api';
 
 class ApiService {
   private api: AxiosInstance;
 
   constructor() {
+    console.log('API Service initialized with base URL:', API_BASE_URL);
     this.api = axios.create({
       baseURL: API_BASE_URL,
       headers: {
@@ -31,6 +32,13 @@ class ApiService {
     this.api.interceptors.response.use(
       (response) => response,
       (error) => {
+        console.error('API Error:', {
+          url: error.config?.url,
+          method: error.config?.method,
+          status: error.response?.status,
+          data: error.response?.data
+        });
+        
         if (error.response?.status === 401) {
           localStorage.removeItem('authToken');
           localStorage.removeItem('userType');
