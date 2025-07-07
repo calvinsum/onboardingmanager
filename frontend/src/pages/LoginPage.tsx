@@ -3,10 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { getOnboardingByToken } from '../services/api';
 
 const LoginPage: React.FC = () => {
+  const [userType, setUserType] = useState<'merchant' | 'onboarding_manager'>('onboarding_manager');
   const [accessToken, setAccessToken] = useState('');
-  const [userType, setUserType] = useState<'merchant' | 'onboarding_manager'>('merchant');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [debugInfo, setDebugInfo] = useState<string | null>(null);
@@ -34,6 +32,18 @@ const LoginPage: React.FC = () => {
       setDebugInfo(debugMessage);
     }
   }, []);
+
+  // Test function to check if debug system is working
+  const testDebugSystem = () => {
+    const testError = {
+      timestamp: new Date().toISOString(),
+      details: 'TEST: This is a test error to verify the debug system is working.\n\nIf you can see this, the persistent error logging is functional.'
+    };
+    localStorage.setItem('merchantLoginError', JSON.stringify(testError));
+    
+    // Reload the page to trigger the useEffect
+    window.location.reload();
+  };
 
   const handleMerchantTokenLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -253,7 +263,16 @@ const LoginPage: React.FC = () => {
                   disabled={loading}
                   className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  {loading ? 'Verifying...' : 'Access My Onboarding'}
+                  {loading ? 'Accessing...' : 'Access My Onboarding'}
+                </button>
+                
+                {/* Test Debug System Button - Remove after testing */}
+                <button
+                  type="button"
+                  onClick={testDebugSystem}
+                  className="w-full py-2 px-4 mt-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 text-sm"
+                >
+                  Test Debug System
                 </button>
               </div>
             </form>
