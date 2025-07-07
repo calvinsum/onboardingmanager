@@ -23,7 +23,7 @@ const GoogleCallback: React.FC = () => {
         localStorage.setItem('userType', 'onboarding_manager');
         
         // Redirect to onboarding manager dashboard
-        navigate('/onboarding-manager');
+        navigate('/onboarding-manager-dashboard');
         
         // Reload the page to trigger auth context refresh
         window.location.reload();
