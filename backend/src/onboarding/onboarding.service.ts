@@ -187,4 +187,24 @@ export class OnboardingService {
       order: { createdAt: 'DESC' },
     });
   }
+
+  // Debug method to test manager lookup
+  async debugManagerLookup(managerId: string): Promise<{ found: boolean; manager?: any }> {
+    try {
+      const manager = await this.onboardingManagerRepository.findOne({
+        where: { id: managerId }
+      });
+      
+      return {
+        found: !!manager,
+        manager: manager ? { id: manager.id, email: manager.email } : null
+      };
+    } catch (error) {
+      console.error('Error in debugManagerLookup:', error);
+      return {
+        found: false,
+        manager: null
+      };
+    }
+  }
 } 

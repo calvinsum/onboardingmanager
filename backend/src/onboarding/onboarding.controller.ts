@@ -12,6 +12,38 @@ import { Onboarding, OnboardingStatus } from './entities/onboarding.entity';
 export class OnboardingController {
   constructor(private readonly onboardingService: OnboardingService) {}
 
+  @Get('debug')
+  @ApiOperation({ summary: 'Debug endpoint to test authentication and manager lookup' })
+  async debugAuth(@Request() req: any): Promise<any> {
+    try {
+      console.log('=== DEBUG ENDPOINT ===');
+      console.log('User from JWT:', JSON.stringify(req.user, null, 2));
+      
+      const managerId = req.user.id;
+      console.log('Extracted managerId:', managerId);
+      
+      // Test manager lookup
+      const result = await this.onboardingService.debugManagerLookup(managerId);
+      
+      return {
+        success: true,
+        user: req.user,
+        managerId,
+        managerFound: result.found,
+        manager: result.manager,
+        timestamp: new Date().toISOString()
+      };
+    } catch (error) {
+      console.error('Debug endpoint error:', error);
+      return {
+        success: false,
+        error: error.message,
+        stack: error.stack,
+        timestamp: new Date().toISOString()
+      };
+    }
+  }
+
   @Post()
   @ApiOperation({ summary: 'Create a new onboarding record' })
   @ApiResponse({ status: 201, description: 'Onboarding record created successfully', type: Onboarding })
