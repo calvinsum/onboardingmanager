@@ -126,7 +126,7 @@ const CreateMerchantForm: React.FC<CreateMerchantFormProps> = ({ onSubmit, initi
             value={formData.accountName}
             onChange={handleChange}
             placeholder="Account Name (e.g., ABC Trading Sdn Bhd)"
-            required
+            required={!isEditMode}
             className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
           />
         </div>

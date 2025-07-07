@@ -29,7 +29,7 @@ export class Onboarding {
   onboardingTypes: OnboardingType[];
 
   @ApiProperty({ description: 'Account name' })
-  @Column()
+  @Column({ nullable: true })
   accountName: string;
 
   // Delivery Address
