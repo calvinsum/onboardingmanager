@@ -4,7 +4,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import * as bcrypt from 'bcryptjs';
 import { Merchant } from '../merchant/entities/merchant.entity';
-import { OnboardingManager } from '../onboarding-manager/entities/onboarding-manager.entity';
+import { OnboardingManager, OnboardingManagerRole } from '../onboarding-manager/entities/onboarding-manager.entity';
 
 export interface JwtPayload {
   sub: string;
@@ -167,20 +167,32 @@ export class AuthService {
     picture?: string;
   }) {
     try {
-      // Check if onboarding manager already exists
+      // Find the user by email
       let manager = await this.onboardingManagerRepository.findOne({ 
         where: { email: googleUser.email } 
       });
 
-      // If not exists, create new onboarding manager
+      // If the user doesn't exist, we create them.
       if (!manager) {
+        // Check if this is the very first user.
+        const totalManagers = await this.onboardingManagerRepository.count();
+        const isFirstUser = totalManagers === 0;
+
         manager = this.onboardingManagerRepository.create({
           email: googleUser.email,
           fullName: googleUser.displayName || googleUser.email.split("@")[0],
           oauthProvider: "google",
-          // No password needed for Google OAuth
+          // The first user to sign up is automatically an ADMIN
+          role: isFirstUser ? OnboardingManagerRole.ADMIN : OnboardingManagerRole.MANAGER,
+          isActive: true, // Automatically activate Google users
         });
+        
         manager = await this.onboardingManagerRepository.save(manager);
+      }
+
+      // If the user exists but is not active, throw an error
+      if (!manager.isActive) {
+        throw new UnauthorizedException('Your account has been deactivated.');
       }
 
       // Return JWT token
@@ -188,6 +200,7 @@ export class AuthService {
         sub: manager.id,
         email: manager.email,
         type: "onboarding_manager",
+        role: manager.role, // Include the role in the JWT payload
       };
 
       return {
@@ -197,6 +210,7 @@ export class AuthService {
           email: manager.email,
           fullName: manager.fullName,
           type: "onboarding_manager",
+          role: manager.role,
         },
       };
     } catch (error) {
