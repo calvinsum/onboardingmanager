@@ -22,7 +22,7 @@ services:
       - key: GOOGLE_CLIENT_SECRET
         value: YOUR_GOOGLE_CLIENT_SECRET_HERE
       - key: GOOGLE_CALLBACK_URL
-        value: https://storehub-backend.onrender.com/api/auth/google/callback
+        value: https://onboardingmanager.onrender.com/api/auth/google/callback
       - key: ALLOWED_OAUTH_DOMAINS
         value: "@storehub.com,@gmail.com"
       - key: DATABASE_URL
