@@ -6,9 +6,8 @@ import { format, isWeekend, set } from 'date-fns';
 import { 
   updateOnboardingByToken, 
   getPublicHolidays,
-  getTrainingSlotsByOnboarding
 } from '../services/api';
-import { DELIVERY_TIME_BY_STATE, calculateMinInstallationDate } from '../utils/constants';
+import { DELIVERY_TIME_BY_STATE } from '../utils/constants';
 
 interface Holiday {
   date: string;
@@ -547,7 +546,6 @@ const TrainingConfirmation = ({
 const MerchantSchedulePage: React.FC = () => {
   const [onboardingRecord, setOnboardingRecord] = useState<any>(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const navigate = useNavigate();
 
@@ -568,7 +566,6 @@ const MerchantSchedulePage: React.FC = () => {
       try {
         const recordData = localStorage.getItem('onboardingRecord');
         if (!recordData) {
-          setError('Onboarding record not found. Please log in again.');
           navigate('/login');
           return;
         }
@@ -589,7 +586,7 @@ const MerchantSchedulePage: React.FC = () => {
         setPublicHolidays(holidays.map((h: Holiday) => new Date(h.date)));
 
       } catch (err: any) {
-        setError(err.message || 'Failed to load onboarding data.');
+        console.error("Failed to load onboarding data.", err);
       } finally {
         setLoading(false);
       }
@@ -597,10 +594,6 @@ const MerchantSchedulePage: React.FC = () => {
 
     fetchData();
   }, [navigate]);
-
-  const deliveryTime = onboardingRecord 
-    ? (DELIVERY_TIME_BY_STATE[onboardingRecord.deliveryState] || { min: 3, max: 5 })
-    : null;
 
   const disabledDays = [
     (date: Date) => isWeekend(date),

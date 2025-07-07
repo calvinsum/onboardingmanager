@@ -1,5 +1,4 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState } from 'react';
 import { useAuth } from '../hooks/useAuth';
 
 const LoginPage: React.FC = () => {
@@ -7,7 +6,6 @@ const LoginPage: React.FC = () => {
   const [accessToken, setAccessToken] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const navigate = useNavigate();
   const auth = useAuth();
 
   const handleMerchantTokenLogin = async (e: React.FormEvent) => {
@@ -26,8 +24,13 @@ const LoginPage: React.FC = () => {
   };
 
   const handleManagerLogin = () => {
-    const backendUrl = process.env.REACT_APP_API_BASE_URL || 'http://localhost:3001/api';
-    window.location.href = `${backendUrl}/auth/google`;
+    // Use the production URL when not in a local development environment.
+    const isLocal = window.location.hostname === 'localhost';
+    const backendBaseUrl = isLocal 
+      ? (process.env.REACT_APP_API_BASE_URL || 'http://localhost:3001')
+      : 'https://storehub-backend.onrender.com';
+
+    window.location.href = `${backendBaseUrl}/api/auth/google`;
   };
 
   return (
