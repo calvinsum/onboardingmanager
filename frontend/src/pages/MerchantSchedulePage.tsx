@@ -3,7 +3,11 @@ import { useNavigate } from 'react-router-dom';
 import { DayPicker } from 'react-day-picker';
 import { toast } from 'react-hot-toast';
 import { format, isWeekend, set } from 'date-fns';
-import { updateOnboardingByToken, getPublicHolidays } from '../services/api';
+import { 
+  updateOnboardingByToken, 
+  getPublicHolidays,
+  getTrainingSlotsByOnboarding
+} from '../services/api';
 import { DELIVERY_TIME_BY_STATE, calculateMinInstallationDate } from '../utils/constants';
 
 // Mobile-friendly Date Picker component
@@ -554,6 +558,7 @@ const MerchantSchedulePage: React.FC = () => {
   const [trainingConfirmed, setTrainingConfirmed] = useState(false);
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [trainingConfirmedDate, setTrainingConfirmedDate] = useState<Date | undefined>();
+  const [trainingSlot, setTrainingSlot] = useState<any>(null);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -604,6 +609,21 @@ const MerchantSchedulePage: React.FC = () => {
           setTrainingConfirmed(true);
           // If training was confirmed previously, use the confirmation date from record or fallback to current date
           setTrainingConfirmedDate(record.trainingConfirmedDate ? new Date(record.trainingConfirmedDate) : new Date());
+        }
+
+        // Fetch training slot information if onboarding ID exists
+        if (record.id) {
+          try {
+            const trainingSlots = await getTrainingSlotsByOnboarding(record.id);
+            if (trainingSlots && trainingSlots.length > 0) {
+              // Get the most recent/active training slot
+              const activeSlot = trainingSlots.find((slot: any) => slot.status === 'booked' || slot.status === 'completed') || trainingSlots[0];
+              setTrainingSlot(activeSlot);
+            }
+          } catch (error) {
+            console.error('Error fetching training slots:', error);
+            // Don't show error to user as this is optional information
+          }
         }
       } catch (error) {
         console.error('Error fetching holidays:', error);
@@ -828,6 +848,100 @@ const MerchantSchedulePage: React.FC = () => {
               <span className="font-medium text-gray-700">Phone:</span>
               <span className="ml-2 text-gray-900">{onboardingRecord.picPhone}</span>
             </div>
+          </div>
+        </div>
+
+        {/* Training Status */}
+        <div className="bg-white rounded-lg shadow-sm p-4 mb-6">
+          <h2 className="text-lg font-semibold text-gray-900 mb-3">Training Status</h2>
+          <div className="space-y-3">
+            {/* Training Status Badge */}
+            <div className="flex items-center justify-between">
+              <span className="font-medium text-gray-700">Status:</span>
+              <div className="flex items-center">
+                {trainingConfirmed ? (
+                  <div className="flex items-center">
+                    <div className="w-2 h-2 bg-green-500 rounded-full mr-2"></div>
+                    <span className="text-sm font-medium text-green-700 bg-green-100 px-2 py-1 rounded-full">
+                      Confirmed
+                    </span>
+                  </div>
+                ) : trainingDate ? (
+                  <div className="flex items-center">
+                    <div className="w-2 h-2 bg-yellow-500 rounded-full mr-2"></div>
+                    <span className="text-sm font-medium text-yellow-700 bg-yellow-100 px-2 py-1 rounded-full">
+                      Scheduled
+                    </span>
+                  </div>
+                ) : (
+                  <div className="flex items-center">
+                    <div className="w-2 h-2 bg-gray-400 rounded-full mr-2"></div>
+                    <span className="text-sm font-medium text-gray-600 bg-gray-100 px-2 py-1 rounded-full">
+                      Pending
+                    </span>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Training Date */}
+            {trainingDate && (
+              <div className="flex items-center justify-between">
+                <span className="font-medium text-gray-700">Date & Time:</span>
+                <span className="text-sm text-gray-900">
+                  {format(trainingDate, 'PPP p')}
+                </span>
+              </div>
+            )}
+
+            {/* Assigned Trainer */}
+            {trainingSlot?.trainer && (
+              <div className="flex items-center justify-between">
+                <span className="font-medium text-gray-700">Assigned Trainer:</span>
+                <div className="text-right">
+                  <div className="text-sm font-medium text-gray-900">
+                    {trainingSlot.trainer.name}
+                  </div>
+                  {trainingSlot.trainer.languages && trainingSlot.trainer.languages.length > 0 && (
+                    <div className="text-xs text-gray-500">
+                      Languages: {trainingSlot.trainer.languages.join(', ')}
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Training Type */}
+            {trainingSlot && (
+              <div className="flex items-center justify-between">
+                <span className="font-medium text-gray-700">Training Type:</span>
+                <span className="text-sm text-gray-900 capitalize">
+                  {trainingSlot.trainingType?.replace('_', ' ')}
+                </span>
+              </div>
+            )}
+
+            {/* Training Languages */}
+            {onboardingRecord.trainingPreferenceLanguages && onboardingRecord.trainingPreferenceLanguages.length > 0 && (
+              <div className="flex items-center justify-between">
+                <span className="font-medium text-gray-700">Preferred Languages:</span>
+                <span className="text-sm text-gray-900">
+                  {onboardingRecord.trainingPreferenceLanguages.join(', ')}
+                </span>
+              </div>
+            )}
+
+            {/* No Training Info Message */}
+            {!trainingDate && !trainingSlot && (
+              <div className="text-center py-4">
+                <div className="text-gray-500 text-sm">
+                  <svg className="w-8 h-8 mx-auto mb-2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  Training session not yet scheduled
+                </div>
+              </div>
+            )}
           </div>
         </div>
 
