@@ -10,6 +10,7 @@ import ProtectedRoute from './components/ProtectedRoute';
 import Layout from './components/Layout';
 import './App.css';
 
+// Force frontend redeployment to pick up new API URL environment variables
 function App() {
   return (
     <AuthProvider>
