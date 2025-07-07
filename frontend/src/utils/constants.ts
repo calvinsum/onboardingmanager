@@ -61,4 +61,19 @@ export const calculateMinInstallationDate = (
 ): Date => {
   const deliveryTime = DELIVERY_TIME_BY_STATE[deliveryState] || { min: 3, max: 5 };
   return addWorkingDays(deliveryConfirmedDate, deliveryTime.max);
-}; 
+};
+
+// Trainer Management Constants
+export const TRAINER_LANGUAGES = [
+  'English',
+  'Malay',
+  'Chinese'
+] as const;
+
+export const TRAINER_STATUS = {
+  ACTIVE: 'active',
+  INACTIVE: 'inactive'
+} as const;
+
+export type TrainerLanguage = typeof TRAINER_LANGUAGES[number];
+export type TrainerStatus = typeof TRAINER_STATUS[keyof typeof TRAINER_STATUS]; 

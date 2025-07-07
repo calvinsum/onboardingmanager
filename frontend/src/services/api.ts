@@ -220,4 +220,49 @@ export const checkTokenExpiry = async (token: string) => {
   return response.data;
 };
 
+// Trainer API functions
+export const createTrainer = async (data: any) => {
+  const response = await api.post('/trainers', data);
+  return response.data;
+};
+
+export const getAllTrainers = async () => {
+  const response = await api.get('/trainers');
+  return response.data;
+};
+
+export const getMyTrainers = async () => {
+  const response = await api.get('/trainers/my-trainers');
+  return response.data;
+};
+
+export const getTrainerById = async (id: string) => {
+  const response = await api.get(`/trainers/${id}`);
+  return response.data;
+};
+
+export const updateTrainer = async (id: string, data: any) => {
+  const response = await api.patch(`/trainers/${id}`, data);
+  return response.data;
+};
+
+export const toggleTrainerStatus = async (id: string) => {
+  const response = await api.patch(`/trainers/${id}/toggle-status`, {});
+  return response.data;
+};
+
+export const deleteTrainer = async (id: string) => {
+  const response = await api.delete(`/trainers/${id}`);
+  return response.data;
+};
+
+export const getAvailableTrainers = async (location?: string, language?: string) => {
+  const params = new URLSearchParams();
+  if (location) params.append('location', location);
+  if (language) params.append('language', language);
+  
+  const response = await api.get(`/trainers/available?${params.toString()}`);
+  return response.data;
+};
+
 export default api; 

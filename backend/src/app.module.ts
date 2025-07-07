@@ -7,6 +7,7 @@ import { OnboardingManagerModule } from './onboarding-manager/onboarding-manager
 import { OnboardingModule } from './onboarding/onboarding.module';
 import { HealthModule } from './health/health.module';
 import { ScheduleModule } from './schedule/schedule.module';
+import { TrainerModule } from './trainer/trainer.module';
 import { DatabaseConfig } from './config/database.config';
 import { scheduleConfig } from './config/schedule.config';
 
@@ -31,6 +32,7 @@ import { scheduleConfig } from './config/schedule.config';
     HealthModule,
     OnboardingModule,
     ScheduleModule,
+    TrainerModule,
   ],
   controllers: [],
   providers: [],

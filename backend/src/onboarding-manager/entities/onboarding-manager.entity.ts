@@ -58,4 +58,7 @@ export class OnboardingManager {
   @ApiProperty({ type: () => [Onboarding] })
   @OneToMany(() => Onboarding, (onboarding) => onboarding.createdByManager)
   createdOnboardings: Onboarding[];
+
+  @OneToMany('Trainer', 'createdByManager')
+  createdTrainers: any[];
 }
