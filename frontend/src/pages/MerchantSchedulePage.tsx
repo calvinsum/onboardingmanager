@@ -562,50 +562,27 @@ const MerchantSchedulePage: React.FC = () => {
 
   useEffect(() => {
     const fetchData = async () => {
-      // Get existing debug logs or create new array
-      const existingLogs = JSON.parse(localStorage.getItem('debugLogs') || '[]');
-      const logs: string[] = [...existingLogs];
-      
-      const addLog = (message: string) => {
-        const timestamp = new Date().toISOString();
-        const logEntry = `[${timestamp}] MerchantSchedulePage: ${message}`;
-        logs.push(logEntry);
-        localStorage.setItem('debugLogs', JSON.stringify(logs));
-        console.log(logEntry);
-      };
-      
-      addLog('fetchData called');
-      
       // Add a small delay to ensure localStorage is available
       await new Promise(resolve => setTimeout(resolve, 100));
       
       const token = localStorage.getItem('merchantAccessToken');
       const recordData = localStorage.getItem('onboardingRecord');
       
-      addLog(`Token exists: ${!!token}, Record exists: ${!!recordData}`);
-      addLog(`All localStorage keys: ${Object.keys(localStorage).join(', ')}`);
-      
       if (!token || !recordData) {
-        addLog('Missing token or record data - will redirect to login in 500ms');
-        
         // Add a delay before redirect to ensure this isn't a timing issue
         setTimeout(() => {
-          addLog('Redirecting to login now');
           navigate('/login');
         }, 500);
         return;
       }
 
-      addLog('Authentication data found, proceeding with setup');
       setAccessToken(token);
       
       let record;
       try {
         record = JSON.parse(recordData);
-        addLog(`Record parsed successfully: ${record.picName || 'Unknown'}`);
         setOnboardingRecord(record);
       } catch (parseError) {
-        addLog(`ERROR parsing record: ${parseError}`);
         console.error('Error parsing onboarding record:', parseError);
         navigate('/login');
         return;
