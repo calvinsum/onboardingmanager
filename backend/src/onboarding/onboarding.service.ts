@@ -61,7 +61,8 @@ export class OnboardingService {
       expectedGoLiveDate, 
       hardwareDeliveryDate, 
       hardwareInstallationDate, 
-      trainingDate, 
+      trainingDate,
+      deliveryConfirmedDate,
       ...restOfDto 
     } = updateOnboardingDto;
     
@@ -82,6 +83,15 @@ export class OnboardingService {
 
     if (trainingDate) {
       updatePayload.trainingDate = new Date(trainingDate);
+    }
+
+    if (deliveryConfirmedDate) {
+      updatePayload.deliveryConfirmedDate = new Date(deliveryConfirmedDate);
+    }
+
+    // Auto-set delivery confirmation date if delivery is being confirmed and no date provided
+    if (updateOnboardingDto.deliveryConfirmed && !onboarding.deliveryConfirmed && !deliveryConfirmedDate) {
+      updatePayload.deliveryConfirmedDate = new Date();
     }
     
     // `merge` will update the `onboarding` entity with the new values
@@ -156,7 +166,8 @@ export class OnboardingService {
       expectedGoLiveDate, 
       hardwareDeliveryDate, 
       hardwareInstallationDate, 
-      trainingDate, 
+      trainingDate,
+      deliveryConfirmedDate,
       ...restOfDto 
     } = updateOnboardingDto;
     
@@ -177,6 +188,15 @@ export class OnboardingService {
 
     if (trainingDate) {
       updatePayload.trainingDate = new Date(trainingDate);
+    }
+
+    if (deliveryConfirmedDate) {
+      updatePayload.deliveryConfirmedDate = new Date(deliveryConfirmedDate);
+    }
+
+    // Auto-set delivery confirmation date if delivery is being confirmed and no date provided
+    if (updateOnboardingDto.deliveryConfirmed && !onboarding.deliveryConfirmed && !deliveryConfirmedDate) {
+      updatePayload.deliveryConfirmedDate = new Date();
     }
     
     // `merge` will update the `onboarding` entity with the new values

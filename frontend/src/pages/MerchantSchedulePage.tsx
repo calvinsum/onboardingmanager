@@ -4,7 +4,7 @@ import { DayPicker } from 'react-day-picker';
 import { toast } from 'react-hot-toast';
 import { format, isWeekend, set } from 'date-fns';
 import { updateOnboardingByToken, getPublicHolidays } from '../services/api';
-import { DELIVERY_TIME_BY_STATE } from '../utils/constants';
+import { DELIVERY_TIME_BY_STATE, calculateMinInstallationDate } from '../utils/constants';
 
 // Mobile-friendly Date Picker component
 const MobileDatePicker = ({ 
@@ -330,6 +330,7 @@ const MerchantSchedulePage: React.FC = () => {
   const [hardwareInstallationDate, setHardwareInstallationDate] = useState<Date | undefined>();
   const [trainingDate, setTrainingDate] = useState<Date | undefined>();
   const [deliveryConfirmed, setDeliveryConfirmed] = useState(false);
+  const [deliveryConfirmedDate, setDeliveryConfirmedDate] = useState<Date | undefined>();
 
   useEffect(() => {
     const fetchData = async () => {
@@ -364,6 +365,8 @@ const MerchantSchedulePage: React.FC = () => {
         // Check if delivery is already confirmed
         if (record.deliveryConfirmed) {
           setDeliveryConfirmed(true);
+          // If delivery was confirmed previously, use the confirmation date from record or fallback to current date
+          setDeliveryConfirmedDate(record.deliveryConfirmedDate ? new Date(record.deliveryConfirmedDate) : new Date());
         }
       } catch (error) {
         console.error('Error fetching holidays:', error);
@@ -386,8 +389,10 @@ const MerchantSchedulePage: React.FC = () => {
 
     setSaving(true);
     try {
+      const confirmationDate = new Date();
       const payload = {
         deliveryConfirmed: true,
+        deliveryConfirmedDate: confirmationDate.toISOString(),
       };
 
       const updatedRecord = await updateOnboardingByToken(accessToken, payload);
@@ -396,6 +401,7 @@ const MerchantSchedulePage: React.FC = () => {
       localStorage.setItem('onboardingRecord', JSON.stringify(updatedRecord));
       setOnboardingRecord(updatedRecord);
       setDeliveryConfirmed(true);
+      setDeliveryConfirmedDate(confirmationDate);
       
       toast.success('Delivery confirmed successfully!');
     } catch (error: any) {
@@ -536,7 +542,9 @@ const MerchantSchedulePage: React.FC = () => {
               label="Hardware Installation Date & Time"
               selectedDate={hardwareInstallationDate}
               onDateChange={setHardwareInstallationDate}
-              minDate={deliveryConfirmed ? new Date() : undefined}
+              minDate={deliveryConfirmed && deliveryConfirmedDate && onboardingRecord?.deliveryState 
+                ? calculateMinInstallationDate(deliveryConfirmedDate, onboardingRecord.deliveryState)
+                : undefined}
               disabledDays={disabledDays}
               disabled={!deliveryConfirmed}
               includeTime={true}

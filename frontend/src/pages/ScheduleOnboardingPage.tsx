@@ -4,7 +4,7 @@ import { DayPicker } from 'react-day-picker';
 import { toast } from 'react-hot-toast';
 import { format, isWeekend, set } from 'date-fns';
 import { getOnboardingRecordById, getPublicHolidays, updateOnboardingRecord } from '../services/api';
-import { DELIVERY_TIME_BY_STATE } from '../utils/constants';
+import { DELIVERY_TIME_BY_STATE, calculateMinInstallationDate } from '../utils/constants';
 
 // A reusable Date Picker component
 const CustomDatePicker = ({ label, selectedDate, onDateChange, minDate, disabledDays, disabled = false, includeTime = false }: {
@@ -289,6 +289,7 @@ const ScheduleOnboardingPage = () => {
   const [hardwareInstallationDate, setHardwareInstallationDate] = useState<Date | undefined>();
   const [trainingDate, setTrainingDate] = useState<Date | undefined>();
   const [deliveryConfirmed, setDeliveryConfirmed] = useState(false);
+  const [deliveryConfirmedDate, setDeliveryConfirmedDate] = useState<Date | undefined>();
 
   useEffect(() => {
     const fetchData = async () => {
@@ -310,6 +311,8 @@ const ScheduleOnboardingPage = () => {
         // Check if delivery is already confirmed
         if (fetchedRecord.deliveryConfirmed) {
           setDeliveryConfirmed(true);
+          // If delivery was confirmed previously, use the confirmation date from record or fallback to current date
+          setDeliveryConfirmedDate(fetchedRecord.deliveryConfirmedDate ? new Date(fetchedRecord.deliveryConfirmedDate) : new Date());
         }
 
       } catch (error) {
@@ -330,10 +333,15 @@ const ScheduleOnboardingPage = () => {
   const handleDeliveryConfirm = async () => {
     if (!id) return;
     try {
-      const payload = { deliveryConfirmed: true };
+      const confirmationDate = new Date();
+      const payload = { 
+        deliveryConfirmed: true,
+        deliveryConfirmedDate: confirmationDate.toISOString(),
+      };
       const updatedRecord = await updateOnboardingRecord(id, payload);
       setRecord(updatedRecord);
       setDeliveryConfirmed(true);
+      setDeliveryConfirmedDate(confirmationDate);
       toast.success('Delivery confirmed successfully!');
     } catch (error) {
       console.error('Error confirming delivery:', error);
@@ -378,7 +386,9 @@ const ScheduleOnboardingPage = () => {
           label="Hardware Installation Date & Time"
           selectedDate={hardwareInstallationDate}
           onDateChange={setHardwareInstallationDate}
-          minDate={deliveryConfirmed ? new Date() : undefined}
+          minDate={deliveryConfirmed && deliveryConfirmedDate && record?.deliveryState 
+            ? calculateMinInstallationDate(deliveryConfirmedDate, record.deliveryState)
+            : undefined}
           disabledDays={disabledDays}
           disabled={!deliveryConfirmed}
           includeTime={true}

@@ -24,6 +24,11 @@ export class CreateOnboardingDto {
   @IsBoolean()
   deliveryConfirmed?: boolean;
 
+  @ApiProperty({ description: 'Date when delivery was confirmed', required: false })
+  @IsOptional()
+  @IsDateString()
+  deliveryConfirmedDate?: string;
+
   // Delivery Address
   @ApiProperty({ description: 'Delivery address line 1', example: '123 Main Street' })
   @IsString()

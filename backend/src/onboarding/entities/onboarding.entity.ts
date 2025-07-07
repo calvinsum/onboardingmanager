@@ -36,6 +36,10 @@ export class Onboarding {
   @Column({ default: false })
   deliveryConfirmed: boolean;
 
+  @ApiProperty({ description: 'Date when delivery was confirmed' })
+  @Column({ type: 'timestamp', nullable: true })
+  deliveryConfirmedDate: Date;
+
   // Delivery Address
   @ApiProperty({ description: 'Delivery address line 1' })
   @Column()
