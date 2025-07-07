@@ -6,6 +6,7 @@ const DebugAuth: React.FC = () => {
   const [testToken, setTestToken] = useState('');
   const [testResult, setTestResult] = useState<any>(null);
   const [loading, setLoading] = useState(false);
+  const [debugLogs, setDebugLogs] = useState<string[]>([]);
 
   useEffect(() => {
     // Check localStorage data
@@ -16,6 +17,10 @@ const DebugAuth: React.FC = () => {
       authToken: localStorage.getItem('authToken'),
     };
     setLocalStorageData(data);
+    
+    // Load debug logs
+    const logs = JSON.parse(localStorage.getItem('debugLogs') || '[]');
+    setDebugLogs(logs);
   }, []);
 
   const handleTestToken = async () => {
@@ -43,6 +48,22 @@ const DebugAuth: React.FC = () => {
     localStorage.clear();
     setLocalStorageData({});
     setTestResult(null);
+    setDebugLogs([]);
+  };
+
+  const handleRefreshData = () => {
+    // Refresh localStorage data
+    const data = {
+      merchantAccessToken: localStorage.getItem('merchantAccessToken'),
+      userType: localStorage.getItem('userType'),
+      onboardingRecord: localStorage.getItem('onboardingRecord'),
+      authToken: localStorage.getItem('authToken'),
+    };
+    setLocalStorageData(data);
+    
+    // Refresh debug logs
+    const logs = JSON.parse(localStorage.getItem('debugLogs') || '[]');
+    setDebugLogs(logs);
   };
 
   const handleSetTestData = () => {
@@ -94,6 +115,12 @@ const DebugAuth: React.FC = () => {
               >
                 Set Test Data
               </button>
+              <button
+                onClick={handleRefreshData}
+                className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700"
+              >
+                Refresh Data
+              </button>
             </div>
           </div>
 
@@ -143,6 +170,25 @@ const DebugAuth: React.FC = () => {
                 {'\n'}User Agent: {navigator.userAgent}
                 {'\n'}Local Storage Available: {typeof(Storage) !== "undefined" ? 'Yes' : 'No'}
               </pre>
+            </div>
+          </div>
+
+          {/* Debug Logs */}
+          <div className="mb-8">
+            <h2 className="text-lg font-semibold text-gray-800 mb-4">Debug Logs</h2>
+            <div className="bg-gray-900 text-green-400 p-4 rounded-md font-mono text-sm max-h-96 overflow-y-auto">
+              {debugLogs.length > 0 ? (
+                debugLogs.map((log, index) => (
+                  <div key={index} className="mb-1">
+                    {log}
+                  </div>
+                ))
+              ) : (
+                <div className="text-gray-500">No debug logs found</div>
+              )}
+            </div>
+            <div className="mt-2 text-sm text-gray-600">
+              These logs persist even after page redirects. Try logging in with a merchant token and then come back here to see what happened.
             </div>
           </div>
         </div>

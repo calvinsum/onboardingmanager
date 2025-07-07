@@ -15,30 +15,53 @@ const LoginPage: React.FC = () => {
     setError('');
     setLoading(true);
 
+    // Clear previous debug logs
+    localStorage.removeItem('debugLogs');
+    const logs: string[] = [];
+    
+    const addLog = (message: string) => {
+      const timestamp = new Date().toISOString();
+      const logEntry = `[${timestamp}] ${message}`;
+      logs.push(logEntry);
+      localStorage.setItem('debugLogs', JSON.stringify(logs));
+      console.log(logEntry);
+    };
+
     try {
+      addLog(`Starting login with token: ${accessToken.substring(0, 10)}...`);
+      
       // Verify the access token by fetching the onboarding record
       const onboardingRecord = await getOnboardingByToken(accessToken);
+      addLog(`Onboarding record received: ${JSON.stringify(onboardingRecord).substring(0, 100)}...`);
       
       // Store the access token for merchant access
       localStorage.setItem('merchantAccessToken', accessToken);
       localStorage.setItem('userType', 'merchant');
       localStorage.setItem('onboardingRecord', JSON.stringify(onboardingRecord));
       
+      addLog('Data stored in localStorage');
+      
       // Verify data was stored correctly
       const storedToken = localStorage.getItem('merchantAccessToken');
       const storedRecord = localStorage.getItem('onboardingRecord');
       
+      addLog(`Verification - Token exists: ${!!storedToken}, Record exists: ${!!storedRecord}`);
+      
       // Double-check that data is actually stored
       if (!storedToken || !storedRecord) {
+        addLog('ERROR: Failed to store authentication data');
         throw new Error('Failed to store authentication data. Please try again.');
       }
       
       // Small delay to ensure localStorage is written
       await new Promise(resolve => setTimeout(resolve, 100));
       
+      addLog('About to navigate to /merchant-schedule');
+      
       // Navigate to merchant dashboard
       navigate('/merchant-schedule');
     } catch (error: any) {
+      addLog(`ERROR: ${error.message || error.toString()}`);
       console.error('Login error:', error);
       setError(error.message || 'Invalid or expired access token. Please check your token and try again.');
     } finally {
