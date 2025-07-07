@@ -5,6 +5,7 @@ import { Onboarding, OnboardingStatus } from './entities/onboarding.entity';
 import { Merchant } from '../merchant/entities/merchant.entity';
 import { OnboardingManager } from '../onboarding-manager/entities/onboarding-manager.entity';
 import { CreateOnboardingDto } from './dto/create-onboarding.dto';
+import { UpdateOnboardingDto } from './dto/update-onboarding.dto';
 import * as crypto from 'crypto';
 
 @Injectable()
@@ -50,6 +51,23 @@ export class OnboardingService {
     }
 
     return this.onboardingRepository.save(onboarding);
+  }
+
+  async updateOnboarding(id: string, updateOnboardingDto: UpdateOnboardingDto): Promise<Onboarding> {
+    const onboarding = await this.getOnboardingById(id);
+
+    // Separate date from the rest of the DTO to handle type conversion
+    const { expectedGoLiveDate, ...restOfDto } = updateOnboardingDto;
+    const updatePayload: Partial<Onboarding> = { ...restOfDto };
+
+    if (expectedGoLiveDate) {
+      updatePayload.expectedGoLiveDate = new Date(expectedGoLiveDate);
+    }
+    
+    // `merge` will update the `onboarding` entity with the new values
+    const updatedOnboarding = this.onboardingRepository.merge(onboarding, updatePayload);
+
+    return this.onboardingRepository.save(updatedOnboarding);
   }
 
   async getAllOnboardings(): Promise<Onboarding[]> {

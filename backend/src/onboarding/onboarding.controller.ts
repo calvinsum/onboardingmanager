@@ -3,6 +3,7 @@ import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiParam, ApiQuery }
 import { AuthGuard } from '@nestjs/passport';
 import { OnboardingService } from './onboarding.service';
 import { CreateOnboardingDto } from './dto/create-onboarding.dto';
+import { UpdateOnboardingDto } from './dto/update-onboarding.dto';
 import { Onboarding, OnboardingStatus } from './entities/onboarding.entity';
 
 @ApiTags('onboarding')
@@ -82,6 +83,18 @@ export class OnboardingController {
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   async getOnboardingById(@Param('id') id: string): Promise<Onboarding> {
     return this.onboardingService.getOnboardingById(id);
+  }
+
+  @Patch(':id')
+  @ApiOperation({ summary: 'Update an onboarding record' })
+  @ApiParam({ name: 'id', description: 'Onboarding ID' })
+  @ApiResponse({ status: 200, description: 'Onboarding record updated successfully', type: Onboarding })
+  @ApiResponse({ status: 404, description: 'Onboarding record not found' })
+  async updateOnboarding(
+    @Param('id') id: string,
+    @Body() updateOnboardingDto: UpdateOnboardingDto,
+  ): Promise<Onboarding> {
+    return this.onboardingService.updateOnboarding(id, updateOnboardingDto);
   }
 
   @Patch(':id/status')

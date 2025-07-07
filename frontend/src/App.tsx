@@ -11,6 +11,7 @@ import GoogleCallback from './pages/GoogleCallback';
 import DebugAuth from './pages/DebugAuth';
 import ProtectedRoute from './components/ProtectedRoute';
 import Layout from './components/Layout';
+import EditOnboardingPage from './pages/EditOnboardingPage';
 import './App.css';
 
 // Force frontend redeployment to pick up new API URL environment variables
@@ -57,6 +58,17 @@ function App() {
                 </ProtectedRoute>
               } 
             />
+            
+            <Route
+              path="/edit-onboarding/:id"
+              element={
+                <ProtectedRoute userType="onboarding_manager">
+                  <EditOnboardingPage />
+                </ProtectedRoute>
+              }
+            />
+            
+            <Route path="/merchant-dashboard" element={<MerchantDashboard />} />
             
             {/* Dashboard redirect */}
             <Route 

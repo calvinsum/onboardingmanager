@@ -119,14 +119,29 @@ class ApiService {
   }
 
   // Generic methods
-  async get(url: string) {
-    const response = await this.api.get(url);
-    return response.data;
+  private handleApiError(error: any) {
+    console.error("API Error:", error.response?.data || error.message);
+    // You could add more robust error handling here, e.g., logging service
+  }
+  
+  async get(endpoint: string) {
+    try {
+      const response = await this.api.get(endpoint);
+      return response;
+    } catch (error) {
+      this.handleApiError(error);
+      throw error;
+    }
   }
 
-  async post(url: string, data?: any) {
-    const response = await this.api.post(url, data);
-    return response;
+  async post(endpoint: string, data: any) {
+    try {
+      const response = await this.api.post(endpoint, data);
+      return response;
+    } catch (error) {
+      this.handleApiError(error);
+      throw error;
+    }
   }
 
   async put(url: string, data?: any) {
@@ -138,7 +153,56 @@ class ApiService {
     const response = await this.api.delete(url);
     return response.data;
   }
+
+  async patch(endpoint: string, data: any) {
+    try {
+      const response = await this.api.patch(endpoint, data);
+      return response;
+    } catch (error) {
+      this.handleApiError(error);
+      throw error;
+    }
+  }
+
+  async setAuthToken(token: string | null) {
+    if (token) {
+      this.api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+    } else {
+      delete this.api.defaults.headers.common['Authorization'];
+    }
+  }
 }
 
-const apiService = new ApiService();
-export default apiService; 
+const api = new ApiService();
+
+export const createMerchantOnboarding = async (data: any) => {
+  const response = await api.post('/onboarding', data);
+  return response.data;
+};
+
+export const getMyOnboardingRecords = async () => {
+  const response = await api.get('/onboarding/my-records');
+  return response.data;
+};
+
+export const getOnboardingRecordById = async (id: string) => {
+  const response = await api.get(`/onboarding/${id}`);
+  return response.data;
+};
+
+export const getOnboardingByToken = async (token: string) => {
+  const response = await api.get(`/merchant-onboarding/access/${token}`);
+  return response.data;
+};
+
+export const updateOnboardingRecord = async (id: string, data: any) => {
+  const response = await api.patch(`/onboarding/${id}`, data);
+  return response.data;
+};
+
+export const regenerateOnboardingToken = async (id: string) => {
+  const response = await api.post(`/onboarding/${id}/regenerate-token`, {});
+  return response.data;
+};
+
+export default api; 

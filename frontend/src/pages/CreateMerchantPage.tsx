@@ -1,14 +1,30 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
+import { toast } from 'react-hot-toast';
 import CreateMerchantForm from '../components/CreateMerchantForm';
-import Layout from '../components/Layout';
+import { createMerchantOnboarding } from '../services/api';
 
-const CreateMerchantPage: React.FC = () => {
+const CreateMerchantPage = () => {
+  const navigate = useNavigate();
+
+  const handleSubmit = async (formData: any) => {
+    try {
+      const newRecord = await createMerchantOnboarding(formData);
+      toast.success(
+        `Onboarding record created! Token: ${newRecord.accessToken}`,
+        { duration: 6000 }
+      );
+      navigate('/manager-dashboard');
+    } catch (error) {
+      toast.error('Failed to create onboarding record.');
+      console.error(error);
+    }
+  };
+
   return (
-    <Layout>
-      <div className="p-6">
-        <CreateMerchantForm />
-      </div>
-    </Layout>
+    <div className="container mx-auto mt-10">
+      <CreateMerchantForm onSubmit={handleSubmit} />
+    </div>
   );
 };
 
