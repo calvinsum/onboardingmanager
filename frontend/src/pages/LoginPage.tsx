@@ -28,7 +28,7 @@ const LoginPage: React.FC = () => {
     const isLocal = window.location.hostname === 'localhost';
     const backendBaseUrl = isLocal 
       ? (process.env.REACT_APP_API_BASE_URL || 'http://localhost:3001')
-      : 'https://storehub-backend.onrender.com';
+      : 'https://onboardingmanager.onrender.com';
 
     window.location.href = `${backendBaseUrl}/api/auth/google`;
   };
