@@ -210,4 +210,14 @@ export const getPublicHolidays = async (year: number, state?: string) => {
   return response.data;
 };
 
+export const updateOnboardingByToken = async (token: string, data: any) => {
+  const response = await api.patch(`/merchant-onboarding/update/${token}`, data);
+  return response.data;
+};
+
+export const checkTokenExpiry = async (token: string) => {
+  const response = await api.get(`/merchant-onboarding/check-token/${token}`);
+  return response.data;
+};
+
 export default api; 

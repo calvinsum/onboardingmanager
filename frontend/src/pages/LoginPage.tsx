@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
+import { getOnboardingByToken } from '../services/api';
 
 const LoginPage: React.FC = () => {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [accessToken, setAccessToken] = useState('');
   const [userType, setUserType] = useState<'merchant' | 'onboarding_manager'>('merchant');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -12,17 +12,24 @@ const LoginPage: React.FC = () => {
   const { login } = useAuth();
   const navigate = useNavigate();
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleMerchantTokenLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
     setLoading(true);
 
     try {
-      await login(email, password, userType);
-      const redirectPath = userType === 'merchant' ? '/merchant' : '/onboarding-manager';
-      navigate(redirectPath);
+      // Verify the access token by fetching the onboarding record
+      const onboardingRecord = await getOnboardingByToken(accessToken);
+      
+      // Store the access token for merchant access
+      localStorage.setItem('merchantAccessToken', accessToken);
+      localStorage.setItem('userType', 'merchant');
+      localStorage.setItem('onboardingRecord', JSON.stringify(onboardingRecord));
+      
+      // Navigate to merchant dashboard
+      navigate('/merchant-schedule');
     } catch (error: any) {
-      setError(error.response?.data?.message || 'Login failed. Please try again.');
+      setError('Invalid or expired access token. Please check your token and try again.');
     } finally {
       setLoading(false);
     }
@@ -110,67 +117,53 @@ const LoginPage: React.FC = () => {
           </div>
         )}
 
-        {/* Merchant Login Form */}
+        {/* Merchant Access Token Login */}
         {userType === 'merchant' && (
-          <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
-            <div className="rounded-md shadow-sm -space-y-px">
-              <div>
-                <label htmlFor="email-address" className="sr-only">
-                  Email address
-                </label>
-                <input
-                  id="email-address"
-                  name="email"
-                  type="email"
-                  autoComplete="email"
-                  required
-                  className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
-                  placeholder="Email address"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                />
+          <div className="space-y-4">
+            <div className="relative">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-gray-300" />
               </div>
-              <div>
-                <label htmlFor="password" className="sr-only">
-                  Password
-                </label>
-                <input
-                  id="password"
-                  name="password"
-                  type="password"
-                  autoComplete="current-password"
-                  required
-                  className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
-                  placeholder="Password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                />
+              <div className="relative flex justify-center text-sm">
+                <span className="px-2 bg-gray-50 text-gray-500">Enter your access token</span>
               </div>
             </div>
+            
+            <form className="space-y-4" onSubmit={handleMerchantTokenLogin}>
+              <div>
+                <label htmlFor="access-token" className="block text-sm font-medium text-gray-700">
+                  Access Token
+                </label>
+                <input
+                  id="access-token"
+                  name="access-token"
+                  type="text"
+                  required
+                  className="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
+                  placeholder="Enter your access token"
+                  value={accessToken}
+                  onChange={(e) => setAccessToken(e.target.value)}
+                />
+                <p className="mt-2 text-sm text-gray-600">
+                  Your access token was provided by your onboarding manager.
+                </p>
+              </div>
 
-            {error && (
-              <div className="text-red-600 text-sm text-center">{error}</div>
-            )}
+              {error && (
+                <div className="text-red-600 text-sm text-center">{error}</div>
+              )}
 
-            <div>
-              <button
-                type="submit"
-                disabled={loading}
-                className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {loading ? 'Signing in...' : 'Sign in'}
-              </button>
-            </div>
-
-            <div className="text-center">
-              <Link
-                to="/register"
-                className="font-medium text-blue-600 hover:text-blue-500"
-              >
-                Don't have an account? Register as a merchant
-              </Link>
-            </div>
-          </form>
+              <div>
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {loading ? 'Verifying...' : 'Access My Onboarding'}
+                </button>
+              </div>
+            </form>
+          </div>
         )}
       </div>
     </div>

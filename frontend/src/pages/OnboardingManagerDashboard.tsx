@@ -58,6 +58,55 @@ const OnboardingManagerDashboard = () => {
     }
   };
 
+  const handleCopyToken = (token: string) => {
+    navigator.clipboard.writeText(token).then(() => {
+      toast.success('Access token copied to clipboard!');
+    }).catch(() => {
+      toast.error('Failed to copy token to clipboard.');
+    });
+  };
+
+  const handleShareWithMerchant = (record: any) => {
+    const loginUrl = `${window.location.origin}/merchant-schedule`;
+    const message = `Hi ${record.picName},
+
+Your StoreHub onboarding is ready! Please use the following details to access your scheduling portal:
+
+🔑 Access Token: ${record.accessToken}
+🌐 Login URL: ${loginUrl}
+
+Instructions:
+1. Click the link above or go to ${loginUrl}
+2. Select "Merchant" and enter your access token
+3. Schedule your preferred dates for:
+   - Hardware Delivery
+   - Hardware Installation
+   - Training Session
+
+If you have any questions, please don't hesitate to reach out.
+
+Best regards,
+StoreHub Onboarding Team`;
+
+    if (navigator.share) {
+      navigator.share({
+        title: 'StoreHub Onboarding Access',
+        text: message,
+      }).catch(() => {
+        // Fallback to clipboard
+        navigator.clipboard.writeText(message).then(() => {
+          toast.success('Message copied to clipboard!');
+        });
+      });
+    } else {
+      navigator.clipboard.writeText(message).then(() => {
+        toast.success('Message copied to clipboard!');
+      }).catch(() => {
+        toast.error('Failed to copy message.');
+      });
+    }
+  };
+
   return (
     <div className="container mx-auto mt-10 p-6 bg-white rounded-lg shadow-md">
       <div className="flex justify-between items-center mb-6">
@@ -116,27 +165,51 @@ const OnboardingManagerDashboard = () => {
                       </span>
                     </td>
                     <td className="py-2 px-4 border-b">{new Date(record.expectedGoLiveDate).toLocaleDateString()}</td>
-                    <td className="py-2 px-4 border-b font-mono text-sm">{record.accessToken}</td>
+                    <td className="py-2 px-4 border-b">
+                      <div className="flex items-center space-x-2">
+                        <span className="font-mono text-sm bg-gray-100 px-2 py-1 rounded border">
+                          {record.accessToken}
+                        </span>
+                        <button
+                          onClick={() => handleCopyToken(record.accessToken)}
+                          className="text-blue-500 hover:text-blue-700 text-sm"
+                          title="Copy token"
+                        >
+                          📋
+                        </button>
+                      </div>
+                    </td>
                     <td className="py-2 px-4 border-b">{calculateExpiry(record.tokenExpiryDate)}</td>
                     <td className="py-2 px-4 border-b">
-                      <button 
-                        onClick={() => navigate(`/view-onboarding/${record.id}`)} 
-                        className="text-gray-600 hover:underline mr-4"
-                      >
-                        View
-                      </button>
-                      <button 
-                        onClick={() => navigate(`/edit-onboarding/${record.id}`)} 
-                        className="text-blue-500 hover:underline mr-4"
-                      >
-                        Edit
-                      </button>
-                      <Link to={`/schedule-onboarding/${record.id}`} className="text-purple-500 hover:underline mr-4">
-                        Schedule
-                      </Link>
-                      <button onClick={() => handleRegenerateToken(record.id)} className="text-green-500 hover:underline">
-                        Regenerate Token
-                      </button>
+                      <div className="flex flex-wrap gap-2">
+                        <button 
+                          onClick={() => navigate(`/view-onboarding/${record.id}`)} 
+                          className="text-gray-600 hover:underline text-sm"
+                        >
+                          View
+                        </button>
+                        <button 
+                          onClick={() => navigate(`/edit-onboarding/${record.id}`)} 
+                          className="text-blue-500 hover:underline text-sm"
+                        >
+                          Edit
+                        </button>
+                        <Link to={`/schedule-onboarding/${record.id}`} className="text-purple-500 hover:underline text-sm">
+                          Schedule
+                        </Link>
+                        <button 
+                          onClick={() => handleRegenerateToken(record.id)} 
+                          className="text-green-500 hover:underline text-sm"
+                        >
+                          Regenerate
+                        </button>
+                        <button 
+                          onClick={() => handleShareWithMerchant(record)} 
+                          className="text-orange-500 hover:underline text-sm font-medium"
+                        >
+                          Share
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}

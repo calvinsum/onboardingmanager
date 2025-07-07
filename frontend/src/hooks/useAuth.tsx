@@ -13,6 +13,7 @@ interface User {
 interface AuthContextType {
   user: User | null;
   login: (email: string, password: string, userType: 'merchant' | 'onboarding_manager') => Promise<void>;
+  loginWithToken: (token: string) => Promise<void>;
   register: (email: string, password: string) => Promise<void>;
   logout: () => void;
   loading: boolean;
@@ -26,10 +27,24 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   useEffect(() => {
     const token = localStorage.getItem('authToken');
+    const merchantToken = localStorage.getItem('merchantAccessToken');
     const userType = localStorage.getItem('userType') as 'merchant' | 'onboarding_manager';
 
-    if (token && userType) {
-      // Verify token and get user data
+    if (merchantToken && userType === 'merchant') {
+      // Handle merchant token-based auth
+      const onboardingRecord = localStorage.getItem('onboardingRecord');
+      if (onboardingRecord) {
+        const record = JSON.parse(onboardingRecord);
+        setUser({
+          id: record.id,
+          email: record.picEmail,
+          fullName: record.picName,
+          type: 'merchant',
+        });
+      }
+      setLoading(false);
+    } else if (token && userType) {
+      // Handle JWT-based auth for onboarding managers
       const fetchUserData = async () => {
         try {
           let userData;
@@ -73,6 +88,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  const loginWithToken = async (token: string) => {
+    try {
+      // This is handled in the LoginPage component
+      // The token verification and user data setting happens there
+      return Promise.resolve();
+    } catch (error) {
+      console.error('Token login error:', error);
+      throw error;
+    }
+  };
+
   const register = async (email: string, password: string) => {
     try {
       await apiService.registerMerchant(email, password);
@@ -86,13 +112,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const logout = () => {
     localStorage.removeItem('authToken');
+    localStorage.removeItem('merchantAccessToken');
     localStorage.removeItem('userType');
+    localStorage.removeItem('onboardingRecord');
     setUser(null);
   };
 
   const value = {
     user,
     login,
+    loginWithToken,
     register,
     logout,
     loading,

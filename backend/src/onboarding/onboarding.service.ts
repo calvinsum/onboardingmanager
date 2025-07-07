@@ -136,6 +136,55 @@ export class OnboardingService {
     return onboarding;
   }
 
+  async updateOnboardingByToken(token: string, updateOnboardingDto: UpdateOnboardingDto): Promise<Onboarding> {
+    const onboarding = await this.onboardingRepository.findOne({
+      where: { accessToken: token },
+      relations: ['createdByManager', 'merchant'],
+    });
+
+    if (!onboarding) {
+      throw new NotFoundException('Invalid or expired token');
+    }
+
+    // Check if token is expired
+    if (new Date() > onboarding.tokenExpiryDate) {
+      throw new BadRequestException('Access token has expired');
+    }
+
+    // Separate date fields from the rest of the DTO to handle type conversion
+    const { 
+      expectedGoLiveDate, 
+      hardwareDeliveryDate, 
+      hardwareInstallationDate, 
+      trainingDate, 
+      ...restOfDto 
+    } = updateOnboardingDto;
+    
+    const updatePayload: Partial<Onboarding> = { ...restOfDto };
+
+    // Handle date conversions
+    if (expectedGoLiveDate) {
+      updatePayload.expectedGoLiveDate = new Date(expectedGoLiveDate);
+    }
+
+    if (hardwareDeliveryDate) {
+      updatePayload.hardwareDeliveryDate = new Date(hardwareDeliveryDate);
+    }
+
+    if (hardwareInstallationDate) {
+      updatePayload.hardwareInstallationDate = new Date(hardwareInstallationDate);
+    }
+
+    if (trainingDate) {
+      updatePayload.trainingDate = new Date(trainingDate);
+    }
+    
+    // `merge` will update the `onboarding` entity with the new values
+    const updatedOnboarding = this.onboardingRepository.merge(onboarding, updatePayload);
+
+    return this.onboardingRepository.save(updatedOnboarding);
+  }
+
   async updateOnboardingStatus(id: string, status: OnboardingStatus): Promise<Onboarding> {
     const onboarding = await this.getOnboardingById(id);
     

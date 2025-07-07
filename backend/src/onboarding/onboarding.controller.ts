@@ -149,6 +149,18 @@ export class MerchantOnboardingController {
     return this.onboardingService.getOnboardingByToken(token);
   }
 
+  @Patch('update/:token')
+  @ApiOperation({ summary: 'Update onboarding schedule using access token' })
+  @ApiParam({ name: 'token', description: 'Access token' })
+  @ApiResponse({ status: 200, description: 'Onboarding schedule updated successfully', type: Onboarding })
+  @ApiResponse({ status: 404, description: 'Invalid or expired token' })
+  async updateOnboardingByToken(
+    @Param('token') token: string,
+    @Body() updateOnboardingDto: UpdateOnboardingDto,
+  ): Promise<Onboarding> {
+    return this.onboardingService.updateOnboardingByToken(token, updateOnboardingDto);
+  }
+
   @Get('check-token/:token')
   @ApiOperation({ summary: 'Check if token is expired' })
   @ApiParam({ name: 'token', description: 'Access token' })
