@@ -1,4 +1,4 @@
-import axios, { AxiosInstance, AxiosResponse } from 'axios';
+import axios, { AxiosInstance } from 'axios';
 
 const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://onboardingmanager.onrender.com/api';
 
@@ -117,6 +117,28 @@ class ApiService {
     const response = await this.api.get('/health');
     return response.data;
   }
+
+  // Generic methods
+  async get(url: string) {
+    const response = await this.api.get(url);
+    return response.data;
+  }
+
+  async post(url: string, data?: any) {
+    const response = await this.api.post(url, data);
+    return response;
+  }
+
+  async put(url: string, data?: any) {
+    const response = await this.api.put(url, data);
+    return response.data;
+  }
+
+  async delete(url: string) {
+    const response = await this.api.delete(url);
+    return response.data;
+  }
 }
 
-export default new ApiService(); 
+const apiService = new ApiService();
+export default apiService; 

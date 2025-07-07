@@ -1,11 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import apiService from '../services/api';
 
 const DebugAuth: React.FC = () => {
   const [results, setResults] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
 
-  const addResult = (name: string, result: any, error?: any) => {
+  const addResult = useCallback((name: string, result: any, error?: any) => {
     const newResult = {
       name,
       timestamp: new Date().toISOString(),
@@ -16,9 +16,9 @@ const DebugAuth: React.FC = () => {
       url: error?.config?.url || 'N/A'
     };
     setResults(prev => [...prev, newResult]);
-  };
+  }, []);
 
-  const testEndpoints = async () => {
+  const testEndpoints = useCallback(async () => {
     setLoading(true);
     setResults([]);
 
@@ -52,11 +52,11 @@ const DebugAuth: React.FC = () => {
     }
 
     setLoading(false);
-  };
+  }, [addResult]);
 
   useEffect(() => {
     testEndpoints();
-  }, []);
+  }, [testEndpoints]);
 
   return (
     <div className="p-6 max-w-4xl mx-auto">

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import apiService from '../services/api';
 
@@ -14,6 +15,7 @@ interface Merchant {
 
 const OnboardingManagerDashboard: React.FC = () => {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [merchants, setMerchants] = useState<Merchant[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedMerchant, setSelectedMerchant] = useState<Merchant | null>(null);
@@ -95,8 +97,16 @@ const OnboardingManagerDashboard: React.FC = () => {
       <div className="bg-white shadow rounded-lg p-6">
         <div className="flex items-center justify-between mb-6">
           <h1 className="text-2xl font-bold text-gray-900">Onboarding Manager Dashboard</h1>
-          <div className="text-sm text-gray-500">
-            Welcome, {user?.email}
+          <div className="flex items-center space-x-4">
+            <button
+              onClick={() => navigate('/create-merchant')}
+              className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors font-medium"
+            >
+              Create Merchant
+            </button>
+            <div className="text-sm text-gray-500">
+              Welcome, {user?.email}
+            </div>
           </div>
         </div>
 

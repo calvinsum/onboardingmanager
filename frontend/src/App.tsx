@@ -1,10 +1,12 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { Toaster } from 'react-hot-toast';
 import { AuthProvider } from './hooks/useAuth';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import MerchantDashboard from './pages/MerchantDashboard';
 import OnboardingManagerDashboard from './pages/OnboardingManagerDashboard';
+import CreateMerchantPage from './pages/CreateMerchantPage';
 import GoogleCallback from './pages/GoogleCallback';
 import DebugAuth from './pages/DebugAuth';
 import ProtectedRoute from './components/ProtectedRoute';
@@ -47,10 +49,41 @@ function App() {
               } 
             />
             
+            <Route 
+              path="/create-merchant" 
+              element={
+                <ProtectedRoute userType="onboarding_manager">
+                  <CreateMerchantPage />
+                </ProtectedRoute>
+              } 
+            />
+            
+            {/* Dashboard redirect */}
+            <Route 
+              path="/dashboard" 
+              element={
+                <ProtectedRoute userType="onboarding_manager">
+                  <Layout>
+                    <OnboardingManagerDashboard />
+                  </Layout>
+                </ProtectedRoute>
+              } 
+            />
+            
             {/* Default redirect */}
             <Route path="/" element={<Navigate to="/login" replace />} />
           </Routes>
         </div>
+        <Toaster 
+          position="top-right"
+          toastOptions={{
+            duration: 4000,
+            style: {
+              background: '#363636',
+              color: '#fff',
+            },
+          }}
+        />
       </Router>
     </AuthProvider>
   );

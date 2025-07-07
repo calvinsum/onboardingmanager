@@ -4,6 +4,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { AuthModule } from './auth/auth.module';
 import { MerchantModule } from './merchant/merchant.module';
 import { OnboardingManagerModule } from './onboarding-manager/onboarding-manager.module';
+import { OnboardingModule } from './onboarding/onboarding.module';
 import { HealthModule } from './health/health.module';
 import { DatabaseConfig } from './config/database.config';
 
@@ -25,6 +26,7 @@ import { DatabaseConfig } from './config/database.config';
     AuthModule,
     MerchantModule,
     OnboardingManagerModule,
+    OnboardingModule,
     HealthModule,
   ],
   controllers: [],
