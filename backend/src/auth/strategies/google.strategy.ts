@@ -47,13 +47,14 @@ export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {
                       (name ? `${name.givenName || ''} ${name.familyName || ''}`.trim() : '') || 
                       email.split('@')[0];
 
-      const user = await this.authService.validateGoogleUser({
+      // Return user profile data for the controller to process
+      const userProfile = {
         email,
         displayName: fullName,
         picture: photos && photos[0] ? photos[0].value : undefined,
-      });
+      };
 
-      done(null, user);
+      done(null, userProfile);
     } catch (error) {
       console.error('Google OAuth validation error:', error);
       done(error, null);
