@@ -14,6 +14,11 @@ export class CreateOnboardingDto {
   @IsNotEmpty()
   onboardingTypes: OnboardingType[];
 
+  @ApiProperty({ description: 'Account name', example: 'ABC Trading Sdn Bhd' })
+  @IsString()
+  @IsNotEmpty()
+  accountName: string;
+
   // Delivery Address
   @ApiProperty({ description: 'Delivery address line 1', example: '123 Main Street' })
   @IsString()

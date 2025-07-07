@@ -141,6 +141,7 @@ StoreHub Onboarding Team`;
             <table className="min-w-full bg-white border">
               <thead className="bg-gray-100">
                 <tr>
+                  <th className="py-2 px-4 border-b text-left">Account Name</th>
                   <th className="py-2 px-4 border-b text-left">PIC Name</th>
                   <th className="py-2 px-4 border-b text-left">PIC Email</th>
                   <th className="py-2 px-4 border-b text-left">Status</th>
@@ -153,6 +154,7 @@ StoreHub Onboarding Team`;
               <tbody>
                 {records.map((record) => (
                   <tr key={record.id} className="hover:bg-gray-50">
+                    <td className="py-2 px-4 border-b font-medium">{record.accountName || 'N/A'}</td>
                     <td className="py-2 px-4 border-b">{record.picName}</td>
                     <td className="py-2 px-4 border-b">{record.picEmail}</td>
                     <td className="py-2 px-4 border-b">

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { MALAYSIA_STATES } from '../utils/constants';
 
 interface CreateMerchantFormProps {
   onSubmit: (data: any) => Promise<void>;
@@ -8,6 +9,7 @@ interface CreateMerchantFormProps {
 
 interface FormData {
   onboardingTypes: string[];
+  accountName: string;
   deliveryAddress1: string;
   deliveryAddress2: string;
   deliveryCity: string;
@@ -30,6 +32,7 @@ interface FormData {
 const CreateMerchantForm: React.FC<CreateMerchantFormProps> = ({ onSubmit, initialData, isEditMode = false }) => {
   const [formData, setFormData] = useState<FormData>({
     onboardingTypes: [],
+    accountName: '',
     deliveryAddress1: '',
     deliveryAddress2: '',
     deliveryCity: '',
@@ -53,6 +56,7 @@ const CreateMerchantForm: React.FC<CreateMerchantFormProps> = ({ onSubmit, initi
     if (isEditMode && initialData) {
       setFormData({
         onboardingTypes: initialData.onboardingTypes || [],
+        accountName: initialData.accountName || '',
         deliveryAddress1: initialData.deliveryAddress1 || '',
         deliveryAddress2: initialData.deliveryAddress2 || '',
         deliveryCity: initialData.deliveryCity || '',
@@ -113,6 +117,20 @@ const CreateMerchantForm: React.FC<CreateMerchantFormProps> = ({ onSubmit, initi
     <div className="max-w-4xl mx-auto p-8 bg-white rounded-lg shadow-lg">
       <h2 className="text-2xl font-bold text-gray-800 mb-6">{isEditMode ? 'Edit Merchant Onboarding' : 'Create Merchant Onboarding'}</h2>
       <form onSubmit={handleSubmit} className="space-y-8">
+        {/* Account Name */}
+        <div>
+          <h3 className="text-lg font-semibold text-gray-700 mb-2">Account Information</h3>
+          <input
+            type="text"
+            name="accountName"
+            value={formData.accountName}
+            onChange={handleChange}
+            placeholder="Account Name (e.g., ABC Trading Sdn Bhd)"
+            required
+            className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+          />
+        </div>
+
         {/* Onboarding Types */}
         <div>
           <h3 className="text-lg font-semibold text-gray-700 mb-2">Onboarding Types</h3>
@@ -137,12 +155,17 @@ const CreateMerchantForm: React.FC<CreateMerchantFormProps> = ({ onSubmit, initi
         <div className="border-t pt-6">
           <h3 className="text-lg font-semibold text-gray-700 mb-4">Delivery Address</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <input type="text" name="deliveryAddress1" value={formData.deliveryAddress1} onChange={handleChange} placeholder="Address Line 1" required className="p-2 border rounded" />
-            <input type="text" name="deliveryAddress2" value={formData.deliveryAddress2} onChange={handleChange} placeholder="Address Line 2" className="p-2 border rounded" />
-            <input type="text" name="deliveryCity" value={formData.deliveryCity} onChange={handleChange} placeholder="City" required className="p-2 border rounded" />
-            <input type="text" name="deliveryState" value={formData.deliveryState} onChange={handleChange} placeholder="State" required className="p-2 border rounded" />
-            <input type="text" name="deliveryPostalCode" value={formData.deliveryPostalCode} onChange={handleChange} placeholder="Postal Code" required className="p-2 border rounded" />
-            <input type="text" name="deliveryCountry" value={formData.deliveryCountry} onChange={handleChange} placeholder="Country" required className="p-2 border rounded" />
+            <input type="text" name="deliveryAddress1" value={formData.deliveryAddress1} onChange={handleChange} placeholder="Address Line 1" required className="p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" />
+            <input type="text" name="deliveryAddress2" value={formData.deliveryAddress2} onChange={handleChange} placeholder="Address Line 2" className="p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" />
+            <input type="text" name="deliveryCity" value={formData.deliveryCity} onChange={handleChange} placeholder="City" required className="p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" />
+            <select name="deliveryState" value={formData.deliveryState} onChange={handleChange} required className="p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
+              <option value="">Select State</option>
+              {MALAYSIA_STATES.map(state => (
+                <option key={state} value={state}>{state}</option>
+              ))}
+            </select>
+            <input type="text" name="deliveryPostalCode" value={formData.deliveryPostalCode} onChange={handleChange} placeholder="Postal Code" required className="p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" />
+            <input type="text" name="deliveryCountry" value={formData.deliveryCountry} onChange={handleChange} placeholder="Country" required className="p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" />
           </div>
         </div>
 
@@ -155,12 +178,17 @@ const CreateMerchantForm: React.FC<CreateMerchantFormProps> = ({ onSubmit, initi
           </label>
           {!formData.useSameAddressForTraining && (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <input type="text" name="trainingAddress1" value={formData.trainingAddress1} onChange={handleChange} placeholder="Address Line 1" className="p-2 border rounded" />
-              <input type="text" name="trainingAddress2" value={formData.trainingAddress2} onChange={handleChange} placeholder="Address Line 2" className="p-2 border rounded" />
-              <input type="text" name="trainingCity" value={formData.trainingCity} onChange={handleChange} placeholder="City" className="p-2 border rounded" />
-              <input type="text" name="trainingState" value={formData.trainingState} onChange={handleChange} placeholder="State" className="p-2 border rounded" />
-              <input type="text" name="trainingPostalCode" value={formData.trainingPostalCode} onChange={handleChange} placeholder="Postal Code" className="p-2 border rounded" />
-              <input type="text" name="trainingCountry" value={formData.trainingCountry} onChange={handleChange} placeholder="Country" className="p-2 border rounded" />
+              <input type="text" name="trainingAddress1" value={formData.trainingAddress1} onChange={handleChange} placeholder="Address Line 1" className="p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" />
+              <input type="text" name="trainingAddress2" value={formData.trainingAddress2} onChange={handleChange} placeholder="Address Line 2" className="p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" />
+              <input type="text" name="trainingCity" value={formData.trainingCity} onChange={handleChange} placeholder="City" className="p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" />
+              <select name="trainingState" value={formData.trainingState} onChange={handleChange} className="p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
+                <option value="">Select State</option>
+                {MALAYSIA_STATES.map(state => (
+                  <option key={state} value={state}>{state}</option>
+                ))}
+              </select>
+              <input type="text" name="trainingPostalCode" value={formData.trainingPostalCode} onChange={handleChange} placeholder="Postal Code" className="p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" />
+              <input type="text" name="trainingCountry" value={formData.trainingCountry} onChange={handleChange} placeholder="Country" className="p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" />
             </div>
           )}
         </div>
@@ -169,16 +197,16 @@ const CreateMerchantForm: React.FC<CreateMerchantFormProps> = ({ onSubmit, initi
         <div className="border-t pt-6">
           <h3 className="text-lg font-semibold text-gray-700 mb-4">Person-in-Charge (PIC) Details</h3>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <input type="text" name="picName" value={formData.picName} onChange={handleChange} placeholder="PIC Name" required className="p-2 border rounded" />
-            <input type="text" name="picPhone" value={formData.picPhone} onChange={handleChange} placeholder="PIC Phone" required className="p-2 border rounded" />
-            <input type="email" name="picEmail" value={formData.picEmail} onChange={handleChange} placeholder="PIC Email" required className="p-2 border rounded" />
+            <input type="text" name="picName" value={formData.picName} onChange={handleChange} placeholder="PIC Name" required className="p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" />
+            <input type="text" name="picPhone" value={formData.picPhone} onChange={handleChange} placeholder="PIC Phone" required className="p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" />
+            <input type="email" name="picEmail" value={formData.picEmail} onChange={handleChange} placeholder="PIC Email" required className="p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" />
           </div>
         </div>
 
         {/* EGLD */}
         <div className="border-t pt-6">
           <h3 className="text-lg font-semibold text-gray-700 mb-2">Expected Go-Live Date (EGLD)</h3>
-          <input type="date" name="expectedGoLiveDate" value={formData.expectedGoLiveDate} onChange={handleChange} required className="p-2 border rounded" />
+          <input type="date" name="expectedGoLiveDate" value={formData.expectedGoLiveDate} onChange={handleChange} required className="p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 max-w-xs" />
         </div>
 
         <div className="flex justify-end">

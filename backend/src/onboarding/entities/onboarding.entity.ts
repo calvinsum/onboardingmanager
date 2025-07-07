@@ -28,6 +28,10 @@ export class Onboarding {
   @Column('simple-array')
   onboardingTypes: OnboardingType[];
 
+  @ApiProperty({ description: 'Account name' })
+  @Column()
+  accountName: string;
+
   // Delivery Address
   @ApiProperty({ description: 'Delivery address line 1' })
   @Column()
