@@ -7,7 +7,7 @@ import Holidays from 'date-holidays';
 
 @Injectable()
 export class ScheduleService implements OnModuleInit {
-  private hd: InstanceType<typeof Holidays>;
+  private hd: Holidays;
 
   constructor(
     @InjectRepository(Onboarding)
@@ -17,6 +17,5 @@ export class ScheduleService implements OnModuleInit {
 
   onModuleInit() {
     this.hd = new Holidays('MY', '10'); // Malaysia, Selangor
-    this.hd.setLanguages('en-MY');
   }
 } 
