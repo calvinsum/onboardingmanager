@@ -38,7 +38,6 @@ async function bootstrap() {
   const port = process.env.PORT || 3001;
   await app.listen(port, '0.0.0.0');
   
-  console.log('--- BUILD CACHE BUSTER v2 ---');
   console.log(`🚀 StoreHub Merchant Onboarding API is running on: ${await app.getUrl()}`);
   console.log(`📚 API Documentation available at: ${await app.getUrl()}/api/docs`);
 }
