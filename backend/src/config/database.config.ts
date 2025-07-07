@@ -16,7 +16,7 @@ export class DatabaseConfig implements TypeOrmOptionsFactory {
         type: 'postgres',
         url: databaseUrl,
         entities: [__dirname + '/../**/*.entity{.ts,.js}'],
-        synchronize: !isProduction, // Only sync in development
+        synchronize: true,
         logging: !isProduction,
         ssl: isProduction ? { rejectUnauthorized: false } : false,
         extra: isProduction ? {
@@ -36,7 +36,7 @@ export class DatabaseConfig implements TypeOrmOptionsFactory {
       password: this.configService.get('DB_PASSWORD', 'password'),
       database: this.configService.get('DB_NAME', 'storehub_onboarding'),
       entities: [__dirname + '/../**/*.entity{.ts,.js}'],
-      synchronize: !isProduction, // Only sync in development
+      synchronize: true,
       logging: !isProduction,
       ssl: isProduction ? { rejectUnauthorized: false } : false,
       extra: isProduction ? {
