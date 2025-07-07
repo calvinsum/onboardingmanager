@@ -3,16 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { DayPicker } from 'react-day-picker';
 import { toast } from 'react-hot-toast';
 import { format, isWeekend, set } from 'date-fns';
-import { 
-  updateOnboardingByToken, 
-  getPublicHolidays,
-} from '../services/api';
-import { DELIVERY_TIME_BY_STATE } from '../utils/constants';
-
-interface Holiday {
-  date: string;
-  name: string;
-}
+import { updateOnboardingByToken, getPublicHolidays } from '../services/api';
+import { DELIVERY_TIME_BY_STATE, calculateMinInstallationDate } from '../utils/constants';
 
 // Mobile-friendly Date Picker component
 const MobileDatePicker = ({ 
@@ -544,49 +536,78 @@ const TrainingConfirmation = ({
 };
 
 const MerchantSchedulePage: React.FC = () => {
-  const [onboardingRecord, setOnboardingRecord] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const navigate = useNavigate();
+  const [onboardingRecord, setOnboardingRecord] = useState<any>(null);
+  const [accessToken, setAccessToken] = useState<string>('');
+  const [holidays, setHolidays] = useState<Date[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [saving, setSaving] = useState(false);
 
-  const [publicHolidays, setPublicHolidays] = useState<Date[]>([]);
+  const [hardwareDeliveryDate, setHardwareDeliveryDate] = useState<Date | undefined>();
+  const [hardwareInstallationDate, setHardwareInstallationDate] = useState<Date | undefined>();
+  const [trainingDate, setTrainingDate] = useState<Date | undefined>();
+  const [deliveryConfirmed, setDeliveryConfirmed] = useState(false);
+  const [deliveryConfirmedDate, setDeliveryConfirmedDate] = useState<Date | undefined>();
+  const [installationConfirmed, setInstallationConfirmed] = useState(false);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const [installationConfirmedDate, setInstallationConfirmedDate] = useState<Date | undefined>();
+  const [trainingConfirmed, setTrainingConfirmed] = useState(false);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const [trainingConfirmedDate, setTrainingConfirmedDate] = useState<Date | undefined>();
 
-  // State for each step
-  const [isDeliveryConfirmed, setIsDeliveryConfirmed] = useState(false);
-  const [isInstallationConfirmed, setIsInstallationConfirmed] = useState(false);
-  const [isTrainingConfirmed, setIsTrainingConfirmed] = useState(false);
-
-  // Dates for each event
-  const [deliveryDate, setDeliveryDate] = useState<Date | undefined>(undefined);
-  const [installationDate, setInstallationDate] = useState<Date | undefined>(undefined);
-  const [trainingDate, setTrainingDate] = useState<Date | undefined>(undefined);
-  
   useEffect(() => {
     const fetchData = async () => {
+      const token = localStorage.getItem('merchantAccessToken');
+      const recordData = localStorage.getItem('onboardingRecord');
+      
+      if (!token || !recordData) {
+        navigate('/login');
+        return;
+      }
+
+      setAccessToken(token);
+      const record = JSON.parse(recordData);
+      setOnboardingRecord(record);
+
       try {
-        const recordData = localStorage.getItem('onboardingRecord');
-        if (!recordData) {
-          navigate('/login');
-          return;
+        setLoading(true);
+        const fetchedHolidays = await getPublicHolidays(new Date().getFullYear(), '10');
+        setHolidays(fetchedHolidays.map((h: any) => new Date(h.date)));
+
+        // Set existing dates if available
+        if (record.hardwareDeliveryDate) {
+          setHardwareDeliveryDate(new Date(record.hardwareDeliveryDate));
         }
-
-        const record = JSON.parse(recordData);
-        setOnboardingRecord(record);
-
-        // Initialize state from the record
-        setIsDeliveryConfirmed(!!record.deliveryDate);
-        setDeliveryDate(record.deliveryDate ? new Date(record.deliveryDate) : undefined);
-        setIsInstallationConfirmed(!!record.installationDate);
-        setInstallationDate(record.installationDate ? new Date(record.installationDate) : undefined);
-        setIsTrainingConfirmed(!!record.trainingDate);
-        setTrainingDate(record.trainingDate ? new Date(record.trainingDate) : undefined);
-
-        const stateOrCountry = record.deliveryState || record.deliveryCountry || 'Malaysia';
-        const holidays = await getPublicHolidays(new Date().getFullYear(), stateOrCountry);
-        setPublicHolidays(holidays.map((h: Holiday) => new Date(h.date)));
-
-      } catch (err: any) {
-        console.error("Failed to load onboarding data.", err);
+        if (record.hardwareInstallationDate) {
+          setHardwareInstallationDate(new Date(record.hardwareInstallationDate));
+        }
+        if (record.trainingDate) {
+          setTrainingDate(new Date(record.trainingDate));
+        }
+        
+        // Check if delivery is already confirmed
+        if (record.deliveryConfirmed) {
+          setDeliveryConfirmed(true);
+          // If delivery was confirmed previously, use the confirmation date from record or fallback to current date
+          setDeliveryConfirmedDate(record.deliveryConfirmedDate ? new Date(record.deliveryConfirmedDate) : new Date());
+        }
+        
+        // Check if installation is already confirmed
+        if (record.installationConfirmed) {
+          setInstallationConfirmed(true);
+          // If installation was confirmed previously, use the confirmation date from record or fallback to current date
+          setInstallationConfirmedDate(record.installationConfirmedDate ? new Date(record.installationConfirmedDate) : new Date());
+        }
+        
+        // Check if training is already confirmed
+        if (record.trainingConfirmed) {
+          setTrainingConfirmed(true);
+          // If training was confirmed previously, use the confirmation date from record or fallback to current date
+          setTrainingConfirmedDate(record.trainingConfirmedDate ? new Date(record.trainingConfirmedDate) : new Date());
+        }
+      } catch (error) {
+        console.error('Error fetching holidays:', error);
+        toast.error('Failed to load calendar data');
       } finally {
         setLoading(false);
       }
@@ -597,13 +618,13 @@ const MerchantSchedulePage: React.FC = () => {
 
   const disabledDays = [
     (date: Date) => isWeekend(date),
-    ...publicHolidays
+    ...holidays
   ];
 
   const handleDeliveryConfirm = async () => {
-    if (!onboardingRecord) return;
+    if (!accessToken) return;
 
-    setIsSubmitting(true);
+    setSaving(true);
     try {
       const confirmationDate = new Date();
       const payload = {
@@ -611,13 +632,13 @@ const MerchantSchedulePage: React.FC = () => {
         deliveryConfirmedDate: confirmationDate.toISOString(),
       };
 
-      const updatedRecord = await updateOnboardingByToken(onboardingRecord.accessToken, payload);
+      const updatedRecord = await updateOnboardingByToken(accessToken, payload);
       
       // Update local storage
       localStorage.setItem('onboardingRecord', JSON.stringify(updatedRecord));
       setOnboardingRecord(updatedRecord);
-      setIsDeliveryConfirmed(true);
-      setDeliveryDate(confirmationDate);
+      setDeliveryConfirmed(true);
+      setDeliveryConfirmedDate(confirmationDate);
       
       toast.success('Delivery confirmed successfully!');
     } catch (error: any) {
@@ -631,14 +652,14 @@ const MerchantSchedulePage: React.FC = () => {
         toast.error('Failed to confirm delivery. Please try again.');
       }
     } finally {
-      setIsSubmitting(false);
+      setSaving(false);
     }
   };
 
   const handleInstallationConfirm = async () => {
-    if (!onboardingRecord) return;
+    if (!accessToken) return;
 
-    setIsSubmitting(true);
+    setSaving(true);
     try {
       const confirmationDate = new Date();
       const payload = {
@@ -646,13 +667,13 @@ const MerchantSchedulePage: React.FC = () => {
         installationConfirmedDate: confirmationDate.toISOString(),
       };
 
-      const updatedRecord = await updateOnboardingByToken(onboardingRecord.accessToken, payload);
+      const updatedRecord = await updateOnboardingByToken(accessToken, payload);
       
       // Update local storage
       localStorage.setItem('onboardingRecord', JSON.stringify(updatedRecord));
       setOnboardingRecord(updatedRecord);
-      setIsInstallationConfirmed(true);
-      setInstallationDate(confirmationDate);
+      setInstallationConfirmed(true);
+      setInstallationConfirmedDate(confirmationDate);
       
       toast.success('Installation confirmed successfully!');
     } catch (error: any) {
@@ -666,14 +687,14 @@ const MerchantSchedulePage: React.FC = () => {
         toast.error('Failed to confirm installation. Please try again.');
       }
     } finally {
-      setIsSubmitting(false);
+      setSaving(false);
     }
   };
 
   const handleTrainingConfirm = async () => {
-    if (!onboardingRecord) return;
+    if (!accessToken) return;
 
-    setIsSubmitting(true);
+    setSaving(true);
     try {
       const confirmationDate = new Date();
       const payload = {
@@ -681,13 +702,13 @@ const MerchantSchedulePage: React.FC = () => {
         trainingConfirmedDate: confirmationDate.toISOString(),
       };
 
-      const updatedRecord = await updateOnboardingByToken(onboardingRecord.accessToken, payload);
+      const updatedRecord = await updateOnboardingByToken(accessToken, payload);
       
       // Update local storage
       localStorage.setItem('onboardingRecord', JSON.stringify(updatedRecord));
       setOnboardingRecord(updatedRecord);
-      setIsTrainingConfirmed(true);
-      setTrainingDate(confirmationDate);
+      setTrainingConfirmed(true);
+      setTrainingConfirmedDate(confirmationDate);
       
       toast.success('Training confirmed successfully!');
     } catch (error: any) {
@@ -701,22 +722,22 @@ const MerchantSchedulePage: React.FC = () => {
         toast.error('Failed to confirm training. Please try again.');
       }
     } finally {
-      setIsSubmitting(false);
+      setSaving(false);
     }
   };
 
   const handleSaveSchedule = async () => {
-    if (!onboardingRecord) return;
+    if (!accessToken) return;
 
-    setIsSubmitting(true);
+    setSaving(true);
     try {
       const payload = {
-        hardwareDeliveryDate: deliveryDate?.toISOString(),
-        hardwareInstallationDate: installationDate?.toISOString(),
+        hardwareDeliveryDate: hardwareDeliveryDate?.toISOString(),
+        hardwareInstallationDate: hardwareInstallationDate?.toISOString(),
         trainingDate: trainingDate?.toISOString(),
       };
 
-      const updatedRecord = await updateOnboardingByToken(onboardingRecord.accessToken, payload);
+      const updatedRecord = await updateOnboardingByToken(accessToken, payload);
       
       // Update local storage
       localStorage.setItem('onboardingRecord', JSON.stringify(updatedRecord));
@@ -734,7 +755,7 @@ const MerchantSchedulePage: React.FC = () => {
         toast.error('Failed to save schedule. Please try again.');
       }
     } finally {
-      setIsSubmitting(false);
+      setSaving(false);
     }
   };
 
@@ -810,100 +831,6 @@ const MerchantSchedulePage: React.FC = () => {
           </div>
         </div>
 
-        {/* Training Status */}
-        <div className="bg-white rounded-lg shadow-sm p-4 mb-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-3">Training Status</h2>
-          <div className="space-y-3">
-            {/* Training Status Badge */}
-            <div className="flex items-center justify-between">
-              <span className="font-medium text-gray-700">Status:</span>
-              <div className="flex items-center">
-                {isTrainingConfirmed ? (
-                  <div className="flex items-center">
-                    <div className="w-2 h-2 bg-green-500 rounded-full mr-2"></div>
-                    <span className="text-sm font-medium text-green-700 bg-green-100 px-2 py-1 rounded-full">
-                      Confirmed
-                    </span>
-                  </div>
-                ) : trainingDate ? (
-                  <div className="flex items-center">
-                    <div className="w-2 h-2 bg-yellow-500 rounded-full mr-2"></div>
-                    <span className="text-sm font-medium text-yellow-700 bg-yellow-100 px-2 py-1 rounded-full">
-                      Scheduled
-                    </span>
-                  </div>
-                ) : (
-                  <div className="flex items-center">
-                    <div className="w-2 h-2 bg-gray-400 rounded-full mr-2"></div>
-                    <span className="text-sm font-medium text-gray-600 bg-gray-100 px-2 py-1 rounded-full">
-                      Pending
-                    </span>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* Training Date */}
-            {trainingDate && (
-              <div className="flex items-center justify-between">
-                <span className="font-medium text-gray-700">Date & Time:</span>
-                <span className="text-sm text-gray-900">
-                  {format(trainingDate, 'PPP p')}
-                </span>
-              </div>
-            )}
-
-            {/* Assigned Trainer */}
-            {onboardingRecord.trainingSlot && (
-              <div className="flex items-center justify-between">
-                <span className="font-medium text-gray-700">Assigned Trainer:</span>
-                <div className="text-right">
-                  <div className="text-sm font-medium text-gray-900">
-                    {onboardingRecord.trainingSlot.trainer.name}
-                  </div>
-                  {onboardingRecord.trainingSlot.trainer.languages && onboardingRecord.trainingSlot.trainer.languages.length > 0 && (
-                    <div className="text-xs text-gray-500">
-                      Languages: {onboardingRecord.trainingSlot.trainer.languages.join(', ')}
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
-
-            {/* Training Type */}
-            {onboardingRecord.trainingSlot && (
-              <div className="flex items-center justify-between">
-                <span className="font-medium text-gray-700">Training Type:</span>
-                <span className="text-sm text-gray-900 capitalize">
-                  {onboardingRecord.trainingSlot.trainingType?.replace('_', ' ')}
-                </span>
-              </div>
-            )}
-
-            {/* Training Languages */}
-            {onboardingRecord.trainingPreferenceLanguages && onboardingRecord.trainingPreferenceLanguages.length > 0 && (
-              <div className="flex items-center justify-between">
-                <span className="font-medium text-gray-700">Preferred Languages:</span>
-                <span className="text-sm text-gray-900">
-                  {onboardingRecord.trainingPreferenceLanguages.join(', ')}
-                </span>
-              </div>
-            )}
-
-            {/* No Training Info Message */}
-            {!trainingDate && !onboardingRecord.trainingSlot && (
-              <div className="text-center py-4">
-                <div className="text-gray-500 text-sm">
-                  <svg className="w-8 h-8 mx-auto mb-2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                  Training session not yet scheduled
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-
         {/* Schedule Section */}
         <div className="bg-white rounded-lg shadow-sm p-4 mb-6">
           <h2 className="text-lg font-semibold text-gray-900 mb-4">Schedule Your Onboarding</h2>
@@ -915,17 +842,19 @@ const MerchantSchedulePage: React.FC = () => {
             <DeliveryConfirmation
               onboardingRecord={onboardingRecord}
               onConfirm={handleDeliveryConfirm}
-              isConfirmed={isDeliveryConfirmed}
+              isConfirmed={deliveryConfirmed}
             />
             
-            {!isInstallationConfirmed ? (
+            {!installationConfirmed ? (
               <MobileDatePicker
                 label="Hardware Installation Date & Time"
-                selectedDate={installationDate}
-                onDateChange={setInstallationDate}
-                minDate={deliveryDate && deliveryDate.getTime() > new Date().getTime() ? deliveryDate : undefined}
+                selectedDate={hardwareInstallationDate}
+                onDateChange={setHardwareInstallationDate}
+                minDate={deliveryConfirmed && deliveryConfirmedDate && onboardingRecord?.deliveryState 
+                  ? calculateMinInstallationDate(deliveryConfirmedDate, onboardingRecord.deliveryState)
+                  : undefined}
                 disabledDays={disabledDays}
-                disabled={!isDeliveryConfirmed}
+                disabled={!deliveryConfirmed}
                 includeTime={true}
               />
             ) : null}
@@ -933,19 +862,19 @@ const MerchantSchedulePage: React.FC = () => {
             <InstallationConfirmation
               onboardingRecord={onboardingRecord}
               onConfirm={handleInstallationConfirm}
-              isConfirmed={isInstallationConfirmed}
-              installationDate={installationDate}
-              disabled={isSubmitting}
+              isConfirmed={installationConfirmed}
+              installationDate={hardwareInstallationDate}
+              disabled={saving}
             />
             
-            {!isTrainingConfirmed ? (
+            {!trainingConfirmed ? (
               <MobileDatePicker
                 label="Training Date & Time"
                 selectedDate={trainingDate}
                 onDateChange={setTrainingDate}
-                minDate={installationDate}
+                minDate={hardwareInstallationDate}
                 disabledDays={disabledDays}
-                disabled={!isInstallationConfirmed}
+                disabled={!installationConfirmed}
                 includeTime={true}
               />
             ) : null}
@@ -953,9 +882,9 @@ const MerchantSchedulePage: React.FC = () => {
             <TrainingConfirmation
               onboardingRecord={onboardingRecord}
               onConfirm={handleTrainingConfirm}
-              isConfirmed={isTrainingConfirmed}
+              isConfirmed={trainingConfirmed}
               trainingDate={trainingDate}
-              disabled={isSubmitting}
+              disabled={saving}
             />
           </div>
 
@@ -973,10 +902,10 @@ const MerchantSchedulePage: React.FC = () => {
         <div className="sticky bottom-0 bg-white border-t p-4 -mx-4">
           <button
             onClick={handleSaveSchedule}
-            disabled={isSubmitting || !isDeliveryConfirmed || !isInstallationConfirmed || !trainingDate || !isTrainingConfirmed}
+            disabled={saving || !deliveryConfirmed || !installationConfirmed || !trainingDate || !trainingConfirmed}
             className="w-full bg-blue-600 text-white py-3 px-4 rounded-lg font-medium hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
-            {isSubmitting ? 'Saving...' : 'Save Schedule'}
+            {saving ? 'Saving...' : 'Save Schedule'}
           </button>
         </div>
       </div>

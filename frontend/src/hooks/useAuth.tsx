@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import apiService, { getOnboardingByToken } from '../services/api';
+import apiService from '../services/api';
 
 interface User {
   id: string;
@@ -88,25 +88,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const loginWithToken = async (accessToken: string) => {
-    // Clear any existing session first to prevent conflicts
-    logout();
-    
-    // Call the API to verify the token and get the onboarding record
-    const onboardingRecord = await getOnboardingByToken(accessToken);
-    
-    // Store the new session data in localStorage
-    localStorage.setItem('merchantAccessToken', accessToken);
-    localStorage.setItem('userType', 'merchant');
-    localStorage.setItem('onboardingRecord', JSON.stringify(onboardingRecord));
-    
-    // CRITICAL: Set the user in the AuthProvider's state
-    setUser({
-      id: onboardingRecord.id,
-      email: onboardingRecord.picEmail,
-      fullName: onboardingRecord.picName,
-      type: 'merchant',
-    });
+  const loginWithToken = async (token: string) => {
+    try {
+      // This is handled in the LoginPage component
+      // The token verification and user data setting happens there
+      return Promise.resolve();
+    } catch (error) {
+      console.error('Token login error:', error);
+      throw error;
+    }
   };
 
   const register = async (email: string, password: string) => {
@@ -125,9 +115,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     localStorage.removeItem('merchantAccessToken');
     localStorage.removeItem('userType');
     localStorage.removeItem('onboardingRecord');
-    // Also clear debug items
-    localStorage.removeItem('merchantLoginError');
-    localStorage.removeItem('merchantRedirectReason');
     setUser(null);
   };
 

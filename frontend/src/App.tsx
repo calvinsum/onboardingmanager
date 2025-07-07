@@ -3,51 +3,133 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import { Toaster } from 'react-hot-toast';
 import { AuthProvider } from './hooks/useAuth';
 import LoginPage from './pages/LoginPage';
+import RegisterPage from './pages/RegisterPage';
+import MerchantDashboard from './pages/MerchantDashboard';
 import OnboardingManagerDashboard from './pages/OnboardingManagerDashboard';
 import CreateMerchantPage from './pages/CreateMerchantPage';
-import MerchantSchedulePage from './pages/MerchantSchedulePage';
-import ProtectedRoute from './components/ProtectedRoute';
 import GoogleCallback from './pages/GoogleCallback';
-import AuthRedirector from './hooks/AuthRedirector';
+import DebugAuth from './pages/DebugAuth';
+import ProtectedRoute from './components/ProtectedRoute';
+import Layout from './components/Layout';
+import EditOnboardingPage from './pages/EditOnboardingPage';
+import ViewOnboardingPage from './pages/ViewOnboardingPage';
+import ScheduleOnboardingPage from './pages/ScheduleOnboardingPage';
+import MerchantSchedulePage from './pages/MerchantSchedulePage';
+import TrainerManagementPage from './pages/TrainerManagementPage';
+import './App.css';
 
+// Force frontend redeployment to pick up new API URL environment variables
 function App() {
   return (
     <AuthProvider>
-      <Toaster position="top-center" reverseOrder={false} />
       <Router>
-        <AuthRedirector />
-        <Routes>
-          <Route path="/login" element={<LoginPage />} />
-          <Route path="/auth/callback" element={<GoogleCallback />} />
-          
-          <Route 
-            path="/onboarding-manager-dashboard" 
-            element={
-              <ProtectedRoute userType={'onboarding_manager'}>
-                <OnboardingManagerDashboard />
-              </ProtectedRoute>
-            } 
-          />
-          <Route 
-            path="/create-merchant" 
-            element={
-              <ProtectedRoute userType={'onboarding_manager'}>
-                <CreateMerchantPage />
-              </ProtectedRoute>
-            } 
-          />
-          
-          <Route 
-            path="/merchant-schedule" 
-            element={
-              <ProtectedRoute userType={'merchant'}>
-                <MerchantSchedulePage />
-              </ProtectedRoute>
-            } 
-          />
-          
-          <Route path="*" element={<Navigate to="/login" />} />
-        </Routes>
+        <div className="App min-h-screen bg-gray-50">
+          <Routes>
+            {/* Public routes */}
+            <Route path="/login" element={<LoginPage />} />
+            <Route path="/register" element={<RegisterPage />} />
+            <Route path="/auth/callback" element={<GoogleCallback />} />
+            <Route path="/debug" element={<DebugAuth />} />
+            
+            {/* Merchant token-based route (no auth required) */}
+            <Route path="/merchant-schedule" element={<MerchantSchedulePage />} />
+            
+            {/* Protected routes */}
+            <Route 
+              path="/merchant" 
+              element={
+                <ProtectedRoute userType="merchant">
+                  <Layout>
+                    <MerchantDashboard />
+                  </Layout>
+                </ProtectedRoute>
+              } 
+            />
+            
+            <Route 
+              path="/onboarding-manager" 
+              element={
+                <ProtectedRoute userType="onboarding_manager">
+                  <Layout>
+                    <OnboardingManagerDashboard />
+                  </Layout>
+                </ProtectedRoute>
+              } 
+            />
+            
+            <Route 
+              path="/create-merchant" 
+              element={
+                <ProtectedRoute userType="onboarding_manager">
+                  <CreateMerchantPage />
+                </ProtectedRoute>
+              } 
+            />
+            
+            <Route
+              path="/edit-onboarding/:id"
+              element={
+                <ProtectedRoute userType="onboarding_manager">
+                  <EditOnboardingPage />
+                </ProtectedRoute>
+              }
+            />
+            
+            <Route
+              path="/view-onboarding/:id"
+              element={
+                <ProtectedRoute userType="onboarding_manager">
+                  <ViewOnboardingPage />
+                </ProtectedRoute>
+              }
+            />
+            
+            <Route
+              path="/schedule-onboarding/:id"
+              element={
+                <ProtectedRoute userType="onboarding_manager">
+                  <ScheduleOnboardingPage />
+                </ProtectedRoute>
+              }
+            />
+            
+            <Route
+              path="/trainer-management"
+              element={
+                <ProtectedRoute userType="onboarding_manager">
+                  <TrainerManagementPage />
+                </ProtectedRoute>
+              }
+            />
+            
+            <Route path="/merchant-dashboard" element={<MerchantDashboard />} />
+            
+            {/* Dashboard redirect */}
+            <Route 
+              path="/dashboard" 
+              element={
+                <ProtectedRoute userType="onboarding_manager">
+                  <Layout>
+                    <OnboardingManagerDashboard />
+                  </Layout>
+                </ProtectedRoute>
+              } 
+            />
+            
+            {/* Default redirect */}
+            <Route path="/" element={<Navigate to="/login" replace />} />
+          </Routes>
+        </div>
+        <Toaster 
+          position="top-right"
+          toastOptions={{
+            duration: 4000,
+            style: {
+              background: '#363636',
+              color: '#fff',
+            },
+          }}
+        />
       </Router>
     </AuthProvider>
   );

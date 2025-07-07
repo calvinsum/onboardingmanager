@@ -31,7 +31,7 @@ JWT_EXPIRES_IN=30d
 ```bash
 GOOGLE_CLIENT_ID=your-google-oauth-client-id
 GOOGLE_CLIENT_SECRET=your-google-oauth-client-secret
-GOOGLE_CALLBACK_URL=https://onboardingmanager.onrender.com/api/auth/google/callback
+GOOGLE_CALLBACK_URL=https://your-backend-url.onrender.com/api/auth/google/callback
 ALLOWED_OAUTH_DOMAINS=@storehub.com,@gmail.com
 ```
 
@@ -62,7 +62,7 @@ FRONTEND_URL=https://your-frontend-url.onrender.com
    - http://localhost:3000 (for development)
    
    Authorized redirect URIs:
-   - https://onboardingmanager.onrender.com/api/auth/google/callback
+   - https://storehub-backend.onrender.com/api/auth/google/callback
    - http://localhost:3001/api/auth/google/callback (for development)
    ```
 
@@ -80,9 +80,9 @@ JWT_SECRET=generate-secure-random-string
 JWT_EXPIRES_IN=30d
 GOOGLE_CLIENT_ID=your-actual-client-id
 GOOGLE_CLIENT_SECRET=your-actual-client-secret
-GOOGLE_CALLBACK_URL=https://onboardingmanager.onrender.com/api/auth/google/callback
+GOOGLE_CALLBACK_URL=https://storehub-backend.onrender.com/api/auth/google/callback
 ALLOWED_OAUTH_DOMAINS=@storehub.com,@gmail.com
-FRONTEND_URL=https://storehub-merchant-onboarding-frontend.onrender.com
+FRONTEND_URL=https://onboardingmanager-1.onrender.com
 DATABASE_URL=postgresql://... (from database service)
 ```
 
@@ -90,17 +90,17 @@ DATABASE_URL=postgresql://... (from database service)
 
 1. **Health Check**
    ```bash
-   curl https://onboardingmanager.onrender.com/api/health
+   curl https://storehub-backend.onrender.com/api/health
    ```
 
 2. **API Documentation**
    ```bash
-   https://onboardingmanager.onrender.com/api/docs
+   https://storehub-backend.onrender.com/api/docs
    ```
 
 3. **Google OAuth Test**
    ```bash
-   https://onboardingmanager.onrender.com/api/auth/google
+   https://storehub-backend.onrender.com/api/auth/google
    ```
 
 ## Common Issues and Solutions

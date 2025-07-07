@@ -1,7 +1,6 @@
 import React, { useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 
-// Force deployment rebuild - OAuth callback handler
 const GoogleCallback: React.FC = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -24,7 +23,7 @@ const GoogleCallback: React.FC = () => {
         localStorage.setItem('userType', 'onboarding_manager');
         
         // Redirect to onboarding manager dashboard
-        navigate('/onboarding-manager-dashboard');
+        navigate('/onboarding-manager');
         
         // Reload the page to trigger auth context refresh
         window.location.reload();

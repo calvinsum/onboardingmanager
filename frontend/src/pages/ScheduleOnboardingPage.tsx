@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { DayPicker } from 'react-day-picker';
 import { toast } from 'react-hot-toast';
 import { format, isWeekend, set } from 'date-fns';
-import { getOnboardingRecordById, getPublicHolidays, updateOnboardingRecord, bookTrainingSlot, getTrainingSlotsByOnboarding } from '../services/api';
+import { getOnboardingRecordById, getPublicHolidays, updateOnboardingRecord, bookTrainingSlot } from '../services/api';
 import { DELIVERY_TIME_BY_STATE, calculateMinInstallationDate } from '../utils/constants';
 import TrainingScheduler from '../components/TrainingScheduler';
 
@@ -514,7 +514,6 @@ const ScheduleOnboardingPage = () => {
   const [trainingConfirmed, setTrainingConfirmed] = useState(false);
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [trainingConfirmedDate, setTrainingConfirmedDate] = useState<Date | undefined>();
-  const [trainingSlot, setTrainingSlot] = useState<any>(null);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -552,19 +551,6 @@ const ScheduleOnboardingPage = () => {
           setTrainingConfirmed(true);
           // If training was confirmed previously, use the confirmation date from record or fallback to current date
           setTrainingConfirmedDate(fetchedRecord.trainingConfirmedDate ? new Date(fetchedRecord.trainingConfirmedDate) : new Date());
-        }
-
-        // Fetch training slot information
-        try {
-          const trainingSlots = await getTrainingSlotsByOnboarding(id);
-          if (trainingSlots && trainingSlots.length > 0) {
-            // Get the most recent/active training slot
-            const activeSlot = trainingSlots.find((slot: any) => slot.status === 'booked' || slot.status === 'completed') || trainingSlots[0];
-            setTrainingSlot(activeSlot);
-          }
-        } catch (error) {
-          console.error('Error fetching training slots:', error);
-          // Don't show error to user as this is optional information
         }
 
       } catch (error) {
@@ -664,17 +650,6 @@ const ScheduleOnboardingPage = () => {
       // Update local state
       setTrainingDate(date);
       
-      // Refresh training slot data
-      try {
-        const trainingSlots = await getTrainingSlotsByOnboarding(id);
-        if (trainingSlots && trainingSlots.length > 0) {
-          const activeSlot = trainingSlots.find((slot: any) => slot.status === 'booked' || slot.status === 'completed') || trainingSlots[0];
-          setTrainingSlot(activeSlot);
-        }
-      } catch (error) {
-        console.error('Error refreshing training slots:', error);
-      }
-      
       toast.success('Training slot booked successfully!');
     } catch (error) {
       console.error('Error booking training slot:', error);
@@ -708,83 +683,6 @@ const ScheduleOnboardingPage = () => {
     <div className="container mx-auto mt-10 p-6 bg-white rounded-lg shadow-md max-w-2xl">
       <h1 className="text-3xl font-bold text-gray-800 mb-2">Schedule Onboarding</h1>
       <p className="text-gray-600 mb-6">For: {record.picName} ({record.picEmail})</p>
-
-      {/* Training Status Section */}
-      <div className="bg-gray-50 rounded-lg p-4 mb-6">
-        <h2 className="text-lg font-semibold text-gray-800 mb-3">Training Status</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {/* Training Status */}
-          <div className="flex items-center justify-between">
-            <span className="font-medium text-gray-600">Status:</span>
-            <div className="flex items-center">
-              {trainingConfirmed ? (
-                <div className="flex items-center">
-                  <div className="w-2 h-2 bg-green-500 rounded-full mr-2"></div>
-                  <span className="text-sm font-medium text-green-700 bg-green-100 px-2 py-1 rounded-full">
-                    Confirmed
-                  </span>
-                </div>
-              ) : trainingDate ? (
-                <div className="flex items-center">
-                  <div className="w-2 h-2 bg-yellow-500 rounded-full mr-2"></div>
-                  <span className="text-sm font-medium text-yellow-700 bg-yellow-100 px-2 py-1 rounded-full">
-                    Scheduled
-                  </span>
-                </div>
-              ) : (
-                <div className="flex items-center">
-                  <div className="w-2 h-2 bg-gray-400 rounded-full mr-2"></div>
-                  <span className="text-sm font-medium text-gray-600 bg-gray-100 px-2 py-1 rounded-full">
-                    Pending
-                  </span>
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Assigned Trainer */}
-          {trainingSlot?.trainer ? (
-            <div className="flex items-center justify-between">
-              <span className="font-medium text-gray-600">Trainer:</span>
-              <div className="text-right">
-                <div className="text-sm font-medium text-gray-800">
-                  {trainingSlot.trainer.name}
-                </div>
-                {trainingSlot.trainer.languages && trainingSlot.trainer.languages.length > 0 && (
-                  <div className="text-xs text-gray-500">
-                    {trainingSlot.trainer.languages.join(', ')}
-                  </div>
-                )}
-              </div>
-            </div>
-          ) : (
-            <div className="flex items-center justify-between">
-              <span className="font-medium text-gray-600">Trainer:</span>
-              <span className="text-sm text-gray-500">Not assigned</span>
-            </div>
-          )}
-
-          {/* Training Date */}
-          {trainingDate && (
-            <div className="flex items-center justify-between md:col-span-2">
-              <span className="font-medium text-gray-600">Scheduled:</span>
-              <span className="text-sm text-gray-800">
-                {format(trainingDate, 'PPP p')}
-              </span>
-            </div>
-          )}
-
-          {/* Training Type */}
-          {trainingSlot && (
-            <div className="flex items-center justify-between">
-              <span className="font-medium text-gray-600">Type:</span>
-              <span className="text-sm text-gray-800 capitalize">
-                {trainingSlot.trainingType?.replace('_', ' ')}
-              </span>
-            </div>
-          )}
-        </div>
-      </div>
 
       <div className="space-y-6">
         <DeliveryConfirmation
