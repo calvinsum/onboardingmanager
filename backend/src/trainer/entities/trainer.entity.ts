@@ -33,19 +33,18 @@ export class Trainer {
 
   @ApiProperty({ description: 'Trainer availability status', enum: TrainerStatus })
   @Column({
-    type: 'enum',
-    enum: TrainerStatus,
+    type: 'varchar',
     default: TrainerStatus.ACTIVE,
   })
   status: TrainerStatus;
 
   // Relationships
   @ApiProperty({ description: 'Created by onboarding manager', type: () => OnboardingManager })
-  @ManyToOne(() => OnboardingManager, (manager) => manager.createdTrainers)
+  @ManyToOne(() => OnboardingManager, (manager) => manager.createdTrainers, { nullable: true })
   @JoinColumn({ name: 'createdByManagerId' })
   createdByManager: OnboardingManager;
 
-  @Column()
+  @Column({ nullable: true })
   createdByManagerId: string;
 
   @ApiProperty({ description: 'Created timestamp' })

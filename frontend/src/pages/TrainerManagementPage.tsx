@@ -34,7 +34,7 @@ interface TrainerFormData {
 
 const TrainerManagementPage: React.FC = () => {
   const navigate = useNavigate();
-  const { user, logout } = useAuth();
+  const { logout } = useAuth();
   const [trainers, setTrainers] = useState<Trainer[]>([]);
   const [loading, setLoading] = useState(false);
   const [showForm, setShowForm] = useState(false);
