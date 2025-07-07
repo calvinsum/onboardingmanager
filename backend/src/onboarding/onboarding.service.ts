@@ -56,12 +56,32 @@ export class OnboardingService {
   async updateOnboarding(id: string, updateOnboardingDto: UpdateOnboardingDto): Promise<Onboarding> {
     const onboarding = await this.getOnboardingById(id);
 
-    // Separate date from the rest of the DTO to handle type conversion
-    const { expectedGoLiveDate, ...restOfDto } = updateOnboardingDto;
+    // Separate date fields from the rest of the DTO to handle type conversion
+    const { 
+      expectedGoLiveDate, 
+      hardwareDeliveryDate, 
+      hardwareInstallationDate, 
+      trainingDate, 
+      ...restOfDto 
+    } = updateOnboardingDto;
+    
     const updatePayload: Partial<Onboarding> = { ...restOfDto };
 
+    // Handle date conversions
     if (expectedGoLiveDate) {
       updatePayload.expectedGoLiveDate = new Date(expectedGoLiveDate);
+    }
+
+    if (hardwareDeliveryDate) {
+      updatePayload.hardwareDeliveryDate = new Date(hardwareDeliveryDate);
+    }
+
+    if (hardwareInstallationDate) {
+      updatePayload.hardwareInstallationDate = new Date(hardwareInstallationDate);
+    }
+
+    if (trainingDate) {
+      updatePayload.trainingDate = new Date(trainingDate);
     }
     
     // `merge` will update the `onboarding` entity with the new values

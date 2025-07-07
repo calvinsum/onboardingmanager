@@ -2,26 +2,48 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { DayPicker } from 'react-day-picker';
 import { toast } from 'react-hot-toast';
-import { format, isWeekend } from 'date-fns';
+import { format, isWeekend, set } from 'date-fns';
 import { getOnboardingRecordById, getPublicHolidays, updateOnboardingRecord } from '../services/api';
 
 // A reusable Date Picker component
-const CustomDatePicker = ({ label, selectedDate, onDateChange, minDate, disabledDays, disabled = false }: {
+const CustomDatePicker = ({ label, selectedDate, onDateChange, minDate, disabledDays, disabled = false, includeTime = false }: {
   label: string;
   selectedDate: Date | undefined;
   onDateChange: (date: Date) => void;
   minDate?: Date;
   disabledDays: any[];
   disabled?: boolean;
+  includeTime?: boolean;
 }) => {
   const [isOpen, setIsOpen] = useState(false);
+  const [selectedTime, setSelectedTime] = useState('09:00');
   const buttonRef = useRef<HTMLButtonElement>(null);
+
+  const timeSlots = [
+    '09:00', '09:30', '10:00', '10:30', '11:00', '11:30',
+    '14:00', '14:30', '15:00', '15:30', '16:00', '16:30'
+  ];
 
   const handleDaySelect = (date: Date | undefined) => {
     if (date) {
-      onDateChange(date);
+      if (includeTime) {
+        const [hours, minutes] = selectedTime.split(':').map(Number);
+        const dateWithTime = set(date, { hours, minutes, seconds: 0, milliseconds: 0 });
+        onDateChange(dateWithTime);
+      } else {
+        onDateChange(date);
+      }
     }
     setIsOpen(false);
+  };
+
+  const handleTimeChange = (time: string) => {
+    setSelectedTime(time);
+    if (selectedDate) {
+      const [hours, minutes] = time.split(':').map(Number);
+      const dateWithTime = set(selectedDate, { hours, minutes, seconds: 0, milliseconds: 0 });
+      onDateChange(dateWithTime);
+    }
   };
 
   return (
@@ -34,12 +56,18 @@ const CustomDatePicker = ({ label, selectedDate, onDateChange, minDate, disabled
         onClick={() => !disabled && setIsOpen(!isOpen)}
         disabled={disabled}
       >
-        {selectedDate ? format(selectedDate, 'PPP') : <span className="text-gray-500">Select date</span>}
+        {selectedDate ? (
+          <span>
+            {format(selectedDate, 'PPP')}
+            {includeTime && <span className="ml-2 text-blue-600">{format(selectedDate, 'HH:mm')}</span>}
+          </span>
+        ) : (
+          <span className="text-gray-500">Select {includeTime ? 'date & time' : 'date'}</span>
+        )}
       </button>
       {isOpen && (
         <div 
           className="absolute z-10 mt-1 bg-white border border-gray-300 rounded-lg shadow-lg"
-          // Simple way to handle clicks outside
           onMouseLeave={() => setIsOpen(false)}
         >
           <DayPicker
@@ -50,6 +78,20 @@ const CustomDatePicker = ({ label, selectedDate, onDateChange, minDate, disabled
             disabled={disabledDays}
             initialFocus
           />
+          {includeTime && (
+            <div className="p-3 border-t border-gray-200">
+              <label className="block text-sm font-medium text-gray-700 mb-2">Time Slot</label>
+              <select
+                value={selectedTime}
+                onChange={(e) => handleTimeChange(e.target.value)}
+                className="w-full p-2 border border-gray-300 rounded-md"
+              >
+                {timeSlots.map(time => (
+                  <option key={time} value={time}>{time}</option>
+                ))}
+              </select>
+            </div>
+          )}
         </div>
       )}
     </div>
@@ -87,6 +129,7 @@ const ScheduleOnboardingPage = () => {
 
       } catch (error) {
         toast.error('Failed to fetch data.');
+        console.error('Error fetching data:', error);
       } finally {
         setLoading(false);
       }
@@ -103,11 +146,13 @@ const ScheduleOnboardingPage = () => {
     if (!id) return;
     try {
       const payload = { hardwareDeliveryDate, hardwareInstallationDate, trainingDate };
+      console.log('Saving schedule with payload:', payload);
       await updateOnboardingRecord(id, payload);
       toast.success('Schedule updated successfully!');
       navigate('/onboarding-manager');
     } catch (error) {
-      toast.error('Failed to save schedule.');
+      console.error('Error saving schedule:', error);
+      toast.error('Failed to save schedule. Please try again.');
     }
   };
 
@@ -125,22 +170,25 @@ const ScheduleOnboardingPage = () => {
           selectedDate={hardwareDeliveryDate}
           onDateChange={setHardwareDeliveryDate}
           disabledDays={disabledDays}
+          includeTime={false}
         />
         <CustomDatePicker
-          label="Hardware Installation Date"
+          label="Hardware Installation Date & Time"
           selectedDate={hardwareInstallationDate}
           onDateChange={setHardwareInstallationDate}
           minDate={hardwareDeliveryDate}
           disabledDays={disabledDays}
           disabled={!hardwareDeliveryDate}
+          includeTime={true}
         />
         <CustomDatePicker
-          label="Training Date"
+          label="Training Date & Time"
           selectedDate={trainingDate}
           onDateChange={setTrainingDate}
           minDate={hardwareInstallationDate}
           disabledDays={disabledDays}
           disabled={!hardwareInstallationDate}
+          includeTime={true}
         />
       </div>
 

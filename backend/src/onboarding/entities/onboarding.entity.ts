@@ -147,15 +147,19 @@ export class Onboarding {
   @Column({ type: 'date', nullable: true })
   hardwareDeliveryDate: Date | null;
 
-  @ApiProperty({ description: 'Scheduled date for hardware installation', nullable: true })
-  @Column({ type: 'date', nullable: true })
+  @ApiProperty({ description: 'Scheduled date and time for hardware installation', nullable: true })
+  @Column({ type: 'timestamp', nullable: true })
   hardwareInstallationDate: Date | null;
 
+  @ApiProperty({ description: 'Scheduled date and time for training', nullable: true })
+  @Column({ type: 'timestamp', nullable: true })
+  trainingDate: Date | null;
+
   @ApiProperty({ description: 'Scheduled date for remote training', nullable: true })
-  @Column({ type: 'date', nullable: true })
+  @Column({ type: 'timestamp', nullable: true })
   remoteTrainingDate: Date | null;
 
   @ApiProperty({ description: 'Scheduled date for onsite training', nullable: true })
-  @Column({ type: 'date', nullable: true })
+  @Column({ type: 'timestamp', nullable: true })
   onsiteTrainingDate: Date | null;
 } 
