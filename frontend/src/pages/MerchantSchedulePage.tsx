@@ -562,31 +562,53 @@ const MerchantSchedulePage: React.FC = () => {
 
   useEffect(() => {
     const fetchData = async () => {
+      console.log('=== MERCHANT SCHEDULE PAGE DEBUG START ===');
+      console.log('1. MerchantSchedulePage fetchData called');
+      
       // Add a small delay to ensure localStorage is available
       await new Promise(resolve => setTimeout(resolve, 100));
       
+      console.log('2. Checking localStorage...');
       const token = localStorage.getItem('merchantAccessToken');
       const recordData = localStorage.getItem('onboardingRecord');
+      const userType = localStorage.getItem('userType');
+      
+      console.log('3. localStorage contents:', {
+        token: token ? token.substring(0, 10) + '...' : 'MISSING',
+        recordData: recordData ? 'EXISTS' : 'MISSING',
+        userType: userType,
+        allKeys: Object.keys(localStorage)
+      });
       
       if (!token || !recordData) {
+        console.log('4. MISSING DATA - will redirect to login');
+        console.log('Token exists:', !!token);
+        console.log('Record exists:', !!recordData);
+        
         // Add a delay before redirect to ensure this isn't a timing issue
         setTimeout(() => {
+          console.log('5. Redirecting to login now...');
           navigate('/login');
         }, 500);
         return;
       }
 
+      console.log('6. Data found, proceeding with setup...');
       setAccessToken(token);
       
       let record;
       try {
         record = JSON.parse(recordData);
+        console.log('7. Record parsed successfully:', record.picName);
         setOnboardingRecord(record);
       } catch (parseError) {
-        console.error('Error parsing onboarding record:', parseError);
+        console.error('8. ERROR parsing onboarding record:', parseError);
         navigate('/login');
         return;
       }
+      
+      console.log('9. Setup complete, proceeding with data fetch...');
+      console.log('=== MERCHANT SCHEDULE PAGE DEBUG END ===');
 
       try {
         setLoading(true);

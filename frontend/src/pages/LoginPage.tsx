@@ -16,34 +16,56 @@ const LoginPage: React.FC = () => {
     setLoading(true);
 
     try {
+      console.log('=== MERCHANT LOGIN DEBUG START ===');
+      console.log('1. Starting merchant login with token:', accessToken.substring(0, 10) + '...');
+      
       // Clear any existing authentication data first
+      console.log('2. Clearing existing auth data...');
       localStorage.removeItem('authToken');
       localStorage.removeItem('userType');
       localStorage.removeItem('onboardingRecord');
       localStorage.removeItem('merchantAccessToken');
       
       // Verify the access token by fetching the onboarding record
+      console.log('3. Calling API to verify token...');
       const onboardingRecord = await getOnboardingByToken(accessToken);
+      console.log('4. API response received:', onboardingRecord);
       
       // Store the access token for merchant access
+      console.log('5. Storing data in localStorage...');
       localStorage.setItem('merchantAccessToken', accessToken);
       localStorage.setItem('userType', 'merchant');
       localStorage.setItem('onboardingRecord', JSON.stringify(onboardingRecord));
       
       // Verify data was stored correctly
+      console.log('6. Verifying stored data...');
       const storedToken = localStorage.getItem('merchantAccessToken');
       const storedRecord = localStorage.getItem('onboardingRecord');
       const storedUserType = localStorage.getItem('userType');
+      
+      console.log('7. Stored data verification:', {
+        token: storedToken ? 'EXISTS' : 'MISSING',
+        record: storedRecord ? 'EXISTS' : 'MISSING',
+        userType: storedUserType
+      });
       
       if (!storedToken || !storedRecord || storedUserType !== 'merchant') {
         throw new Error(`Failed to store data correctly. Token: ${!!storedToken}, Record: ${!!storedRecord}, UserType: ${storedUserType}`);
       }
       
+      console.log('8. About to navigate to /merchant-schedule');
+      
       // Navigate to merchant schedule page
       navigate('/merchant-schedule');
       
+      console.log('9. Navigation called successfully');
+      console.log('=== MERCHANT LOGIN DEBUG END ===');
+      
     } catch (error: any) {
-      console.error('Login error:', error);
+      console.error('=== MERCHANT LOGIN ERROR ===');
+      console.error('Error details:', error);
+      console.error('Error message:', error.message);
+      console.error('Error stack:', error.stack);
       setError(error.message || 'Invalid access token');
     } finally {
       setLoading(false);
