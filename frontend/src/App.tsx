@@ -6,6 +6,7 @@ import RegisterPage from './pages/RegisterPage';
 import MerchantDashboard from './pages/MerchantDashboard';
 import OnboardingManagerDashboard from './pages/OnboardingManagerDashboard';
 import GoogleCallback from './pages/GoogleCallback';
+import DebugAuth from './pages/DebugAuth';
 import ProtectedRoute from './components/ProtectedRoute';
 import Layout from './components/Layout';
 import './App.css';
@@ -21,6 +22,7 @@ function App() {
             <Route path="/login" element={<LoginPage />} />
             <Route path="/register" element={<RegisterPage />} />
             <Route path="/auth/callback" element={<GoogleCallback />} />
+            <Route path="/debug" element={<DebugAuth />} />
             
             {/* Protected routes */}
             <Route 
