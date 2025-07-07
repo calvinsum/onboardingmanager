@@ -19,88 +19,37 @@ export class OnboardingService {
   ) {}
 
   async createOnboarding(createOnboardingDto: CreateOnboardingDto, managerId: string): Promise<Onboarding> {
-    try {
-      console.log('Creating onboarding with managerId:', managerId);
-      console.log('DTO:', JSON.stringify(createOnboardingDto, null, 2));
-      
-      // Verify manager exists
-      const manager = await this.onboardingManagerRepository.findOne({
-        where: { id: managerId }
-      });
+    const manager = await this.onboardingManagerRepository.findOne({
+      where: { id: managerId },
+    });
 
-      console.log('Found manager:', manager ? 'Yes' : 'No');
-      if (!manager) {
-        throw new NotFoundException(`Onboarding manager not found with ID: ${managerId}`);
-      }
-
-      // Generate unique access token
-      const accessToken = this.generateAccessToken();
-      
-      // Set token expiry to 30 days from now
-      const tokenExpiryDate = new Date();
-      tokenExpiryDate.setDate(tokenExpiryDate.getDate() + 30);
-
-      // Parse the date safely
-      let expectedGoLiveDate: Date;
-      try {
-        expectedGoLiveDate = new Date(createOnboardingDto.expectedGoLiveDate);
-        if (isNaN(expectedGoLiveDate.getTime())) {
-          throw new Error('Invalid date format');
-        }
-      } catch (error) {
-        throw new BadRequestException(`Invalid expected go live date: ${createOnboardingDto.expectedGoLiveDate}`);
-      }
-
-      // Create basic onboarding object first
-      const onboardingData = {
-        onboardingTypes: createOnboardingDto.onboardingTypes,
-        deliveryAddress1: createOnboardingDto.deliveryAddress1,
-        deliveryAddress2: createOnboardingDto.deliveryAddress2 || null,
-        deliveryCity: createOnboardingDto.deliveryCity,
-        deliveryState: createOnboardingDto.deliveryState,
-        deliveryPostalCode: createOnboardingDto.deliveryPostalCode,
-        deliveryCountry: createOnboardingDto.deliveryCountry,
-        useSameAddressForTraining: createOnboardingDto.useSameAddressForTraining,
-        picName: createOnboardingDto.picName,
-        picPhone: createOnboardingDto.picPhone,
-        picEmail: createOnboardingDto.picEmail,
-        expectedGoLiveDate,
-        accessToken,
-        tokenExpiryDate,
-        createdByManagerId: managerId,
-        status: OnboardingStatus.CREATED,
-      };
-
-      // Handle training address
-      if (createOnboardingDto.useSameAddressForTraining) {
-        onboardingData['trainingAddress1'] = createOnboardingDto.deliveryAddress1;
-        onboardingData['trainingAddress2'] = createOnboardingDto.deliveryAddress2 || null;
-        onboardingData['trainingCity'] = createOnboardingDto.deliveryCity;
-        onboardingData['trainingState'] = createOnboardingDto.deliveryState;
-        onboardingData['trainingPostalCode'] = createOnboardingDto.deliveryPostalCode;
-        onboardingData['trainingCountry'] = createOnboardingDto.deliveryCountry;
-      } else {
-        onboardingData['trainingAddress1'] = createOnboardingDto.trainingAddress1 || null;
-        onboardingData['trainingAddress2'] = createOnboardingDto.trainingAddress2 || null;
-        onboardingData['trainingCity'] = createOnboardingDto.trainingCity || null;
-        onboardingData['trainingState'] = createOnboardingDto.trainingState || null;
-        onboardingData['trainingPostalCode'] = createOnboardingDto.trainingPostalCode || null;
-        onboardingData['trainingCountry'] = createOnboardingDto.trainingCountry || null;
-      }
-
-      console.log('Creating onboarding with data:', JSON.stringify(onboardingData, null, 2));
-
-      const onboarding = this.onboardingRepository.create(onboardingData);
-      const savedOnboarding = await this.onboardingRepository.save(onboarding);
-
-      console.log('Onboarding saved successfully:', savedOnboarding.id);
-
-      // Return simple object without complex relations to avoid issues
-      return savedOnboarding;
-    } catch (error) {
-      console.error('Error in createOnboarding:', error);
-      throw error;
+    if (!manager) {
+      throw new NotFoundException('Onboarding manager not found');
     }
+
+    const accessToken = this.generateAccessToken();
+    const tokenExpiryDate = new Date();
+    tokenExpiryDate.setDate(tokenExpiryDate.getDate() + 30);
+
+    const onboarding = this.onboardingRepository.create({
+      ...createOnboardingDto,
+      expectedGoLiveDate: new Date(createOnboardingDto.expectedGoLiveDate),
+      accessToken,
+      tokenExpiryDate,
+      createdByManagerId: managerId,
+      status: OnboardingStatus.CREATED,
+    });
+    
+    if (createOnboardingDto.useSameAddressForTraining) {
+      onboarding.trainingAddress1 = createOnboardingDto.deliveryAddress1;
+      onboarding.trainingAddress2 = createOnboardingDto.deliveryAddress2;
+      onboarding.trainingCity = createOnboardingDto.deliveryCity;
+      onboarding.trainingState = createOnboardingDto.deliveryState;
+      onboarding.trainingPostalCode = createOnboardingDto.deliveryPostalCode;
+      onboarding.trainingCountry = createOnboardingDto.deliveryCountry;
+    }
+
+    return this.onboardingRepository.save(onboarding);
   }
 
   async getAllOnboardings(): Promise<Onboarding[]> {

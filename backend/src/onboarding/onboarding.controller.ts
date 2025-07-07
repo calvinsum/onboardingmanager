@@ -53,10 +53,7 @@ export class OnboardingController {
     @Body() createOnboardingDto: CreateOnboardingDto,
     @Request() req: any,
   ): Promise<Onboarding> {
-    // Debug logging
-    console.log('User from JWT:', JSON.stringify(req.user, null, 2));
     const managerId = req.user.id;
-    console.log('Extracted managerId:', managerId);
     return this.onboardingService.createOnboarding(createOnboardingDto, managerId);
   }
 
