@@ -6,14 +6,16 @@ import { MerchantModule } from './merchant/merchant.module';
 import { OnboardingManagerModule } from './onboarding-manager/onboarding-manager.module';
 import { OnboardingModule } from './onboarding/onboarding.module';
 import { HealthModule } from './health/health.module';
+import { ScheduleModule } from './schedule/schedule.module';
 import { DatabaseConfig } from './config/database.config';
+import { scheduleConfig } from './config/schedule.config';
 
 @Module({
   imports: [
     // Configuration module - loads environment variables
     ConfigModule.forRoot({
       isGlobal: true,
-      envFilePath: ['.env.local', '.env'],
+      load: [scheduleConfig],
     }),
     
     // Database configuration
@@ -26,8 +28,9 @@ import { DatabaseConfig } from './config/database.config';
     AuthModule,
     MerchantModule,
     OnboardingManagerModule,
-    OnboardingModule,
     HealthModule,
+    OnboardingModule,
+    ScheduleModule,
   ],
   controllers: [],
   providers: [],
