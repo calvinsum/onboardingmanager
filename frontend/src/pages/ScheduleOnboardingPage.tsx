@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { DayPicker } from 'react-day-picker';
-import 'react-day-picker/dist/style.css';
 import { toast } from 'react-hot-toast';
 import { format, isWeekend } from 'date-fns';
 import { getOnboardingRecordById, getPublicHolidays, updateOnboardingRecord } from '../services/api';
