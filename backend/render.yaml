@@ -16,7 +16,7 @@ services:
       - key: JWT_EXPIRES_IN
         value: 30d
       - key: FRONTEND_URL
-        value: https://onboardingmanager-1.onrender.com
+        value: https://storehub-merchant-onboarding-frontend.onrender.com
       - key: GOOGLE_CLIENT_ID
         value: YOUR_GOOGLE_CLIENT_ID_HERE
       - key: GOOGLE_CLIENT_SECRET
