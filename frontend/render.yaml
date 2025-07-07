@@ -7,7 +7,7 @@ services:
     pullRequestPreviewsEnabled: false
     envVars:
       - key: REACT_APP_API_URL
-        value: https://storehub-backend.onrender.com/api
+        value: https://onboardingmanager.onrender.com/api
       - key: REACT_APP_ENV
         value: production
     headers:
