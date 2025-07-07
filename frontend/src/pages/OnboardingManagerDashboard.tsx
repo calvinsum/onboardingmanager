@@ -121,12 +121,6 @@ StoreHub Onboarding Team`;
           >
             Create Merchant
           </Link>
-          <Link
-            to="/trainer-management"
-            className="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded mr-4"
-          >
-            Trainer Management
-          </Link>
           <button
             onClick={handleLogout}
             className="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded"
@@ -206,21 +200,6 @@ StoreHub Onboarding Team`;
                     <td className="py-2 px-4 border-b">{calculateExpiry(record.tokenExpiryDate)}</td>
                     <td className="py-2 px-4 border-b">
                       <div className="flex flex-wrap gap-2">
-                        <button 
-                          onClick={() => navigate(`/view-onboarding/${record.id}`)} 
-                          className="text-gray-600 hover:underline text-sm"
-                        >
-                          View
-                        </button>
-                        <button 
-                          onClick={() => navigate(`/edit-onboarding/${record.id}`)} 
-                          className="text-blue-500 hover:underline text-sm"
-                        >
-                          Edit
-                        </button>
-                        <Link to={`/schedule-onboarding/${record.id}`} className="text-purple-500 hover:underline text-sm">
-                          Schedule
-                        </Link>
                         <button 
                           onClick={() => handleRegenerateToken(record.id)} 
                           className="text-green-500 hover:underline text-sm"

@@ -18,7 +18,7 @@ function App() {
         <AuthRedirector />
         <Routes>
           <Route path="/login" element={<LoginPage />} />
-          <Route path="/auth/google/callback" element={<GoogleCallback />} />
+          <Route path="/auth/callback" element={<GoogleCallback />} />
           
           <Route 
             path="/onboarding-manager-dashboard" 
