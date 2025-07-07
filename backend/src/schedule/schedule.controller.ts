@@ -3,7 +3,7 @@ import { ScheduleService } from './schedule.service';
 import { ApiTags, ApiOperation, ApiParam, ApiQuery } from '@nestjs/swagger';
 
 @ApiTags('Schedule')
-@Controller('api/schedule')
+@Controller('schedule')
 export class ScheduleController {
   constructor(private readonly scheduleService: ScheduleService) {}
 
