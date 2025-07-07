@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: storehub-frontend
+    name: storehub-merchant-onboarding-frontend
     env: static
     buildCommand: npm cache clean --force && npm install && npm run build
     staticPublishPath: ./build
