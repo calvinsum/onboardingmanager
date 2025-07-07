@@ -17,7 +17,7 @@ const LoginPage: React.FC = () => {
 
     try {
       await auth.loginWithToken(accessToken);
-      navigate('/merchant-schedule');
+      // Navigation is now handled by AuthRedirector
     } catch (error: any) {
       setError(error.response?.data?.message || error.message || 'Invalid or expired access token.');
     } finally {
