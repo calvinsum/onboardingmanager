@@ -36,7 +36,7 @@ export class OnboardingService {
       expectedGoLiveDate: new Date(createOnboardingDto.expectedGoLiveDate),
       accessToken,
       tokenExpiryDate,
-      createdByManagerId: managerId,
+      createdByManager: manager,
       status: OnboardingStatus.CREATED,
     });
     
