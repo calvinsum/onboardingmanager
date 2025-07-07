@@ -265,4 +265,69 @@ export const getAvailableTrainers = async (location?: string, language?: string)
   return response.data;
 };
 
+// Training Slot API functions
+export const getAvailableTrainingSlots = async (
+  date: string,
+  trainingType: string,
+  location?: string,
+  languages?: string
+) => {
+  const params = new URLSearchParams({
+    date,
+    trainingType
+  });
+  if (location) params.append('location', location);
+  if (languages) params.append('languages', languages);
+  
+  const response = await api.get(`/training-slots/availability?${params.toString()}`);
+  return response.data;
+};
+
+export const getTrainingAvailabilityRange = async (
+  startDate: string,
+  endDate: string,
+  trainingType: string,
+  location?: string,
+  languages?: string
+) => {
+  const params = new URLSearchParams({
+    startDate,
+    endDate,
+    trainingType
+  });
+  if (location) params.append('location', location);
+  if (languages) params.append('languages', languages);
+  
+  const response = await api.get(`/training-slots/availability/range?${params.toString()}`);
+  return response.data;
+};
+
+export const bookTrainingSlot = async (bookingData: {
+  onboardingId: string;
+  trainerId: string;
+  date: string;
+  timeSlot: string;
+  trainingType: string;
+  location?: string;
+  languages?: string[];
+}) => {
+  const response = await api.post('/training-slots/book', bookingData);
+  return response.data;
+};
+
+export const getTrainingSlotsByOnboarding = async (onboardingId: string) => {
+  const response = await api.get(`/training-slots/onboarding/${onboardingId}`);
+  return response.data;
+};
+
+export const cancelTrainingSlot = async (slotId: string) => {
+  const response = await api.patch(`/training-slots/${slotId}/cancel`, {});
+  return response.data;
+};
+
+export const completeTrainingSlot = async (slotId: string) => {
+  const response = await api.patch(`/training-slots/${slotId}/complete`, {});
+  return response.data;
+};
+
 export default api; 

@@ -3,8 +3,9 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { DayPicker } from 'react-day-picker';
 import { toast } from 'react-hot-toast';
 import { format, isWeekend, set } from 'date-fns';
-import { getOnboardingRecordById, getPublicHolidays, updateOnboardingRecord } from '../services/api';
+import { getOnboardingRecordById, getPublicHolidays, updateOnboardingRecord, bookTrainingSlot } from '../services/api';
 import { DELIVERY_TIME_BY_STATE, calculateMinInstallationDate } from '../utils/constants';
+import TrainingScheduler from '../components/TrainingScheduler';
 
 // A reusable Date Picker component
 const CustomDatePicker = ({ label, selectedDate, onDateChange, minDate, disabledDays, disabled = false, includeTime = false }: {
@@ -484,6 +485,38 @@ const ScheduleOnboardingPage = () => {
     }
   };
 
+  const handleTrainingSlotSelected = async (date: Date, timeSlot: string, trainerId: string) => {
+    if (!id) return;
+    try {
+      // Determine training type based on onboarding record
+      const hasRemoteTraining = record?.onboardingTypes?.includes('remote_training');
+      const hasOnsiteTraining = record?.onboardingTypes?.includes('onsite_training');
+      
+      // Default to remote if both are selected (user can choose in the scheduler)
+      const trainingType = hasOnsiteTraining && !hasRemoteTraining ? 'onsite_training' : 'remote_training';
+      
+      const bookingData = {
+        onboardingId: id,
+        trainerId,
+        date: date.toISOString().split('T')[0],
+        timeSlot,
+        trainingType,
+        location: trainingType === 'onsite_training' ? record?.trainingState : undefined,
+        languages: record?.trainingPreferenceLanguages || []
+      };
+
+      await bookTrainingSlot(bookingData);
+      
+      // Update local state
+      setTrainingDate(date);
+      
+      toast.success('Training slot booked successfully!');
+    } catch (error) {
+      console.error('Error booking training slot:', error);
+      toast.error('Failed to book training slot. Please try again.');
+    }
+  };
+
   const handleSaveSchedule = async () => {
     if (!id) return;
     try {
@@ -538,15 +571,16 @@ const ScheduleOnboardingPage = () => {
           installationDate={hardwareInstallationDate}
           disabled={loading}
         />
-        <CustomDatePicker
-          label="Training Date & Time"
-          selectedDate={trainingDate}
-          onDateChange={setTrainingDate}
-          minDate={hardwareInstallationDate}
-          disabledDays={disabledDays}
-          disabled={!installationConfirmed}
-          includeTime={true}
-        />
+        <div>
+          <h3 className="text-lg font-semibold text-gray-700 mb-4">Training Schedule</h3>
+          <TrainingScheduler
+            onboardingRecord={record}
+            onSlotSelected={handleTrainingSlotSelected}
+            disabled={!installationConfirmed}
+            minDate={hardwareInstallationDate}
+            holidays={holidays}
+          />
+        </div>
       </div>
 
       <div className="mt-8 flex justify-end">
