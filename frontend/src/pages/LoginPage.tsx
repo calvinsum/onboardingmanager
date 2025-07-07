@@ -1,14 +1,39 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getOnboardingByToken } from '../services/api';
 
 const LoginPage: React.FC = () => {
   const [accessToken, setAccessToken] = useState('');
   const [userType, setUserType] = useState<'merchant' | 'onboarding_manager'>('merchant');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [debugInfo, setDebugInfo] = useState<string | null>(null);
   
   const navigate = useNavigate();
+
+  // Check for persistent error logs on page load
+  useEffect(() => {
+    const persistentError = localStorage.getItem('merchantLoginError');
+    const redirectReason = localStorage.getItem('merchantRedirectReason');
+    
+    let debugMessage = '';
+    
+    if (persistentError) {
+      const errorData = JSON.parse(persistentError);
+      debugMessage += `Login Error at ${new Date(errorData.timestamp).toLocaleString()}:\n${errorData.details}\n\n`;
+    }
+    
+    if (redirectReason) {
+      const redirectData = JSON.parse(redirectReason);
+      debugMessage += `Redirect Reason at ${new Date(redirectData.timestamp).toLocaleString()}:\n${redirectData.reason}\n\nDetails:\n${redirectData.details}`;
+    }
+    
+    if (debugMessage) {
+      setDebugInfo(debugMessage);
+    }
+  }, []);
 
   const handleMerchantTokenLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -66,6 +91,15 @@ const LoginPage: React.FC = () => {
       console.error('Error details:', error);
       console.error('Error message:', error.message);
       console.error('Error stack:', error.stack);
+      
+      // Store detailed error information for debugging
+      const errorDetails = {
+        timestamp: new Date().toISOString(),
+        details: `ERROR: ${error.message || 'Unknown error'}\n\nFull Error Object:\n${JSON.stringify(error, null, 2)}\n\nStack Trace:\n${error.stack || 'No stack trace available'}\n\nToken Used: ${accessToken.substring(0, 10)}...\n\nURL: ${window.location.href}\n\nUser Agent: ${navigator.userAgent}`
+      };
+      
+      localStorage.setItem('merchantLoginError', JSON.stringify(errorDetails));
+      
       setError(error.message || 'Invalid access token');
     } finally {
       setLoading(false);
@@ -187,7 +221,30 @@ const LoginPage: React.FC = () => {
               </div>
 
               {error && (
-                <div className="text-red-600 text-sm text-center">{error}</div>
+                <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded">
+                  {error}
+                </div>
+              )}
+
+              {debugInfo && (
+                <div className="mb-4 p-4 bg-yellow-100 border border-yellow-400 text-yellow-800 rounded">
+                  <div className="flex justify-between items-start mb-2">
+                    <h4 className="font-semibold">Debug Information:</h4>
+                    <button
+                      onClick={() => {
+                        localStorage.removeItem('merchantLoginError');
+                        localStorage.removeItem('merchantRedirectReason');
+                        setDebugInfo(null);
+                      }}
+                      className="text-yellow-600 hover:text-yellow-800 text-sm"
+                    >
+                      Clear
+                    </button>
+                  </div>
+                  <pre className="text-xs whitespace-pre-wrap overflow-auto max-h-40">
+                    {debugInfo}
+                  </pre>
+                </div>
               )}
 
               <div>

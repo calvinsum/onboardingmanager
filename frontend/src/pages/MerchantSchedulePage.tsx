@@ -585,6 +585,15 @@ const MerchantSchedulePage: React.FC = () => {
         console.log('Token exists:', !!token);
         console.log('Record exists:', !!recordData);
         
+        // Store redirect reason for debugging
+        const redirectInfo = {
+          timestamp: new Date().toISOString(),
+          reason: 'Missing authentication data',
+          details: `Token: ${token ? 'EXISTS' : 'MISSING'}\nRecord: ${recordData ? 'EXISTS' : 'MISSING'}\nUserType: ${userType}\nAll localStorage keys: ${Object.keys(localStorage).join(', ')}\nURL: ${window.location.href}`
+        };
+        
+        localStorage.setItem('merchantRedirectReason', JSON.stringify(redirectInfo));
+        
         // Add a delay before redirect to ensure this isn't a timing issue
         setTimeout(() => {
           console.log('5. Redirecting to login now...');
