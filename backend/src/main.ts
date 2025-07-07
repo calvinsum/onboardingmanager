@@ -16,7 +16,7 @@ async function bootstrap() {
   // CORS configuration for cloud deployment
   app.enableCors({
     origin: [
-      'https://onboardingmanager-1.onrender.com',
+      'https://storehub-merchant-onboarding-frontend.onrender.com',
       'http://localhost:3000',
       process.env.FRONTEND_URL
     ].filter(Boolean),
