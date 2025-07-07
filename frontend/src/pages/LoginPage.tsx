@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { useAuth } from '../hooks/useAuth';
+import { useNavigate } from 'react-router-dom';
 import { getOnboardingByToken } from '../services/api';
 
 const LoginPage: React.FC = () => {
@@ -9,7 +8,6 @@ const LoginPage: React.FC = () => {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   
-  const { login } = useAuth();
   const navigate = useNavigate();
 
   const handleMerchantTokenLogin = async (e: React.FormEvent) => {
