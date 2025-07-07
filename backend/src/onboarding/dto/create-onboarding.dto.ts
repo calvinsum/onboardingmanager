@@ -111,6 +111,17 @@ export class CreateOnboardingDto {
   @IsNotEmpty()
   trainingCountry?: string;
 
+  @ApiProperty({ 
+    description: 'Training preference languages', 
+    isArray: true,
+    required: false,
+    example: ['English', 'Malay']
+  })
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  trainingPreferenceLanguages?: string[];
+
   // PIC Details
   @ApiProperty({ description: 'Person in charge name', example: 'John Doe' })
   @IsString()

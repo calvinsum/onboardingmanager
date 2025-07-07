@@ -102,6 +102,10 @@ export class Onboarding {
   @Column({ nullable: true })
   trainingCountry: string;
 
+  @ApiProperty({ description: 'Training preference languages', isArray: true })
+  @Column('simple-array', { nullable: true })
+  trainingPreferenceLanguages: string[];
+
   // PIC Details
   @ApiProperty({ description: 'Person in charge name' })
   @Column()

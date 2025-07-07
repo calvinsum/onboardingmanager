@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { MALAYSIA_STATES } from '../utils/constants';
+import { MALAYSIA_STATES, TRAINER_LANGUAGES } from '../utils/constants';
 
 interface CreateMerchantFormProps {
   onSubmit: (data: any) => Promise<void>;
@@ -23,6 +23,7 @@ interface FormData {
   trainingState: string;
   trainingPostalCode: string;
   trainingCountry: string;
+  trainingPreferenceLanguages: string[];
   picName: string;
   picPhone: string;
   picEmail: string;
@@ -46,6 +47,7 @@ const CreateMerchantForm: React.FC<CreateMerchantFormProps> = ({ onSubmit, initi
     trainingState: '',
     trainingPostalCode: '',
     trainingCountry: 'Malaysia',
+    trainingPreferenceLanguages: [],
     picName: '',
     picPhone: '',
     picEmail: '',
@@ -70,6 +72,7 @@ const CreateMerchantForm: React.FC<CreateMerchantFormProps> = ({ onSubmit, initi
         trainingState: initialData.trainingState || '',
         trainingPostalCode: initialData.trainingPostalCode || '',
         trainingCountry: initialData.trainingCountry || 'Malaysia',
+        trainingPreferenceLanguages: initialData.trainingPreferenceLanguages || [],
         picName: initialData.picName || '',
         picPhone: initialData.picPhone || '',
         picEmail: initialData.picEmail || '',
@@ -100,6 +103,20 @@ const CreateMerchantForm: React.FC<CreateMerchantFormProps> = ({ onSubmit, initi
       return { ...prev, onboardingTypes: newOnboardingTypes };
     });
   };
+
+  const handleTrainingLanguageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { value, checked } = e.target;
+    setFormData(prev => {
+      const newLanguages = checked
+        ? [...prev.trainingPreferenceLanguages, value]
+        : prev.trainingPreferenceLanguages.filter(lang => lang !== value);
+      return { ...prev, trainingPreferenceLanguages: newLanguages };
+    });
+  };
+
+  // Check if training is selected (remote or onsite)
+  const isTrainingSelected = formData.onboardingTypes.includes('remote_training') || 
+                             formData.onboardingTypes.includes('onsite_training');
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -169,29 +186,63 @@ const CreateMerchantForm: React.FC<CreateMerchantFormProps> = ({ onSubmit, initi
           </div>
         </div>
 
-        {/* Training Address */}
-        <div className="border-t pt-6">
-          <h3 className="text-lg font-semibold text-gray-700 mb-4">Training Address</h3>
-          <label className="flex items-center space-x-2 mb-4">
-            <input type="checkbox" name="useSameAddressForTraining" checked={formData.useSameAddressForTraining} onChange={handleChange} className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded" />
-            <span>Same as Delivery Address</span>
-          </label>
-          {!formData.useSameAddressForTraining && (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <input type="text" name="trainingAddress1" value={formData.trainingAddress1} onChange={handleChange} placeholder="Address Line 1" className="p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" />
-              <input type="text" name="trainingAddress2" value={formData.trainingAddress2} onChange={handleChange} placeholder="Address Line 2" className="p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" />
-              <input type="text" name="trainingCity" value={formData.trainingCity} onChange={handleChange} placeholder="City" className="p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" />
-              <select name="trainingState" value={formData.trainingState} onChange={handleChange} className="p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
-                <option value="">Select State</option>
-                {MALAYSIA_STATES.map(state => (
-                  <option key={state} value={state}>{state}</option>
+        {/* Training Preferences - Only show if training is selected */}
+        {isTrainingSelected && (
+          <div className="border-t pt-6">
+            <h3 className="text-lg font-semibold text-gray-700 mb-4">Training Preferences</h3>
+            
+            {/* Training Preference Languages */}
+            <div className="mb-6">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Preferred Training Languages * (Select all that apply)
+              </label>
+              <div className="grid grid-cols-3 gap-4">
+                {TRAINER_LANGUAGES.map(language => (
+                  <label key={language} className="flex items-center space-x-2">
+                    <input
+                      type="checkbox"
+                      value={language}
+                      checked={formData.trainingPreferenceLanguages.includes(language)}
+                      onChange={handleTrainingLanguageChange}
+                      className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
+                    />
+                    <span className="text-sm text-gray-700">{language}</span>
+                  </label>
                 ))}
-              </select>
-              <input type="text" name="trainingPostalCode" value={formData.trainingPostalCode} onChange={handleChange} placeholder="Postal Code" className="p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" />
-              <input type="text" name="trainingCountry" value={formData.trainingCountry} onChange={handleChange} placeholder="Country" className="p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" />
+              </div>
             </div>
-          )}
-        </div>
+
+            {/* Training Address */}
+            <div>
+              <h4 className="text-md font-medium text-gray-700 mb-4">Training Address</h4>
+              <label className="flex items-center space-x-2 mb-4">
+                <input 
+                  type="checkbox" 
+                  name="useSameAddressForTraining" 
+                  checked={formData.useSameAddressForTraining} 
+                  onChange={handleChange} 
+                  className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded" 
+                />
+                <span>Same as Delivery Address</span>
+              </label>
+              {!formData.useSameAddressForTraining && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <input type="text" name="trainingAddress1" value={formData.trainingAddress1} onChange={handleChange} placeholder="Address Line 1" className="p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" />
+                  <input type="text" name="trainingAddress2" value={formData.trainingAddress2} onChange={handleChange} placeholder="Address Line 2" className="p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" />
+                  <input type="text" name="trainingCity" value={formData.trainingCity} onChange={handleChange} placeholder="City" className="p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" />
+                  <select name="trainingState" value={formData.trainingState} onChange={handleChange} className="p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
+                    <option value="">Select State</option>
+                    {MALAYSIA_STATES.map(state => (
+                      <option key={state} value={state}>{state}</option>
+                    ))}
+                  </select>
+                  <input type="text" name="trainingPostalCode" value={formData.trainingPostalCode} onChange={handleChange} placeholder="Postal Code" className="p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" />
+                  <input type="text" name="trainingCountry" value={formData.trainingCountry} onChange={handleChange} placeholder="Country" className="p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" />
+                </div>
+              )}
+            </div>
+          </div>
+        )}
 
         {/* PIC Details */}
         <div className="border-t pt-6">
