@@ -1,49 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { getOnboardingByToken } from '../services/api';
+import { useAuth } from '../hooks/useAuth';
 
 const LoginPage: React.FC = () => {
-  const [userType, setUserType] = useState<'merchant' | 'onboarding_manager'>('onboarding_manager');
+  const [userType, setUserType] = useState<'merchant' | 'onboarding_manager'>('merchant');
   const [accessToken, setAccessToken] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const [debugInfo, setDebugInfo] = useState<string | null>(null);
-  
   const navigate = useNavigate();
-
-  // Check for persistent error logs on page load
-  useEffect(() => {
-    const persistentError = localStorage.getItem('merchantLoginError');
-    const redirectReason = localStorage.getItem('merchantRedirectReason');
-    
-    let debugMessage = '';
-    
-    if (persistentError) {
-      const errorData = JSON.parse(persistentError);
-      debugMessage += `Login Error at ${new Date(errorData.timestamp).toLocaleString()}:\n${errorData.details}\n\n`;
-    }
-    
-    if (redirectReason) {
-      const redirectData = JSON.parse(redirectReason);
-      debugMessage += `Redirect Reason at ${new Date(redirectData.timestamp).toLocaleString()}:\n${redirectData.reason}\n\nDetails:\n${redirectData.details}`;
-    }
-    
-    if (debugMessage) {
-      setDebugInfo(debugMessage);
-    }
-  }, []);
-
-  // Test function to check if debug system is working
-  const testDebugSystem = () => {
-    const testError = {
-      timestamp: new Date().toISOString(),
-      details: 'TEST: This is a test error to verify the debug system is working.\n\nIf you can see this, the persistent error logging is functional.'
-    };
-    localStorage.setItem('merchantLoginError', JSON.stringify(testError));
-    
-    // Reload the page to trigger the useEffect
-    window.location.reload();
-  };
+  const auth = useAuth();
 
   const handleMerchantTokenLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -51,233 +16,108 @@ const LoginPage: React.FC = () => {
     setLoading(true);
 
     try {
-      console.log('=== MERCHANT LOGIN DEBUG START ===');
-      console.log('1. Starting merchant login with token:', accessToken.substring(0, 10) + '...');
-      
-      // Clear any existing authentication data first
-      console.log('2. Clearing existing auth data...');
-      localStorage.removeItem('authToken');
-      localStorage.removeItem('userType');
-      localStorage.removeItem('onboardingRecord');
-      localStorage.removeItem('merchantAccessToken');
-      
-      // Verify the access token by fetching the onboarding record
-      console.log('3. Calling API to verify token...');
-      const onboardingRecord = await getOnboardingByToken(accessToken);
-      console.log('4. API response received:', onboardingRecord);
-      
-      // Store the access token for merchant access
-      console.log('5. Storing data in localStorage...');
-      localStorage.setItem('merchantAccessToken', accessToken);
-      localStorage.setItem('userType', 'merchant');
-      localStorage.setItem('onboardingRecord', JSON.stringify(onboardingRecord));
-      
-      // Verify data was stored correctly
-      console.log('6. Verifying stored data...');
-      const storedToken = localStorage.getItem('merchantAccessToken');
-      const storedRecord = localStorage.getItem('onboardingRecord');
-      const storedUserType = localStorage.getItem('userType');
-      
-      console.log('7. Stored data verification:', {
-        token: storedToken ? 'EXISTS' : 'MISSING',
-        record: storedRecord ? 'EXISTS' : 'MISSING',
-        userType: storedUserType
-      });
-      
-      if (!storedToken || !storedRecord || storedUserType !== 'merchant') {
-        throw new Error(`Failed to store data correctly. Token: ${!!storedToken}, Record: ${!!storedRecord}, UserType: ${storedUserType}`);
-      }
-      
-      console.log('8. About to navigate to /merchant-schedule');
-      
-      // Navigate to merchant schedule page
+      await auth.loginWithToken(accessToken);
       navigate('/merchant-schedule');
-      
-      console.log('9. Navigation called successfully');
-      console.log('=== MERCHANT LOGIN DEBUG END ===');
-      
     } catch (error: any) {
-      console.error('=== MERCHANT LOGIN ERROR ===');
-      console.error('Error details:', error);
-      console.error('Error message:', error.message);
-      console.error('Error stack:', error.stack);
-      
-      // Store detailed error information for debugging
-      const errorDetails = {
-        timestamp: new Date().toISOString(),
-        details: `ERROR: ${error.message || 'Unknown error'}\n\nFull Error Object:\n${JSON.stringify(error, null, 2)}\n\nStack Trace:\n${error.stack || 'No stack trace available'}\n\nToken Used: ${accessToken.substring(0, 10)}...\n\nURL: ${window.location.href}\n\nUser Agent: ${navigator.userAgent}`
-      };
-      
-      localStorage.setItem('merchantLoginError', JSON.stringify(errorDetails));
-      
-      setError(error.message || 'Invalid access token');
+      setError(error.response?.data?.message || error.message || 'Invalid or expired access token.');
     } finally {
       setLoading(false);
     }
   };
 
-  const handleGoogleLogin = () => {
-    // Redirect to Google OAuth
-    window.location.href = `${process.env.REACT_APP_API_URL}/auth/google`;
+  const handleManagerLogin = () => {
+    const backendUrl = process.env.REACT_APP_API_BASE_URL || 'http://localhost:3001/api';
+    window.location.href = `${backendUrl}/auth/google`;
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-gray-50 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full space-y-8">
         <div>
-          <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-            Sign in to StoreHub
-          </h2>
-          <p className="mt-2 text-center text-sm text-gray-600">
-            Merchant Onboarding Platform
-          </p>
+          <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">Sign in to StoreHub</h2>
+          <p className="mt-2 text-center text-sm text-gray-600">Merchant Onboarding Platform</p>
         </div>
 
-        {/* User Type Selection */}
-        <div>
-          <fieldset>
-            <legend className="text-sm font-medium text-gray-900">I am a:</legend>
-            <div className="mt-2 space-y-2">
-              <div className="flex items-center">
+        <div className="bg-white p-8 rounded-lg shadow-md space-y-6">
+          <div>
+            <label className="text-sm font-medium text-gray-700">I am a:</label>
+            <div className="mt-2 flex items-center space-x-4">
+              <label className="inline-flex items-center">
                 <input
-                  id="merchant"
-                  name="user-type"
                   type="radio"
+                  className="form-radio h-4 w-4 text-blue-600"
+                  name="userType"
                   value="merchant"
                   checked={userType === 'merchant'}
-                  onChange={(e) => setUserType(e.target.value as 'merchant')}
-                  className="focus:ring-blue-500 h-4 w-4 text-blue-600 border-gray-300"
+                  onChange={() => setUserType('merchant')}
                 />
-                <label htmlFor="merchant" className="ml-3 block text-sm font-medium text-gray-700">
-                  Merchant
-                </label>
-              </div>
-              <div className="flex items-center">
+                <span className="ml-2 text-gray-700">Merchant</span>
+              </label>
+              <label className="inline-flex items-center">
                 <input
-                  id="onboarding-manager"
-                  name="user-type"
                   type="radio"
+                  className="form-radio h-4 w-4 text-blue-600"
+                  name="userType"
                   value="onboarding_manager"
                   checked={userType === 'onboarding_manager'}
-                  onChange={(e) => setUserType(e.target.value as 'onboarding_manager')}
-                  className="focus:ring-blue-500 h-4 w-4 text-blue-600 border-gray-300"
+                  onChange={() => setUserType('onboarding_manager')}
                 />
-                <label htmlFor="onboarding-manager" className="ml-3 block text-sm font-medium text-gray-700">
-                  Onboarding Manager
-                </label>
-              </div>
+                <span className="ml-2 text-gray-700">Onboarding Manager</span>
+              </label>
             </div>
-          </fieldset>
-        </div>
-
-        {/* Onboarding Manager Google Login */}
-        {userType === 'onboarding_manager' && (
-          <div className="space-y-4">
-            <div className="relative">
-              <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-gray-300" />
-              </div>
-              <div className="relative flex justify-center text-sm">
-                <span className="px-2 bg-gray-50 text-gray-500">Sign in with your @storehub.com email</span>
-              </div>
-            </div>
-            
-            <button
-              type="button"
-              onClick={handleGoogleLogin}
-              className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
-            >
-              <svg className="w-5 h-5 mr-2" viewBox="0 0 24 24">
-                <path fill="currentColor" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
-                <path fill="currentColor" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-                <path fill="currentColor" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
-                <path fill="currentColor" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
-              </svg>
-              Sign in with Google
-            </button>
           </div>
-        )}
 
-        {/* Merchant Access Token Login */}
-        {userType === 'merchant' && (
-          <div className="space-y-4">
-            <div className="relative">
-              <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-gray-300" />
-              </div>
-              <div className="relative flex justify-center text-sm">
-                <span className="px-2 bg-gray-50 text-gray-500">Enter your access token</span>
-              </div>
+          {error && (
+            <div className="p-3 bg-red-100 border border-red-400 text-red-700 rounded">
+              {error}
             </div>
-            
-            <form className="space-y-4" onSubmit={handleMerchantTokenLogin}>
+          )}
+
+          {userType === 'merchant' ? (
+            <form className="space-y-6" onSubmit={handleMerchantTokenLogin}>
               <div>
-                <label htmlFor="access-token" className="block text-sm font-medium text-gray-700">
+                <label htmlFor="accessToken" className="block text-sm font-medium text-gray-700">
                   Access Token
                 </label>
                 <input
-                  id="access-token"
-                  name="access-token"
+                  id="accessToken"
+                  name="accessToken"
                   type="text"
                   required
-                  className="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
+                  className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                   placeholder="Enter your access token"
                   value={accessToken}
                   onChange={(e) => setAccessToken(e.target.value)}
                 />
-                <p className="mt-2 text-sm text-gray-600">
-                  Your access token was provided by your onboarding manager.
-                </p>
+                <p className="mt-2 text-xs text-gray-500">Your access token was provided by your onboarding manager.</p>
               </div>
-
-              {error && (
-                <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded">
-                  {error}
-                </div>
-              )}
-
-              {debugInfo && (
-                <div className="mb-4 p-4 bg-yellow-100 border border-yellow-400 text-yellow-800 rounded">
-                  <div className="flex justify-between items-start mb-2">
-                    <h4 className="font-semibold">Debug Information:</h4>
-                    <button
-                      onClick={() => {
-                        localStorage.removeItem('merchantLoginError');
-                        localStorage.removeItem('merchantRedirectReason');
-                        setDebugInfo(null);
-                      }}
-                      className="text-yellow-600 hover:text-yellow-800 text-sm"
-                    >
-                      Clear
-                    </button>
-                  </div>
-                  <pre className="text-xs whitespace-pre-wrap overflow-auto max-h-40">
-                    {debugInfo}
-                  </pre>
-                </div>
-              )}
-
               <div>
                 <button
                   type="submit"
                   disabled={loading}
-                  className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {loading ? 'Accessing...' : 'Access My Onboarding'}
                 </button>
-                
-                {/* Test Debug System Button - Remove after testing */}
-                <button
-                  type="button"
-                  onClick={testDebugSystem}
-                  className="w-full py-2 px-4 mt-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 text-sm"
-                >
-                  Test Debug System
-                </button>
               </div>
             </form>
-          </div>
-        )}
+          ) : (
+            <div>
+              <p className="text-sm text-center text-gray-600">
+                Sign in with your @storehub.com email
+              </p>
+              <button
+                onClick={handleManagerLogin}
+                className="w-full mt-4 flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-red-600 hover:bg-red-700"
+              >
+                <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
+                  <path fillRule="evenodd" d="M10 0C4.477 0 0 4.477 0 10c0 4.423 2.865 8.166 6.839 9.489.5.092.682-.217.682-.482 0-.237-.009-.868-.014-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.03 1.531 1.03.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.03-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0110 4.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.378.203 2.398.1 2.65.64.7 1.028 1.595 1.028 2.688 0 3.848-2.338 4.695-4.566 4.943.359.308.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.003 10.003 0 0020 10c0-5.523-4.477-10-10-10z" clipRule="evenodd" />
+                </svg>
+                Sign in with Google
+              </button>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
