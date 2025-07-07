@@ -146,6 +146,7 @@ StoreHub Onboarding Team`;
                   <th className="py-2 px-4 border-b text-left">PIC Email</th>
                   <th className="py-2 px-4 border-b text-left">Status</th>
                   <th className="py-2 px-4 border-b text-left">Delivery</th>
+                  <th className="py-2 px-4 border-b text-left">Installation</th>
                   <th className="py-2 px-4 border-b text-left">EGLD</th>
                   <th className="py-2 px-4 border-b text-left">Access Token</th>
                   <th className="py-2 px-4 border-b text-left">Expiry</th>
@@ -172,6 +173,13 @@ StoreHub Onboarding Team`;
                         record.deliveryConfirmed ? 'bg-green-200 text-green-800' : 'bg-gray-200 text-gray-800'
                       }`}>
                         {record.deliveryConfirmed ? 'Confirmed' : 'Pending'}
+                      </span>
+                    </td>
+                    <td className="py-2 px-4 border-b">
+                      <span className={`px-2 py-1 text-xs font-semibold rounded-full ${
+                        record.installationConfirmed ? 'bg-green-200 text-green-800' : 'bg-gray-200 text-gray-800'
+                      }`}>
+                        {record.installationConfirmed ? 'Confirmed' : 'Pending'}
                       </span>
                     </td>
                     <td className="py-2 px-4 border-b">{new Date(record.expectedGoLiveDate).toLocaleDateString()}</td>

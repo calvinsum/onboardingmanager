@@ -318,6 +318,112 @@ const DeliveryConfirmation = ({
   );
 };
 
+// Installation Confirmation Component
+const InstallationConfirmation = ({ 
+  onboardingRecord, 
+  onConfirm, 
+  isConfirmed,
+  installationDate,
+  disabled = false
+}: {
+  onboardingRecord: any;
+  onConfirm: () => void;
+  isConfirmed: boolean;
+  installationDate: Date | undefined;
+  disabled?: boolean;
+}) => {
+  if (isConfirmed) {
+    return (
+      <div className="mb-6">
+        <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+          <div className="flex items-center">
+            <div className="flex-shrink-0">
+              <svg className="h-5 w-5 text-green-400" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+              </svg>
+            </div>
+            <div className="ml-3">
+              <h3 className="text-sm font-medium text-green-800">Installation Confirmed</h3>
+              <p className="text-sm text-green-700 mt-1">
+                Hardware installation has been confirmed for {installationDate ? format(installationDate, 'PPP p') : 'the scheduled date'}
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!installationDate) {
+    return (
+      <div className="mb-6">
+        <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
+          <div className="flex items-center">
+            <div className="flex-shrink-0">
+              <svg className="h-5 w-5 text-gray-400" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+              </svg>
+            </div>
+            <div className="ml-3">
+              <h3 className="text-sm font-medium text-gray-800">Installation Date Required</h3>
+              <p className="text-sm text-gray-600 mt-1">
+                Please select an installation date and time first
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="mb-6">
+      <label className="block text-sm font-medium text-gray-700 mb-2">Hardware Installation Confirmation</label>
+      <div className="bg-white border border-gray-200 rounded-lg p-4">
+        <div className="space-y-3">
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="text-sm font-medium text-gray-900">Scheduled Installation</h3>
+              <p className="text-sm text-gray-600">
+                {format(installationDate, 'PPP p')}
+              </p>
+            </div>
+            <div className="flex-shrink-0">
+              <svg className="h-5 w-5 text-blue-500" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clipRule="evenodd" />
+              </svg>
+            </div>
+          </div>
+          
+          <div className="bg-blue-50 border border-blue-200 rounded-md p-3">
+            <div className="flex items-start">
+              <div className="flex-shrink-0">
+                <svg className="h-5 w-5 text-blue-400" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                </svg>
+              </div>
+              <div className="ml-3">
+                <h4 className="text-sm font-medium text-blue-800">Ready to Confirm</h4>
+                <p className="text-sm text-blue-700 mt-1">
+                  Please confirm that you are ready for the hardware installation at the scheduled time.
+                </p>
+              </div>
+            </div>
+          </div>
+          
+          <button
+            onClick={onConfirm}
+            disabled={disabled}
+            className="w-full bg-blue-600 text-white py-3 px-4 rounded-lg font-medium hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          >
+            {disabled ? 'Confirming...' : 'Confirm Installation'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 const MerchantSchedulePage: React.FC = () => {
   const navigate = useNavigate();
   const [onboardingRecord, setOnboardingRecord] = useState<any>(null);
@@ -331,6 +437,9 @@ const MerchantSchedulePage: React.FC = () => {
   const [trainingDate, setTrainingDate] = useState<Date | undefined>();
   const [deliveryConfirmed, setDeliveryConfirmed] = useState(false);
   const [deliveryConfirmedDate, setDeliveryConfirmedDate] = useState<Date | undefined>();
+  const [installationConfirmed, setInstallationConfirmed] = useState(false);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const [installationConfirmedDate, setInstallationConfirmedDate] = useState<Date | undefined>();
 
   useEffect(() => {
     const fetchData = async () => {
@@ -367,6 +476,13 @@ const MerchantSchedulePage: React.FC = () => {
           setDeliveryConfirmed(true);
           // If delivery was confirmed previously, use the confirmation date from record or fallback to current date
           setDeliveryConfirmedDate(record.deliveryConfirmedDate ? new Date(record.deliveryConfirmedDate) : new Date());
+        }
+        
+        // Check if installation is already confirmed
+        if (record.installationConfirmed) {
+          setInstallationConfirmed(true);
+          // If installation was confirmed previously, use the confirmation date from record or fallback to current date
+          setInstallationConfirmedDate(record.installationConfirmedDate ? new Date(record.installationConfirmedDate) : new Date());
         }
       } catch (error) {
         console.error('Error fetching holidays:', error);
@@ -413,6 +529,41 @@ const MerchantSchedulePage: React.FC = () => {
         navigate('/login');
       } else {
         toast.error('Failed to confirm delivery. Please try again.');
+      }
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleInstallationConfirm = async () => {
+    if (!accessToken) return;
+
+    setSaving(true);
+    try {
+      const confirmationDate = new Date();
+      const payload = {
+        installationConfirmed: true,
+        installationConfirmedDate: confirmationDate.toISOString(),
+      };
+
+      const updatedRecord = await updateOnboardingByToken(accessToken, payload);
+      
+      // Update local storage
+      localStorage.setItem('onboardingRecord', JSON.stringify(updatedRecord));
+      setOnboardingRecord(updatedRecord);
+      setInstallationConfirmed(true);
+      setInstallationConfirmedDate(confirmationDate);
+      
+      toast.success('Installation confirmed successfully!');
+    } catch (error: any) {
+      console.error('Error confirming installation:', error);
+      if (error.response?.status === 404) {
+        toast.error('Access token expired. Please contact your onboarding manager.');
+        localStorage.removeItem('merchantAccessToken');
+        localStorage.removeItem('onboardingRecord');
+        navigate('/login');
+      } else {
+        toast.error('Failed to confirm installation. Please try again.');
       }
     } finally {
       setSaving(false);
@@ -538,16 +689,26 @@ const MerchantSchedulePage: React.FC = () => {
               isConfirmed={deliveryConfirmed}
             />
             
-            <MobileDatePicker
-              label="Hardware Installation Date & Time"
-              selectedDate={hardwareInstallationDate}
-              onDateChange={setHardwareInstallationDate}
-              minDate={deliveryConfirmed && deliveryConfirmedDate && onboardingRecord?.deliveryState 
-                ? calculateMinInstallationDate(deliveryConfirmedDate, onboardingRecord.deliveryState)
-                : undefined}
-              disabledDays={disabledDays}
-              disabled={!deliveryConfirmed}
-              includeTime={true}
+            {!installationConfirmed ? (
+              <MobileDatePicker
+                label="Hardware Installation Date & Time"
+                selectedDate={hardwareInstallationDate}
+                onDateChange={setHardwareInstallationDate}
+                minDate={deliveryConfirmed && deliveryConfirmedDate && onboardingRecord?.deliveryState 
+                  ? calculateMinInstallationDate(deliveryConfirmedDate, onboardingRecord.deliveryState)
+                  : undefined}
+                disabledDays={disabledDays}
+                disabled={!deliveryConfirmed}
+                includeTime={true}
+              />
+            ) : null}
+            
+            <InstallationConfirmation
+              onboardingRecord={onboardingRecord}
+              onConfirm={handleInstallationConfirm}
+              isConfirmed={installationConfirmed}
+              installationDate={hardwareInstallationDate}
+              disabled={saving}
             />
             
             <MobileDatePicker
@@ -556,7 +717,7 @@ const MerchantSchedulePage: React.FC = () => {
               onDateChange={setTrainingDate}
               minDate={hardwareInstallationDate}
               disabledDays={disabledDays}
-              disabled={!hardwareInstallationDate}
+              disabled={!installationConfirmed}
               includeTime={true}
             />
           </div>
@@ -565,7 +726,8 @@ const MerchantSchedulePage: React.FC = () => {
             <p>• Weekends and public holidays are not available</p>
             <p>• Confirm delivery before scheduling installation</p>
             <p>• Installation must be scheduled after delivery confirmation</p>
-            <p>• Training must be scheduled after installation</p>
+            <p>• Confirm installation before scheduling training</p>
+            <p>• Training must be scheduled after installation confirmation</p>
           </div>
         </div>
 
@@ -573,7 +735,7 @@ const MerchantSchedulePage: React.FC = () => {
         <div className="sticky bottom-0 bg-white border-t p-4 -mx-4">
           <button
             onClick={handleSaveSchedule}
-            disabled={saving || !deliveryConfirmed || !hardwareInstallationDate || !trainingDate}
+            disabled={saving || !deliveryConfirmed || !installationConfirmed || !trainingDate}
             className="w-full bg-blue-600 text-white py-3 px-4 rounded-lg font-medium hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
             {saving ? 'Saving...' : 'Save Schedule'}

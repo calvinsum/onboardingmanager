@@ -63,6 +63,7 @@ export class OnboardingService {
       hardwareInstallationDate, 
       trainingDate,
       deliveryConfirmedDate,
+      installationConfirmedDate,
       ...restOfDto 
     } = updateOnboardingDto;
     
@@ -89,9 +90,18 @@ export class OnboardingService {
       updatePayload.deliveryConfirmedDate = new Date(deliveryConfirmedDate);
     }
 
+    if (installationConfirmedDate) {
+      updatePayload.installationConfirmedDate = new Date(installationConfirmedDate);
+    }
+
     // Auto-set delivery confirmation date if delivery is being confirmed and no date provided
     if (updateOnboardingDto.deliveryConfirmed && !onboarding.deliveryConfirmed && !deliveryConfirmedDate) {
       updatePayload.deliveryConfirmedDate = new Date();
+    }
+
+    // Auto-set installation confirmation date if installation is being confirmed and no date provided
+    if (updateOnboardingDto.installationConfirmed && !onboarding.installationConfirmed && !installationConfirmedDate) {
+      updatePayload.installationConfirmedDate = new Date();
     }
     
     // `merge` will update the `onboarding` entity with the new values
@@ -168,6 +178,7 @@ export class OnboardingService {
       hardwareInstallationDate, 
       trainingDate,
       deliveryConfirmedDate,
+      installationConfirmedDate,
       ...restOfDto 
     } = updateOnboardingDto;
     
@@ -194,9 +205,18 @@ export class OnboardingService {
       updatePayload.deliveryConfirmedDate = new Date(deliveryConfirmedDate);
     }
 
+    if (installationConfirmedDate) {
+      updatePayload.installationConfirmedDate = new Date(installationConfirmedDate);
+    }
+
     // Auto-set delivery confirmation date if delivery is being confirmed and no date provided
     if (updateOnboardingDto.deliveryConfirmed && !onboarding.deliveryConfirmed && !deliveryConfirmedDate) {
       updatePayload.deliveryConfirmedDate = new Date();
+    }
+
+    // Auto-set installation confirmation date if installation is being confirmed and no date provided
+    if (updateOnboardingDto.installationConfirmed && !onboarding.installationConfirmed && !installationConfirmedDate) {
+      updatePayload.installationConfirmedDate = new Date();
     }
     
     // `merge` will update the `onboarding` entity with the new values
