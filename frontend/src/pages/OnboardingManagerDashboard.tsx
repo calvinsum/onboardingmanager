@@ -131,6 +131,9 @@ const OnboardingManagerDashboard = () => {
                       >
                         Edit
                       </button>
+                      <Link to={`/schedule-onboarding/${record.id}`} className="text-purple-500 hover:underline mr-4">
+                        Schedule
+                      </Link>
                       <button onClick={() => handleRegenerateToken(record.id)} className="text-green-500 hover:underline">
                         Regenerate Token
                       </button>

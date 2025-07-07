@@ -205,4 +205,9 @@ export const regenerateOnboardingToken = async (id: string) => {
   return response.data;
 };
 
+export const getPublicHolidays = async (year: number, state?: string) => {
+  const response = await api.get(`/schedule/holidays/${year}${state ? `?state=${state}` : ''}`);
+  return response.data;
+};
+
 export default api; 

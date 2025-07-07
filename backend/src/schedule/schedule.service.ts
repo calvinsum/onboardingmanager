@@ -18,4 +18,12 @@ export class ScheduleService implements OnModuleInit {
   onModuleInit() {
     this.hd = new Holidays('MY', '10'); // Malaysia, Selangor
   }
+
+  getPublicHolidays(year: number, state?: string) {
+    let holidayInstance = this.hd;
+    if (state) {
+      holidayInstance = new Holidays('MY', state);
+    }
+    return holidayInstance.getHolidays(year);
+  }
 } 
