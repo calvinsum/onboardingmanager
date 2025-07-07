@@ -84,6 +84,7 @@ export class Merchant {
   @UpdateDateColumn()
   updatedAt: Date;
 
+  @ApiProperty({ type: () => [Onboarding] })
   @OneToMany(() => Onboarding, (onboarding) => onboarding.merchant)
   onboardingRecords: Onboarding[];
 } 

@@ -55,6 +55,7 @@ export class OnboardingManager {
   @UpdateDateColumn()
   updatedAt: Date;
 
+  @ApiProperty({ type: () => [Onboarding] })
   @OneToMany(() => Onboarding, (onboarding) => onboarding.createdByManager)
   createdOnboardings: Onboarding[];
 }

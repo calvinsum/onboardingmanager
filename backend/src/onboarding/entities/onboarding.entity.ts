@@ -118,7 +118,7 @@ export class Onboarding {
   status: OnboardingStatus;
 
   // Relationships
-  @ApiProperty({ description: 'Associated merchant' })
+  @ApiProperty({ description: 'Associated merchant', type: () => Merchant })
   @ManyToOne(() => Merchant, (merchant) => merchant.onboardingRecords, { nullable: true })
   @JoinColumn({ name: 'merchantId' })
   merchant?: Merchant;
@@ -126,7 +126,7 @@ export class Onboarding {
   @Column({ nullable: true })
   merchantId?: string;
 
-  @ApiProperty({ description: 'Created by onboarding manager' })
+  @ApiProperty({ description: 'Created by onboarding manager', type: () => OnboardingManager })
   @ManyToOne(() => OnboardingManager, (manager) => manager.createdOnboardings)
   @JoinColumn({ name: 'createdByManagerId' })
   createdByManager: OnboardingManager;
