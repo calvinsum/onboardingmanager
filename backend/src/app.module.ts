@@ -1,40 +1,40 @@
 import { Module } from '@nestjs/common';
-import { ConfigModule } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { ConfigModule } from '@nestjs/config';
+import { PassportModule } from '@nestjs/passport';
+import { JwtModule } from '@nestjs/jwt';
+
 import { AuthModule } from './auth/auth.module';
 import { MerchantModule } from './merchant/merchant.module';
-import { OnboardingManagerModule } from './onboarding-manager/onboarding-manager.module';
 import { OnboardingModule } from './onboarding/onboarding.module';
-import { HealthModule } from './health/health.module';
-import { ScheduleModule } from './schedule/schedule.module';
+import { OnboardingManagerModule } from './onboarding-manager/onboarding-manager.module';
 import { TrainerModule } from './trainer/trainer.module';
-import { DatabaseConfig } from './config/database.config';
-import { scheduleConfig } from './config/schedule.config';
+import { ScheduleModule } from './schedule/schedule.module';
+import { HealthModule } from './health/health.module';
+import { MigrationController } from './migration.controller';
+
+import { databaseConfig } from './config/database.config';
 
 @Module({
   imports: [
-    // Configuration module - loads environment variables
     ConfigModule.forRoot({
       isGlobal: true,
-      load: [scheduleConfig],
     }),
-    
-    // Database configuration
-    TypeOrmModule.forRootAsync({
-      imports: [ConfigModule],
-      useClass: DatabaseConfig,
+    TypeOrmModule.forRoot(databaseConfig),
+    PassportModule,
+    JwtModule.register({
+      secret: process.env.JWT_SECRET || 'your-secret-key',
+      signOptions: { expiresIn: '24h' },
     }),
-    
-    // Feature modules
     AuthModule,
     MerchantModule,
-    OnboardingManagerModule,
-    HealthModule,
     OnboardingModule,
-    ScheduleModule,
+    OnboardingManagerModule,
     TrainerModule,
+    ScheduleModule,
+    HealthModule,
   ],
-  controllers: [],
+  controllers: [MigrationController],
   providers: [],
 })
 export class AppModule {} 
