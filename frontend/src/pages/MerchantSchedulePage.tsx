@@ -26,12 +26,11 @@ const MobileDatePicker = ({
   includeTime?: boolean;
 }) => {
   const [isOpen, setIsOpen] = useState(false);
-  const [selectedTime, setSelectedTime] = useState('09:00');
+  const [selectedTime, setSelectedTime] = useState('09:30');
   const buttonRef = useRef<HTMLButtonElement>(null);
 
   const timeSlots = [
-    '09:00', '09:30', '10:00', '10:30', '11:00', '11:30',
-    '14:00', '14:30', '15:00', '15:30', '16:00', '16:30'
+    '09:30', '12:00', '14:30', '17:00'
   ];
 
   const handleDaySelect = (date: Date | undefined) => {
