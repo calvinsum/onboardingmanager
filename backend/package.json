@@ -17,7 +17,8 @@
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
     "test:e2e": "jest --config ./test/jest-e2e.json",
     "seed": "ts-node -r tsconfig-paths/register src/scripts/seed-onboarding-manager.ts",
-    "create-manager": "ts-node -r tsconfig-paths/register src/scripts/create-onboarding-manager.ts"
+    "create-manager": "ts-node -r tsconfig-paths/register src/scripts/create-onboarding-manager.ts",
+    "migrate-training-slots": "ts-node -r tsconfig-paths/register src/scripts/migrate-training-slots.ts"
   },
   "dependencies": {
     "@nestjs/cli": "^11.0.7",
