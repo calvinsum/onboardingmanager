@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { getMyTrainingSchedules, getTrainerWorkloadStats } from '../services/api';
+import { getAllTrainingSchedules, getTrainerWorkloadStats } from '../services/api';
 
 interface TrainingSlot {
   id: string;
@@ -74,7 +74,7 @@ const TrainingScheduleListPage: React.FC = () => {
         ...(filters.location && { location: filters.location })
       };
 
-      const response = await getMyTrainingSchedules(filterParams);
+      const response = await getAllTrainingSchedules(filterParams);
 
       setTrainingSlots(response.trainingSlots);
       setTotal(response.total);
