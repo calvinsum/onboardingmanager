@@ -1,15 +1,18 @@
-import { Controller, Post, Get } from '@nestjs/common';
-import { InjectDataSource } from '@nestjs/typeorm';
-import { DataSource } from 'typeorm';
+import { Controller, Get, Post, HttpCode, HttpStatus } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
 import { Onboarding, OnboardingType } from './onboarding/entities/onboarding.entity';
 import { TrainingSlot, TrainingType, SlotStatus } from './trainer/entities/training-slot.entity';
-import { Trainer, TrainerStatus } from './trainer/entities/trainer.entity';
+import { Trainer, TrainerStatus, TrainerLanguage } from './trainer/entities/trainer.entity';
 import { format } from 'date-fns';
 
 @Controller('migration')
 export class MigrationController {
   constructor(
-    @InjectDataSource() private dataSource: DataSource,
+    @InjectRepository(Onboarding) private onboardingRepository: Repository<Onboarding>,
+    @InjectRepository(TrainingSlot) private trainingSlotRepository: Repository<TrainingSlot>,
+    @InjectRepository(Trainer) private trainerRepository: Repository<Trainer>,
   ) {}
 
   @Get('status')
@@ -22,9 +25,9 @@ export class MigrationController {
 
   @Post('training-slots')
   async migrateTrainingSlots() {
-    const onboardingRepository = this.dataSource.getRepository(Onboarding);
-    const trainingSlotRepository = this.dataSource.getRepository(TrainingSlot);
-    const trainerRepository = this.dataSource.getRepository(Trainer);
+    const onboardingRepository = this.onboardingRepository;
+    const trainingSlotRepository = this.trainingSlotRepository;
+    const trainerRepository = this.trainerRepository;
     
     const results = {
       status: 'started',
@@ -161,5 +164,51 @@ export class MigrationController {
     }
 
     return results;
+  }
+
+  @Post('add-selangor-trainer')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Add trainer for Selangor + Malay + onsite training' })
+  @ApiResponse({ status: 200, description: 'Trainer added successfully' })
+  async addSelangorTrainer() {
+    try {
+      // Check if trainer already exists
+      const existingTrainer = await this.trainerRepository.findOne({
+        where: { name: 'Ahmad Rahman' }
+      });
+
+      if (existingTrainer) {
+        return {
+          success: true,
+          message: 'Trainer Ahmad Rahman already exists',
+          trainer: existingTrainer
+        };
+      }
+
+      // Create new trainer for Selangor + Malay + onsite training
+      const trainer = this.trainerRepository.create({
+        name: 'Ahmad Rahman',
+        languages: [TrainerLanguage.MALAY, TrainerLanguage.ENGLISH],
+        locations: ['Selangor', 'Kuala Lumpur'],
+        status: TrainerStatus.ACTIVE,
+        createdByManagerId: null // System created
+      });
+
+      const savedTrainer = await this.trainerRepository.save(trainer);
+
+      return {
+        success: true,
+        message: 'Successfully added trainer Ahmad Rahman for Selangor + Malay training',
+        trainer: savedTrainer
+      };
+
+    } catch (error) {
+      console.error('Error adding trainer:', error);
+      return {
+        success: false,
+        message: 'Failed to add trainer',
+        error: error.message
+      };
+    }
   }
 } 

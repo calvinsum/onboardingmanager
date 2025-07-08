@@ -14,6 +14,9 @@ import { HealthModule } from './health/health.module';
 import { MigrationController } from './migration.controller';
 
 import { DatabaseConfig } from './config/database.config';
+import { Onboarding } from './onboarding/entities/onboarding.entity';
+import { TrainingSlot } from './trainer/entities/training-slot.entity';
+import { Trainer } from './trainer/entities/trainer.entity';
 
 @Module({
   imports: [
@@ -24,6 +27,8 @@ import { DatabaseConfig } from './config/database.config';
       imports: [ConfigModule],
       useClass: DatabaseConfig,
     }),
+    // Add TypeORM repositories for MigrationController
+    TypeOrmModule.forFeature([Onboarding, TrainingSlot, Trainer]),
     PassportModule,
     JwtModule.register({
       secret: process.env.JWT_SECRET || 'your-secret-key',
