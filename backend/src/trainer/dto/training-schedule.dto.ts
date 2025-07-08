@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsString, IsOptional, IsEnum, IsInt, Min } from 'class-validator';
+import { IsString, IsOptional, IsEnum, IsInt, Min, IsArray } from 'class-validator';
 import { Type } from 'class-transformer';
 import { TrainingType, SlotStatus } from '../entities/training-slot.entity';
 
@@ -87,21 +87,30 @@ export class TrainingScheduleListDto {
 // Auto-assign booking request DTO
 export class AutoAssignTrainingSlotDto {
   @ApiProperty({ description: 'Onboarding record ID' })
+  @IsString()
   onboardingId: string;
 
   @ApiProperty({ description: 'Training date' })
+  @IsString()
   date: string;
 
   @ApiProperty({ description: 'Time slot' })
+  @IsString()
   timeSlot: string;
 
   @ApiProperty({ description: 'Training type', enum: TrainingType })
+  @IsEnum(TrainingType)
   trainingType: TrainingType;
 
   @ApiProperty({ description: 'Location for onsite training', required: false })
+  @IsOptional()
+  @IsString()
   location?: string;
 
   @ApiProperty({ description: 'Required languages', isArray: true, required: false })
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
   languages?: string[];
 }
 
