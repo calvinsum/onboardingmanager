@@ -227,17 +227,62 @@ const CreateMerchantForm: React.FC<CreateMerchantFormProps> = ({ onSubmit, initi
               </label>
               {!formData.useSameAddressForTraining && (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <input type="text" name="trainingAddress1" value={formData.trainingAddress1} onChange={handleChange} placeholder="Address Line 1" className="p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" />
-                  <input type="text" name="trainingAddress2" value={formData.trainingAddress2} onChange={handleChange} placeholder="Address Line 2" className="p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" />
-                  <input type="text" name="trainingCity" value={formData.trainingCity} onChange={handleChange} placeholder="City" className="p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" />
-                  <select name="trainingState" value={formData.trainingState} onChange={handleChange} className="p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
+                  <input 
+                    type="text" 
+                    name="trainingAddress1" 
+                    value={formData.trainingAddress1} 
+                    onChange={handleChange} 
+                    placeholder="Address Line 1" 
+                    required={isTrainingSelected && !formData.useSameAddressForTraining}
+                    className="p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" 
+                  />
+                  <input 
+                    type="text" 
+                    name="trainingAddress2" 
+                    value={formData.trainingAddress2} 
+                    onChange={handleChange} 
+                    placeholder="Address Line 2" 
+                    className="p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" 
+                  />
+                  <input 
+                    type="text" 
+                    name="trainingCity" 
+                    value={formData.trainingCity} 
+                    onChange={handleChange} 
+                    placeholder="City" 
+                    required={isTrainingSelected && !formData.useSameAddressForTraining}
+                    className="p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" 
+                  />
+                  <select 
+                    name="trainingState" 
+                    value={formData.trainingState} 
+                    onChange={handleChange} 
+                    required={isTrainingSelected && !formData.useSameAddressForTraining}
+                    className="p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                  >
                     <option value="">Select State</option>
                     {MALAYSIA_STATES.map(state => (
                       <option key={state} value={state}>{state}</option>
                     ))}
                   </select>
-                  <input type="text" name="trainingPostalCode" value={formData.trainingPostalCode} onChange={handleChange} placeholder="Postal Code" className="p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" />
-                  <input type="text" name="trainingCountry" value={formData.trainingCountry} onChange={handleChange} placeholder="Country" className="p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" />
+                  <input 
+                    type="text" 
+                    name="trainingPostalCode" 
+                    value={formData.trainingPostalCode} 
+                    onChange={handleChange} 
+                    placeholder="Postal Code" 
+                    required={isTrainingSelected && !formData.useSameAddressForTraining}
+                    className="p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" 
+                  />
+                  <input 
+                    type="text" 
+                    name="trainingCountry" 
+                    value={formData.trainingCountry} 
+                    onChange={handleChange} 
+                    placeholder="Country" 
+                    required={isTrainingSelected && !formData.useSameAddressForTraining}
+                    className="p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" 
+                  />
                 </div>
               )}
             </div>
