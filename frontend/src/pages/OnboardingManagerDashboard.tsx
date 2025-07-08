@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
-import { getMyOnboardingRecordsWithTrainer, getMyOnboardingRecords, regenerateOnboardingToken } from '../services/api';
+import { getMyOnboardingRecordsWithTrainer, getMyOnboardingRecords, regenerateOnboardingToken, getTrainingSlotsByOnboarding } from '../services/api';
 import { useAuth } from '../hooks/useAuth';
 
 const OnboardingManagerDashboard = () => {
@@ -25,14 +25,41 @@ const OnboardingManagerDashboard = () => {
           // Fallback to the original endpoint if the new one fails
           const fetchedRecords = await getMyOnboardingRecords();
           
-          // Add assignedTrainer: null to each record for consistency
-          const recordsWithTrainerField = fetchedRecords.map((record: any) => ({
-            ...record,
-            assignedTrainer: null,
-            trainingSlot: null
-          }));
+          // For each record, try to fetch training slot information separately
+          const recordsWithTrainerInfo = await Promise.all(
+            fetchedRecords.map(async (record: any) => {
+              try {
+                // Try to get training slots for this onboarding record
+                const trainingSlots = await getTrainingSlotsByOnboarding(record.id);
+                
+                if (trainingSlots && trainingSlots.length > 0) {
+                  // Get the most recent training slot (should only be one per onboarding)
+                  const latestSlot = trainingSlots[trainingSlots.length - 1];
+                  
+                  return {
+                    ...record,
+                    assignedTrainer: latestSlot.trainer || null,
+                    trainingSlot: latestSlot
+                  };
+                } else {
+                  return {
+                    ...record,
+                    assignedTrainer: null,
+                    trainingSlot: null
+                  };
+                }
+              } catch (slotError) {
+                console.log(`No training slots found for record ${record.id}`);
+                return {
+                  ...record,
+                  assignedTrainer: null,
+                  trainingSlot: null
+                };
+              }
+            })
+          );
           
-          setRecords(recordsWithTrainerField);
+          setRecords(recordsWithTrainerInfo);
         }
       } catch (error) {
         toast.error('Failed to fetch onboarding records.');
