@@ -185,6 +185,11 @@ export const getMyOnboardingRecords = async () => {
   return response.data;
 };
 
+export const getMyOnboardingRecordsWithTrainer = async () => {
+  const response = await api.get('/onboarding/my-records-with-trainer');
+  return response.data;
+};
+
 export const getOnboardingRecordById = async (id: string) => {
   const response = await api.get(`/onboarding/${id}`);
   return response.data;

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
-import { getMyOnboardingRecords, regenerateOnboardingToken } from '../services/api';
+import { getMyOnboardingRecordsWithTrainer, regenerateOnboardingToken } from '../services/api';
 import { useAuth } from '../hooks/useAuth';
 
 const OnboardingManagerDashboard = () => {
@@ -14,7 +14,7 @@ const OnboardingManagerDashboard = () => {
     const fetchRecords = async () => {
       try {
         setLoading(true);
-        const fetchedRecords = await getMyOnboardingRecords();
+        const fetchedRecords = await getMyOnboardingRecordsWithTrainer();
         setRecords(fetchedRecords);
       } catch (error) {
         toast.error('Failed to fetch onboarding records.');
@@ -154,6 +154,7 @@ StoreHub Onboarding Team`;
                   <th className="py-2 px-4 border-b text-left">Delivery</th>
                   <th className="py-2 px-4 border-b text-left">Installation</th>
                   <th className="py-2 px-4 border-b text-left">Training</th>
+                  <th className="py-2 px-4 border-b text-left">Assigned Trainer</th>
                   <th className="py-2 px-4 border-b text-left">EGLD</th>
                   <th className="py-2 px-4 border-b text-left">Access Token</th>
                   <th className="py-2 px-4 border-b text-left">Expiry</th>
@@ -195,6 +196,18 @@ StoreHub Onboarding Team`;
                       }`}>
                         {record.trainingConfirmed ? 'Confirmed' : 'Pending'}
                       </span>
+                    </td>
+                    <td className="py-2 px-4 border-b">
+                      {record.assignedTrainer ? (
+                        <div className="flex flex-col">
+                          <span className="font-medium text-sm">{record.assignedTrainer.name}</span>
+                          <span className="text-xs text-gray-500">
+                            {record.assignedTrainer.languages?.join(', ') || 'N/A'}
+                          </span>
+                        </div>
+                      ) : (
+                        <span className="text-gray-400 text-sm">No trainer assigned</span>
+                      )}
                     </td>
                     <td className="py-2 px-4 border-b">{new Date(record.expectedGoLiveDate).toLocaleDateString()}</td>
                     <td className="py-2 px-4 border-b">
