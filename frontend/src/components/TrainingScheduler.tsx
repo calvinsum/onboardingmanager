@@ -15,7 +15,7 @@ interface AvailableSlot {
 
 interface TrainingSchedulerProps {
   onboardingRecord: any;
-  onSlotSelected: (date: Date, timeSlot: string) => void; // Removed trainerId parameter
+  onSlotSelected: (date: Date, timeSlot: string, trainerId: string) => void;
   disabled?: boolean;
   minDate?: Date;
   holidays?: Date[];
@@ -32,6 +32,7 @@ const TrainingScheduler: React.FC<TrainingSchedulerProps> = ({
   const [availableSlots, setAvailableSlots] = useState<AvailableSlot[]>([]);
   const [loading, setLoading] = useState(false);
   const [selectedTimeSlot, setSelectedTimeSlot] = useState<string>('');
+  const [selectedTrainer, setSelectedTrainer] = useState<string>('');
 
   // Determine training type and requirements from onboarding record
   const getTrainingRequirements = () => {
@@ -94,6 +95,7 @@ const TrainingScheduler: React.FC<TrainingSchedulerProps> = ({
       const slots = await response.json();
       setAvailableSlots(slots);
       setSelectedTimeSlot('');
+      setSelectedTrainer('');
     } catch (error) {
       console.error('Error fetching available slots:', error);
       toast.error('Failed to load available time slots');
@@ -110,16 +112,22 @@ const TrainingScheduler: React.FC<TrainingSchedulerProps> = ({
     } else {
       setAvailableSlots([]);
       setSelectedTimeSlot('');
+      setSelectedTrainer('');
     }
   };
 
   const handleTimeSlotSelect = (timeSlot: string) => {
     setSelectedTimeSlot(timeSlot);
+    setSelectedTrainer('');
+  };
+
+  const handleTrainerSelect = (trainerId: string) => {
+    setSelectedTrainer(trainerId);
   };
 
   const handleConfirmBooking = () => {
-    if (selectedDate && selectedTimeSlot) {
-      onSlotSelected(selectedDate, selectedTimeSlot); // No trainerId passed
+    if (selectedDate && selectedTimeSlot && selectedTrainer) {
+      onSlotSelected(selectedDate, selectedTimeSlot, selectedTrainer);
     }
   };
 
@@ -127,6 +135,11 @@ const TrainingScheduler: React.FC<TrainingSchedulerProps> = ({
     (date: Date) => isWeekend(date),
     ...holidays
   ];
+
+  const getAvailableTrainersForSlot = (timeSlot: string) => {
+    const slot = availableSlots.find(s => s.timeSlot === timeSlot);
+    return slot ? slot.availableTrainers : [];
+  };
 
   const canSelectTrainingMode = requirements.hasRemoteOption && requirements.hasOnsiteOption;
 
@@ -180,23 +193,6 @@ const TrainingScheduler: React.FC<TrainingSchedulerProps> = ({
           {requirements.languages.length > 0 && (
             <p><strong>Languages:</strong> {requirements.languages.join(', ')}</p>
           )}
-        </div>
-      </div>
-
-      {/* Auto-Assignment Notice */}
-      <div className="bg-green-50 p-4 rounded-lg border border-green-200">
-        <div className="flex items-center">
-          <div className="flex-shrink-0">
-            <svg className="h-5 w-5 text-green-400" viewBox="0 0 20 20" fill="currentColor">
-              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-            </svg>
-          </div>
-          <div className="ml-3">
-            <h4 className="text-sm font-medium text-green-800">Automatic Trainer Assignment</h4>
-            <p className="text-sm text-green-700">
-              Our system will automatically assign the best available trainer based on your requirements and ensure fair distribution.
-            </p>
-          </div>
         </div>
       </div>
 
@@ -256,8 +252,49 @@ const TrainingScheduler: React.FC<TrainingSchedulerProps> = ({
         </div>
       )}
 
+      {/* Trainer Selection */}
+      {selectedTimeSlot && (
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Select Trainer for {selectedTimeSlot}
+          </label>
+          <div className="space-y-3">
+            {getAvailableTrainersForSlot(selectedTimeSlot).map((trainer) => (
+              <div
+                key={trainer.id}
+                onClick={() => handleTrainerSelect(trainer.id)}
+                className={`p-4 rounded-lg border cursor-pointer ${
+                  selectedTrainer === trainer.id
+                    ? 'bg-green-50 border-green-500'
+                    : 'bg-white border-gray-300 hover:border-green-300'
+                }`}
+              >
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h4 className="font-medium text-gray-900">{trainer.name}</h4>
+                    <div className="text-sm text-gray-600">
+                      <span className="font-medium">Languages:</span> {trainer.languages.join(', ')}
+                    </div>
+                    {trainingMode === 'onsite_training' && (
+                      <div className="text-sm text-gray-600">
+                        <span className="font-medium">Locations:</span> {trainer.locations.join(', ')}
+                      </div>
+                    )}
+                  </div>
+                  <div className={`w-4 h-4 rounded-full border-2 ${
+                    selectedTrainer === trainer.id
+                      ? 'bg-green-500 border-green-500'
+                      : 'border-gray-300'
+                  }`} />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Confirm Booking Button */}
-      {selectedDate && selectedTimeSlot && (
+      {selectedDate && selectedTimeSlot && selectedTrainer && (
         <div className="pt-4">
           <button
             onClick={handleConfirmBooking}
@@ -265,9 +302,6 @@ const TrainingScheduler: React.FC<TrainingSchedulerProps> = ({
             className="w-full bg-blue-600 text-white py-3 px-4 rounded-lg font-medium hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             Confirm Training Booking
-            <div className="text-sm mt-1 opacity-90">
-              System will automatically assign the best trainer
-            </div>
           </button>
         </div>
       )}

@@ -185,11 +185,6 @@ export const getMyOnboardingRecords = async () => {
   return response.data;
 };
 
-export const getMyOnboardingRecordsWithTrainer = async () => {
-  const response = await api.get('/onboarding/my-records-with-trainer');
-  return response.data;
-};
-
 export const getOnboardingRecordById = async (id: string) => {
   const response = await api.get(`/onboarding/${id}`);
   return response.data;
@@ -317,18 +312,6 @@ export const bookTrainingSlot = async (bookingData: {
   languages?: string[];
 }) => {
   const response = await api.post('/training-slots/book', bookingData);
-  return response.data;
-};
-
-export const autoAssignTrainingSlot = async (autoAssignData: {
-  onboardingId: string;
-  date: string;
-  timeSlot: string;
-  trainingType: string;
-  location?: string;
-  languages?: string[];
-}) => {
-  const response = await api.post('/training-slots/auto-assign', autoAssignData);
   return response.data;
 };
 

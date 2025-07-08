@@ -14,15 +14,6 @@ export class BookTrainingSlotDto {
   languages?: string[];
 }
 
-export class AutoAssignTrainingSlotDto {
-  onboardingId: string;
-  date: string;
-  timeSlot: string;
-  trainingType: TrainingType;
-  location?: string;
-  languages?: string[];
-}
-
 @ApiTags('training-slots')
 @ApiBearerAuth()
 @UseGuards(AuthGuard('jwt'))
@@ -96,22 +87,6 @@ export class TrainingSlotController {
       bookingDto.trainingType,
       bookingDto.location,
       bookingDto.languages
-    );
-  }
-
-  @Post('auto-assign')
-  @ApiOperation({ summary: 'Auto-assign a training slot' })
-  @ApiResponse({ status: 201, description: 'Training slot auto-assigned successfully', type: TrainingSlot })
-  async autoAssignTrainingSlot(@Body() autoAssignDto: AutoAssignTrainingSlotDto): Promise<TrainingSlot> {
-    const parsedDate = new Date(autoAssignDto.date);
-    
-    return this.trainingSlotService.autoAssignTrainingSlot(
-      autoAssignDto.onboardingId,
-      parsedDate,
-      autoAssignDto.timeSlot,
-      autoAssignDto.trainingType,
-      autoAssignDto.location,
-      autoAssignDto.languages
     );
   }
 

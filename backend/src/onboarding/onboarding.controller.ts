@@ -75,15 +75,6 @@ export class OnboardingController {
     return this.onboardingService.getOnboardingsByManager(managerId);
   }
 
-  @Get('my-records-with-trainer')
-  @ApiOperation({ summary: 'Get onboarding records created by current manager with trainer information' })
-  @ApiResponse({ status: 200, description: 'List of onboarding records with trainer info' })
-  @ApiResponse({ status: 401, description: 'Unauthorized' })
-  async getMyOnboardingsWithTrainer(@Request() req: any): Promise<any[]> {
-    const managerId = req.user.id;
-    return this.onboardingService.getOnboardingsByManagerWithTrainer(managerId);
-  }
-
   @Get(':id')
   @ApiOperation({ summary: 'Get onboarding record by ID' })
   @ApiParam({ name: 'id', description: 'Onboarding ID' })

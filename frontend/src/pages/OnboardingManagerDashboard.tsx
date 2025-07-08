@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
-import { getMyOnboardingRecordsWithTrainer, getMyOnboardingRecords, regenerateOnboardingToken, getTrainingSlotsByOnboarding } from '../services/api';
+import { getMyOnboardingRecords, regenerateOnboardingToken } from '../services/api';
 import { useAuth } from '../hooks/useAuth';
 
 const OnboardingManagerDashboard = () => {
@@ -14,53 +14,8 @@ const OnboardingManagerDashboard = () => {
     const fetchRecords = async () => {
       try {
         setLoading(true);
-        
-        // Try the new endpoint with trainer information first
-        try {
-          const fetchedRecords = await getMyOnboardingRecordsWithTrainer();
-          setRecords(fetchedRecords);
-        } catch (trainerError) {
-          console.log('New endpoint not available, falling back to original endpoint');
-          
-          // Fallback to the original endpoint if the new one fails
-          const fetchedRecords = await getMyOnboardingRecords();
-          
-          // For each record, try to fetch training slot information separately
-          const recordsWithTrainerInfo = await Promise.all(
-            fetchedRecords.map(async (record: any) => {
-              try {
-                // Try to get training slots for this onboarding record
-                const trainingSlots = await getTrainingSlotsByOnboarding(record.id);
-                
-                if (trainingSlots && trainingSlots.length > 0) {
-                  // Get the most recent training slot (should only be one per onboarding)
-                  const latestSlot = trainingSlots[trainingSlots.length - 1];
-                  
-                  return {
-                    ...record,
-                    assignedTrainer: latestSlot.trainer || null,
-                    trainingSlot: latestSlot
-                  };
-                } else {
-                  return {
-                    ...record,
-                    assignedTrainer: null,
-                    trainingSlot: null
-                  };
-                }
-              } catch (slotError) {
-                console.log(`No training slots found for record ${record.id}`);
-                return {
-                  ...record,
-                  assignedTrainer: null,
-                  trainingSlot: null
-                };
-              }
-            })
-          );
-          
-          setRecords(recordsWithTrainerInfo);
-        }
+        const fetchedRecords = await getMyOnboardingRecords();
+        setRecords(fetchedRecords);
       } catch (error) {
         toast.error('Failed to fetch onboarding records.');
         console.error(error);
@@ -199,7 +154,6 @@ StoreHub Onboarding Team`;
                   <th className="py-2 px-4 border-b text-left">Delivery</th>
                   <th className="py-2 px-4 border-b text-left">Installation</th>
                   <th className="py-2 px-4 border-b text-left">Training</th>
-                  <th className="py-2 px-4 border-b text-left">Assigned Trainer</th>
                   <th className="py-2 px-4 border-b text-left">EGLD</th>
                   <th className="py-2 px-4 border-b text-left">Access Token</th>
                   <th className="py-2 px-4 border-b text-left">Expiry</th>
@@ -241,18 +195,6 @@ StoreHub Onboarding Team`;
                       }`}>
                         {record.trainingConfirmed ? 'Confirmed' : 'Pending'}
                       </span>
-                    </td>
-                    <td className="py-2 px-4 border-b">
-                      {record.assignedTrainer ? (
-                        <div className="flex flex-col">
-                          <span className="font-medium text-sm">{record.assignedTrainer.name}</span>
-                          <span className="text-xs text-gray-500">
-                            {record.assignedTrainer.languages?.join(', ') || 'N/A'}
-                          </span>
-                        </div>
-                      ) : (
-                        <span className="text-gray-400 text-sm">No trainer assigned</span>
-                      )}
                     </td>
                     <td className="py-2 px-4 border-b">{new Date(record.expectedGoLiveDate).toLocaleDateString()}</td>
                     <td className="py-2 px-4 border-b">

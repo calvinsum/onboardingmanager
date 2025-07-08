@@ -4,7 +4,6 @@ import { Repository } from 'typeorm';
 import { Onboarding, OnboardingStatus } from './entities/onboarding.entity';
 import { Merchant } from '../merchant/entities/merchant.entity';
 import { OnboardingManager } from '../onboarding-manager/entities/onboarding-manager.entity';
-import { TrainingSlot } from '../trainer/entities/training-slot.entity';
 import { CreateOnboardingDto } from './dto/create-onboarding.dto';
 import { UpdateOnboardingDto } from './dto/update-onboarding.dto';
 import * as crypto from 'crypto';
@@ -18,8 +17,6 @@ export class OnboardingService {
     private merchantRepository: Repository<Merchant>,
     @InjectRepository(OnboardingManager)
     private onboardingManagerRepository: Repository<OnboardingManager>,
-    @InjectRepository(TrainingSlot)
-    private trainingSlotRepository: Repository<TrainingSlot>,
   ) {}
 
   async createOnboarding(createOnboardingDto: CreateOnboardingDto, managerId: string): Promise<Onboarding> {
@@ -319,34 +316,6 @@ export class OnboardingService {
       relations: ['createdByManager', 'merchant'],
       order: { createdAt: 'DESC' },
     });
-  }
-
-  // Get onboardings created by a specific manager with training slot information
-  async getOnboardingsByManagerWithTrainer(managerId: string): Promise<any[]> {
-    const onboardings = await this.onboardingRepository.find({
-      where: { createdByManagerId: managerId },
-      relations: ['createdByManager', 'merchant'],
-      order: { createdAt: 'DESC' },
-    });
-
-    // For each onboarding, get the associated training slot and trainer
-    const onboardingsWithTrainer = await Promise.all(
-      onboardings.map(async (onboarding) => {
-        const trainingSlot = await this.trainingSlotRepository.findOne({
-          where: { onboardingId: onboarding.id },
-          relations: ['trainer'],
-          order: { createdAt: 'DESC' }, // Get the most recent training slot
-        });
-
-        return {
-          ...onboarding,
-          assignedTrainer: trainingSlot?.trainer || null,
-          trainingSlot: trainingSlot || null,
-        };
-      })
-    );
-
-    return onboardingsWithTrainer;
   }
 
   // Debug method to test manager lookup
