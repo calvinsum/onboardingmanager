@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
-import { getMyOnboardingRecordsWithTrainer, regenerateOnboardingToken } from '../services/api';
+import { getMyOnboardingRecordsWithTrainer, getMyOnboardingRecords, regenerateOnboardingToken } from '../services/api';
 import { useAuth } from '../hooks/useAuth';
 
 const OnboardingManagerDashboard = () => {
@@ -14,8 +14,26 @@ const OnboardingManagerDashboard = () => {
     const fetchRecords = async () => {
       try {
         setLoading(true);
-        const fetchedRecords = await getMyOnboardingRecordsWithTrainer();
-        setRecords(fetchedRecords);
+        
+        // Try the new endpoint with trainer information first
+        try {
+          const fetchedRecords = await getMyOnboardingRecordsWithTrainer();
+          setRecords(fetchedRecords);
+        } catch (trainerError) {
+          console.log('New endpoint not available, falling back to original endpoint');
+          
+          // Fallback to the original endpoint if the new one fails
+          const fetchedRecords = await getMyOnboardingRecords();
+          
+          // Add assignedTrainer: null to each record for consistency
+          const recordsWithTrainerField = fetchedRecords.map((record: any) => ({
+            ...record,
+            assignedTrainer: null,
+            trainingSlot: null
+          }));
+          
+          setRecords(recordsWithTrainerField);
+        }
       } catch (error) {
         toast.error('Failed to fetch onboarding records.');
         console.error(error);
