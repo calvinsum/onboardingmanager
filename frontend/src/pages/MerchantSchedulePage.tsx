@@ -786,13 +786,12 @@ const MerchantSchedulePage: React.FC = () => {
           }
           
           // Log detailed error information for debugging
-          console.log('Booking data that failed:', bookingData);
-          console.log('Available trainers may not cover:', {
-            trainingType: bookingData.trainingType,
-            location: bookingData.location,
-            languages: bookingData.languages,
-            timeSlot: bookingData.timeSlot,
-            date: bookingData.date
+          console.log('Training booking failed with requirements:', {
+            trainingType: hasOnsiteTraining && !hasRemoteTraining ? 'onsite_training' : 'remote_training',
+            location: (hasOnsiteTraining && !hasRemoteTraining) ? onboardingRecord?.trainingState : undefined,
+            languages: onboardingRecord?.trainingPreferenceLanguages || [],
+            timeSlot: format(trainingDate, 'HH:mm'),
+            date: trainingDate.toISOString().split('T')[0]
           });
         }
       } else {
