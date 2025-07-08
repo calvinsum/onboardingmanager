@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { DayPicker } from 'react-day-picker';
 import { toast } from 'react-hot-toast';
-import { format, isWeekend, set } from 'date-fns';
+import { format, isWeekend, set, addDays } from 'date-fns';
 import { getOnboardingRecordById, getPublicHolidays, updateOnboardingRecord, bookTrainingSlot } from '../services/api';
 import { DELIVERY_TIME_BY_STATE, calculateMinInstallationDate } from '../utils/constants';
 import TrainingScheduler from '../components/TrainingScheduler';
@@ -695,7 +695,7 @@ const ScheduleOnboardingPage = () => {
             selectedDate={hardwareInstallationDate}
             onDateChange={setHardwareInstallationDate}
             minDate={deliveryConfirmed && deliveryConfirmedDate && record?.deliveryState 
-              ? calculateMinInstallationDate(deliveryConfirmedDate, record.deliveryState)
+              ? calculateMinInstallationDate(deliveryConfirmedDate, record.deliveryState, holidays)
               : undefined}
             disabledDays={disabledDays}
             disabled={!deliveryConfirmed}
@@ -723,7 +723,7 @@ const ScheduleOnboardingPage = () => {
             onboardingRecord={record}
             onSlotSelected={handleTrainingSlotSelected}
             disabled={!installationConfirmed}
-            minDate={hardwareInstallationDate}
+            minDate={hardwareInstallationDate ? addDays(hardwareInstallationDate, 1) : undefined} // Minimum training date is one day after installation
             holidays={holidays}
           />
         </div>

@@ -4,7 +4,7 @@ import { DayPicker } from 'react-day-picker';
 import { toast } from 'react-hot-toast';
 import { format, isWeekend, set } from 'date-fns';
 import { updateOnboardingByToken, getPublicHolidays } from '../services/api';
-import { DELIVERY_TIME_BY_STATE, calculateMinInstallationDate } from '../utils/constants';
+import { DELIVERY_TIME_BY_STATE, calculateMinInstallationDate, calculateMinTrainingDate } from '../utils/constants';
 import { bookMerchantTrainingSlot } from '../services/api'; // Added import for booking training slot
 
 // Mobile-friendly Date Picker component
@@ -621,6 +621,14 @@ const MerchantSchedulePage: React.FC = () => {
     ...holidays
   ];
 
+  // Calculate minimum training date (next working day after installation confirmation)
+  const getMinTrainingDate = (): Date | undefined => {
+    if (!installationConfirmed || !installationConfirmedDate) {
+      return undefined;
+    }
+    return calculateMinTrainingDate(installationConfirmedDate, holidays);
+  };
+
   const handleDeliveryConfirm = async () => {
     if (!accessToken) return;
 
@@ -981,7 +989,7 @@ const MerchantSchedulePage: React.FC = () => {
                 label="Training Date & Time"
                 selectedDate={trainingDate}
                 onDateChange={setTrainingDate}
-                minDate={hardwareInstallationDate}
+                minDate={getMinTrainingDate()}
                 disabledDays={disabledDays}
                 disabled={!installationConfirmed}
                 includeTime={true}
@@ -1002,7 +1010,7 @@ const MerchantSchedulePage: React.FC = () => {
             <p>• Confirm delivery before scheduling installation</p>
             <p>• Installation must be scheduled after delivery confirmation</p>
             <p>• Confirm installation before scheduling training</p>
-            <p>• Training must be scheduled after installation confirmation</p>
+            <p>• Training must be scheduled at least one day after installation confirmation</p>
             <p>• Confirm training before completing the onboarding</p>
           </div>
         </div>

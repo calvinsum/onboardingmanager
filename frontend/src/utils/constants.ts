@@ -38,15 +38,23 @@ export const DELIVERY_TIME_BY_STATE: Record<string, { min: number; max: number }
   'Terengganu': { min: 3, max: 5 }
 };
 
-// Utility function to add working days to a date (excluding weekends)
-export const addWorkingDays = (startDate: Date, workingDays: number): Date => {
+// Utility function to add working days to a date (excluding weekends and holidays)
+export const addWorkingDays = (startDate: Date, workingDays: number, holidays: Date[] = []): Date => {
   const result = new Date(startDate);
   let daysToAdd = workingDays;
   
   while (daysToAdd > 0) {
     result.setDate(result.getDate() + 1);
+    
     // Skip weekends (Saturday = 6, Sunday = 0)
-    if (result.getDay() !== 0 && result.getDay() !== 6) {
+    const isWeekend = result.getDay() === 0 || result.getDay() === 6;
+    
+    // Skip holidays
+    const isHoliday = holidays.some(holiday => 
+      holiday.toDateString() === result.toDateString()
+    );
+    
+    if (!isWeekend && !isHoliday) {
       daysToAdd--;
     }
   }
@@ -57,10 +65,19 @@ export const addWorkingDays = (startDate: Date, workingDays: number): Date => {
 // Calculate minimum installation date based on delivery confirmation and state
 export const calculateMinInstallationDate = (
   deliveryConfirmedDate: Date, 
-  deliveryState: string
+  deliveryState: string,
+  holidays: Date[] = []
 ): Date => {
   const deliveryTime = DELIVERY_TIME_BY_STATE[deliveryState] || { min: 3, max: 5 };
-  return addWorkingDays(deliveryConfirmedDate, deliveryTime.max);
+  return addWorkingDays(deliveryConfirmedDate, deliveryTime.max, holidays);
+};
+
+// Calculate minimum training date (next working day after installation confirmation)
+export const calculateMinTrainingDate = (
+  installationConfirmedDate: Date,
+  holidays: Date[] = []
+): Date => {
+  return addWorkingDays(installationConfirmedDate, 1, holidays);
 };
 
 // Trainer Management Constants
