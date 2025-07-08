@@ -1,11 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { DayPicker } from 'react-day-picker';
-import { toast } from 'react-hot-toast';
 import { format, isWeekend, set } from 'date-fns';
-import { getOnboardingRecordById, getPublicHolidays, updateOnboardingRecord, bookTrainingSlot } from '../services/api';
-import { DELIVERY_TIME_BY_STATE, calculateMinInstallationDate } from '../utils/constants';
+import { toast } from 'react-hot-toast';
+import { getOnboardingRecordById, updateOnboardingRecord, getPublicHolidays, autoAssignTrainingSlot } from '../services/api';
 import TrainingScheduler from '../components/TrainingScheduler';
+import { DELIVERY_TIME_BY_STATE, calculateMinInstallationDate } from '../utils/constants';
 
 // A reusable Date Picker component
 const CustomDatePicker = ({ label, selectedDate, onDateChange, minDate, disabledDays, disabled = false, includeTime = false }: {
@@ -625,7 +625,7 @@ const ScheduleOnboardingPage = () => {
     }
   };
 
-  const handleTrainingSlotSelected = async (date: Date, timeSlot: string, trainerId: string) => {
+  const handleTrainingSlotSelected = async (date: Date, timeSlot: string) => {
     if (!id) return;
     try {
       // Determine training type based on onboarding record
@@ -635,9 +635,8 @@ const ScheduleOnboardingPage = () => {
       // Default to remote if both are selected (user can choose in the scheduler)
       const trainingType = hasOnsiteTraining && !hasRemoteTraining ? 'onsite_training' : 'remote_training';
       
-      const bookingData = {
+      const autoAssignData = {
         onboardingId: id,
-        trainerId,
         date: date.toISOString().split('T')[0],
         timeSlot,
         trainingType,
@@ -645,12 +644,12 @@ const ScheduleOnboardingPage = () => {
         languages: record?.trainingPreferenceLanguages || []
       };
 
-      await bookTrainingSlot(bookingData);
+      await autoAssignTrainingSlot(autoAssignData);
       
       // Update local state
       setTrainingDate(date);
       
-      toast.success('Training slot booked successfully!');
+      toast.success('Training slot booked successfully with auto-assigned trainer!');
     } catch (error) {
       console.error('Error booking training slot:', error);
       toast.error('Failed to book training slot. Please try again.');

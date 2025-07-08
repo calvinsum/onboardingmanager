@@ -320,6 +320,18 @@ export const bookTrainingSlot = async (bookingData: {
   return response.data;
 };
 
+export const autoAssignTrainingSlot = async (autoAssignData: {
+  onboardingId: string;
+  date: string;
+  timeSlot: string;
+  trainingType: string;
+  location?: string;
+  languages?: string[];
+}) => {
+  const response = await api.post('/training-slots/auto-assign', autoAssignData);
+  return response.data;
+};
+
 export const getTrainingSlotsByOnboarding = async (onboardingId: string) => {
   const response = await api.get(`/training-slots/onboarding/${onboardingId}`);
   return response.data;
