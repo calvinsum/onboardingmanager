@@ -35,51 +35,35 @@ export class TrainingScheduleService {
     managerId: string,
     filters: TrainingScheduleFiltersDto
   ): Promise<TrainingScheduleListDto> {
-    try {
-      console.log('=== getTrainingSchedulesForManager Debug ===');
-      console.log('Manager ID:', managerId);
-      console.log('Filters:', filters);
+    const { page = 1, limit = 10 } = filters;
+    const skip = (page - 1) * limit;
 
-      const { page = 1, limit = 10 } = filters;
-      const skip = (page - 1) * limit;
+    const query = this.buildTrainingScheduleQuery(filters);
 
-      const query = this.buildTrainingScheduleQuery(filters);
-      
-      // Add manager filter
-      query.andWhere('onboarding.createdByManagerId = :managerId', { managerId });
+    // Add manager filter
+    query.andWhere('onboarding.createdByManagerId = :managerId', { managerId });
 
-      console.log('Query SQL:', query.getSql());
-      console.log('Query parameters:', query.getParameters());
+    // Get total count
+    const total = await query.getCount();
 
-      // Get total count
-      const total = await query.getCount();
-      console.log('Total count:', total);
+    // Get paginated results
+    const trainingSlots = await query
+      .skip(skip)
+      .take(limit)
+      .orderBy('slot.date', 'ASC')
+      .addOrderBy('slot.timeSlot', 'ASC')
+      .getMany();
 
-      // Get paginated results
-      const trainingSlots = await query
-        .skip(skip)
-        .take(limit)
-        .orderBy('slot.date', 'ASC')
-        .addOrderBy('slot.timeSlot', 'ASC')
-        .getMany();
+    const managerTrainingSlots = trainingSlots.map(slot =>
+      this.mapToManagerDto(slot),
+    );
 
-      console.log('Training slots found:', trainingSlots.length);
-
-      const managerTrainingSlots = trainingSlots.map(slot => this.mapToManagerDto(slot));
-
-      const result = {
-        trainingSlots: managerTrainingSlots,
-        total,
-        page,
-        limit
-      };
-
-      console.log('Result:', result);
-      return result;
-    } catch (error) {
-      console.error('Error in getTrainingSchedulesForManager:', error);
-      throw error;
-    }
+    return {
+      trainingSlots: managerTrainingSlots,
+      total,
+      page,
+      limit,
+    };
   }
 
   /**

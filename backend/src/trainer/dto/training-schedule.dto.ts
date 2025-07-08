@@ -1,4 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
+import { IsString, IsOptional, IsEnum, IsInt, Min } from 'class-validator';
+import { Type } from 'class-transformer';
 import { TrainingType, SlotStatus } from '../entities/training-slot.entity';
 
 // Base training slot information (common to both views)
@@ -127,26 +129,46 @@ export class TrainerWorkloadDto {
 // Training schedule filters DTO
 export class TrainingScheduleFiltersDto {
   @ApiProperty({ description: 'Start date filter', required: false })
+  @IsOptional()
+  @IsString()
   startDate?: string;
 
   @ApiProperty({ description: 'End date filter', required: false })
+  @IsOptional()
+  @IsString()
   endDate?: string;
 
   @ApiProperty({ description: 'Trainer ID filter', required: false })
+  @IsOptional()
+  @IsString()
   trainerId?: string;
 
-  @ApiProperty({ description: 'Training status filter', required: false })
+  @ApiProperty({ description: 'Training status filter', required: false, enum: SlotStatus })
+  @IsOptional()
+  @IsEnum(SlotStatus)
   status?: SlotStatus;
 
-  @ApiProperty({ description: 'Training type filter', required: false })
+  @ApiProperty({ description: 'Training type filter', required: false, enum: TrainingType })
+  @IsOptional()
+  @IsEnum(TrainingType)
   trainingType?: TrainingType;
 
   @ApiProperty({ description: 'Location filter', required: false })
+  @IsOptional()
+  @IsString()
   location?: string;
 
-  @ApiProperty({ description: 'Page number', required: false })
+  @ApiProperty({ description: 'Page number', required: false, type: Number })
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
   page?: number;
 
-  @ApiProperty({ description: 'Items per page', required: false })
+  @ApiProperty({ description: 'Items per page', required: false, type: Number })
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
   limit?: number;
 } 
