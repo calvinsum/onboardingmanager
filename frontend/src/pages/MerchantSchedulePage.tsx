@@ -768,10 +768,10 @@ const MerchantSchedulePage: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-light-100 flex items-center justify-center">
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-500 mx-auto mb-4"></div>
-          <p className="text-text-muted">Loading your onboarding details...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading your onboarding details...</p>
         </div>
       </div>
     );
@@ -779,12 +779,12 @@ const MerchantSchedulePage: React.FC = () => {
 
   if (!onboardingRecord) {
     return (
-      <div className="min-h-screen bg-light-100 flex items-center justify-center">
-        <div className="text-center card p-8">
-          <p className="text-text-main mb-4">No onboarding record found.</p>
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-gray-600 mb-4">No onboarding record found</p>
           <button
             onClick={() => navigate('/login')}
-            className="btn-primary"
+            className="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600"
           >
             Back to Login
           </button>
@@ -794,53 +794,48 @@ const MerchantSchedulePage: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-light-100 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full space-y-8">
-        {/* Header */}
-        <div className="text-center">
-          <div className="flex justify-center mb-6">
-            <div className="flex items-center space-x-3">
-              <div className="w-12 h-12 bg-primary-500 rounded-xl flex items-center justify-center shadow-medium">
-                <span className="text-white font-bold text-2xl">S</span>
-              </div>
-              <div className="text-left">
-                <h1 className="text-2xl font-bold text-text-main">StoreHub</h1>
-                <p className="text-sm text-text-muted">Merchant Onboarding</p>
-              </div>
-            </div>
+    <div className="min-h-screen bg-gray-50">
+      {/* Header */}
+      <div className="bg-white shadow-sm border-b">
+        <div className="max-w-md mx-auto px-4 py-4">
+          <div className="flex items-center justify-between">
+            <h1 className="text-xl font-bold text-gray-900">My Onboarding</h1>
+            <button
+              onClick={handleLogout}
+              className="text-sm text-gray-500 hover:text-gray-700"
+            >
+              Logout
+            </button>
           </div>
-          <h2 className="text-3xl font-bold text-text-main">
-            My Onboarding
-          </h2>
-          <p className="mt-2 text-text-muted">
-            Welcome, {onboardingRecord.picName}! Let's get you set up.
-          </p>
         </div>
+      </div>
 
-        {/* Contact Info Card */}
-        <div className="card">
-          <h2 className="text-lg font-semibold text-text-main mb-3">Contact Information</h2>
+      {/* Content */}
+      <div className="max-w-md mx-auto px-4 py-6">
+        {/* Merchant Info */}
+        <div className="bg-white rounded-lg shadow-sm p-4 mb-6">
+          <h2 className="text-lg font-semibold text-gray-900 mb-2">Contact Information</h2>
           <div className="space-y-2 text-sm">
-            <div className="flex justify-between">
-              <span className="font-medium text-text-muted">Name:</span>
-              <span className="text-text-main">{onboardingRecord.picName}</span>
+            <div>
+              <span className="font-medium text-gray-700">Name:</span>
+              <span className="ml-2 text-gray-900">{onboardingRecord.picName}</span>
             </div>
-            <div className="flex justify-between">
-              <span className="font-medium text-text-muted">Email:</span>
-              <span className="text-text-main">{onboardingRecord.picEmail}</span>
+            <div>
+              <span className="font-medium text-gray-700">Email:</span>
+              <span className="ml-2 text-gray-900">{onboardingRecord.picEmail}</span>
             </div>
-            <div className="flex justify-between">
-              <span className="font-medium text-text-muted">Phone:</span>
-              <span className="text-text-main">{onboardingRecord.picPhone}</span>
+            <div>
+              <span className="font-medium text-gray-700">Phone:</span>
+              <span className="ml-2 text-gray-900">{onboardingRecord.picPhone}</span>
             </div>
           </div>
         </div>
 
-        {/* Schedule Section Card */}
-        <div className="card">
-          <h2 className="text-lg font-semibold text-text-main mb-2">Schedule Your Onboarding</h2>
-          <p className="text-sm text-text-muted mb-6">
-            Please select your preferred dates for each step of the process.
+        {/* Schedule Section */}
+        <div className="bg-white rounded-lg shadow-sm p-4 mb-6">
+          <h2 className="text-lg font-semibold text-gray-900 mb-4">Schedule Your Onboarding</h2>
+          <p className="text-sm text-gray-600 mb-6">
+            Please select your preferred dates and times for each step of your onboarding process.
           </p>
 
           <div className="space-y-4">
@@ -893,38 +888,26 @@ const MerchantSchedulePage: React.FC = () => {
             />
           </div>
 
-          <div className="mt-6 text-xs text-text-muted space-y-1">
-            <p>• Weekends and public holidays are not available.</p>
-            <p>• You must confirm each step before proceeding to the next.</p>
+          <div className="mt-6 text-xs text-gray-500">
+            <p>• Weekends and public holidays are not available</p>
+            <p>• Confirm delivery before scheduling installation</p>
+            <p>• Installation must be scheduled after delivery confirmation</p>
+            <p>• Confirm installation before scheduling training</p>
+            <p>• Training must be scheduled after installation confirmation</p>
+            <p>• Confirm training before completing the onboarding</p>
           </div>
         </div>
 
-        {/* Save and Logout */}
-        <div className="space-y-4">
+        {/* Save Button */}
+        <div className="sticky bottom-0 bg-white border-t p-4 -mx-4">
           <button
             onClick={handleSaveSchedule}
             disabled={saving || !deliveryConfirmed || !installationConfirmed || !trainingDate || !trainingConfirmed}
-            className="btn-primary w-full"
+            className="w-full bg-blue-600 text-white py-3 px-4 rounded-lg font-medium hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
             {saving ? 'Saving...' : 'Save Schedule'}
           </button>
-          
-          <div className="text-center">
-            <button
-              onClick={handleLogout}
-              className="text-sm text-text-muted hover:text-primary-500 transition-colors"
-            >
-              Logout
-            </button>
-          </div>
         </div>
-      </div>
-
-      {/* Footer */}
-      <div className="text-center mt-8">
-        <p className="text-xs text-text-muted">
-          © 2024 StoreHub. All rights reserved.
-        </p>
       </div>
     </div>
   );
