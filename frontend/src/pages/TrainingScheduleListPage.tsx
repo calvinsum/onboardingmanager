@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import api from '../services/api';
+import api, { getMyTrainingSchedules, getTrainerWorkloadStats } from '../services/api';
 
 interface TrainingSlot {
   id: string;
@@ -63,25 +63,23 @@ const TrainingScheduleListPage: React.FC = () => {
       setLoading(true);
       setError(null);
 
-      const queryParams = new URLSearchParams({
-        page: page.toString(),
-        limit: filters.limit.toString(),
+      const filterParams = {
+        page,
+        limit: filters.limit,
         ...(filters.startDate && { startDate: filters.startDate }),
         ...(filters.endDate && { endDate: filters.endDate }),
         ...(filters.trainerId && { trainerId: filters.trainerId }),
         ...(filters.status && { status: filters.status }),
         ...(filters.trainingType && { trainingType: filters.trainingType }),
         ...(filters.location && { location: filters.location })
-      });
+      };
 
-      const response = await api.get(
-        `/training-schedules/my-schedules?${queryParams}`
-      );
+      const response = await getMyTrainingSchedules(filterParams);
 
-      setTrainingSlots(response.data.trainingSlots);
-      setTotal(response.data.total);
-      setCurrentPage(response.data.page);
-      setTotalPages(Math.ceil(response.data.total / response.data.limit));
+      setTrainingSlots(response.trainingSlots);
+      setTotal(response.total);
+      setCurrentPage(response.page);
+      setTotalPages(Math.ceil(response.total / response.limit));
     } catch (err) {
       setError('Failed to fetch training schedules');
       console.error('Error fetching training schedules:', err);
@@ -92,8 +90,8 @@ const TrainingScheduleListPage: React.FC = () => {
 
   const fetchTrainerWorkload = useCallback(async () => {
     try {
-      const response = await api.get('/training-schedules/trainer-workload');
-      setTrainerWorkload(response.data);
+      const response = await getTrainerWorkloadStats();
+      setTrainerWorkload(response);
     } catch (err) {
       console.error('Error fetching trainer workload:', err);
     }

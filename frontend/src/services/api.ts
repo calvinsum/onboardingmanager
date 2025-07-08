@@ -330,4 +330,113 @@ export const completeTrainingSlot = async (slotId: string) => {
   return response.data;
 };
 
+// Training Schedule API functions
+export const getMyTrainingSchedules = async (filters?: {
+  startDate?: string;
+  endDate?: string;
+  trainerId?: string;
+  status?: string;
+  trainingType?: string;
+  location?: string;
+  page?: number;
+  limit?: number;
+}) => {
+  const params = new URLSearchParams();
+  if (filters) {
+    Object.entries(filters).forEach(([key, value]) => {
+      if (value !== undefined && value !== null) {
+        params.append(key, value.toString());
+      }
+    });
+  }
+  
+  const response = await api.get(`/training-schedules/my-schedules?${params.toString()}`);
+  return response.data;
+};
+
+export const getAllTrainingSchedules = async (filters?: {
+  startDate?: string;
+  endDate?: string;
+  trainerId?: string;
+  status?: string;
+  trainingType?: string;
+  location?: string;
+  page?: number;
+  limit?: number;
+}) => {
+  const params = new URLSearchParams();
+  if (filters) {
+    Object.entries(filters).forEach(([key, value]) => {
+      if (value !== undefined && value !== null) {
+        params.append(key, value.toString());
+      }
+    });
+  }
+  
+  const response = await api.get(`/training-schedules?${params.toString()}`);
+  return response.data;
+};
+
+export const getTrainingSchedulesForManager = async (managerId: string, filters?: {
+  startDate?: string;
+  endDate?: string;
+  trainerId?: string;
+  status?: string;
+  trainingType?: string;
+  location?: string;
+  page?: number;
+  limit?: number;
+}) => {
+  const params = new URLSearchParams();
+  if (filters) {
+    Object.entries(filters).forEach(([key, value]) => {
+      if (value !== undefined && value !== null) {
+        params.append(key, value.toString());
+      }
+    });
+  }
+  
+  const response = await api.get(`/training-schedules/manager/${managerId}?${params.toString()}`);
+  return response.data;
+};
+
+export const bookTrainingSlotAutoAssign = async (bookingData: {
+  onboardingId: string;
+  date: string;
+  timeSlot: string;
+  trainingType: string;
+  location?: string;
+  languages?: string[];
+}) => {
+  const response = await api.post('/training-schedules/book-auto-assign', bookingData);
+  return response.data;
+};
+
+export const getTrainerWorkloadStats = async (startDate?: string, endDate?: string) => {
+  const params = new URLSearchParams();
+  if (startDate) params.append('startDate', startDate);
+  if (endDate) params.append('endDate', endDate);
+  
+  const response = await api.get(`/training-schedules/trainer-workload?${params.toString()}`);
+  return response.data;
+};
+
+// Merchant Training Schedule API functions (privacy-focused)
+export const getMerchantTrainingSchedule = async (onboardingId: string) => {
+  const response = await api.get(`/merchant-training-schedules/onboarding/${onboardingId}`);
+  return response.data;
+};
+
+export const bookMerchantTrainingSlot = async (bookingData: {
+  onboardingId: string;
+  date: string;
+  timeSlot: string;
+  trainingType: string;
+  location?: string;
+  languages?: string[];
+}) => {
+  const response = await api.post('/merchant-training-schedules/book-auto-assign', bookingData);
+  return response.data;
+};
+
 export default api; 

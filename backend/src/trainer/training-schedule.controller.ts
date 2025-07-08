@@ -89,7 +89,7 @@ export class TrainingScheduleController {
     @Request() req: any,
     @Query() filters: TrainingScheduleFiltersDto
   ): Promise<TrainingScheduleListDto> {
-    const managerId = req.user.id;
+    const managerId = req.user.sub;
     return this.trainingScheduleService.getTrainingSchedulesForManager(managerId, filters);
   }
 
