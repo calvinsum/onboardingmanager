@@ -786,6 +786,8 @@ const MerchantSchedulePage: React.FC = () => {
           }
           
           // Log detailed error information for debugging
+          const hasOnsiteTraining = onboardingRecord?.trainingPreferenceMode?.includes('onsite_training');
+          const hasRemoteTraining = onboardingRecord?.trainingPreferenceMode?.includes('remote_training');
           console.log('Training booking failed with requirements:', {
             trainingType: hasOnsiteTraining && !hasRemoteTraining ? 'onsite_training' : 'remote_training',
             location: (hasOnsiteTraining && !hasRemoteTraining) ? onboardingRecord?.trainingState : undefined,
