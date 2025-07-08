@@ -5,6 +5,7 @@ import { toast } from 'react-hot-toast';
 import { format, isWeekend, set } from 'date-fns';
 import { updateOnboardingByToken, getPublicHolidays } from '../services/api';
 import { DELIVERY_TIME_BY_STATE, calculateMinInstallationDate } from '../utils/constants';
+import { bookMerchantTrainingSlot } from '../services/api'; // Added import for booking training slot
 
 // Mobile-friendly Date Picker component
 const MobileDatePicker = ({ 
@@ -739,11 +740,44 @@ const MerchantSchedulePage: React.FC = () => {
 
       const updatedRecord = await updateOnboardingByToken(accessToken, payload);
       
+      // If training date is set and we haven't booked a training slot yet, book it now
+      if (trainingDate && onboardingRecord?.id) {
+        try {
+          // Determine training type based on onboarding record
+          const hasRemoteTraining = onboardingRecord?.onboardingTypes?.includes('remote_training');
+          const hasOnsiteTraining = onboardingRecord?.onboardingTypes?.includes('onsite_training');
+          
+          // Default to remote if both are selected, otherwise use the available option
+          const trainingType = hasOnsiteTraining && !hasRemoteTraining ? 'onsite_training' : 'remote_training';
+          
+          // Extract time slot from training date
+          const timeSlot = format(trainingDate, 'HH:mm');
+          
+          const bookingData = {
+            onboardingId: onboardingRecord.id,
+            date: trainingDate.toISOString().split('T')[0],
+            timeSlot,
+            trainingType,
+            location: trainingType === 'onsite_training' ? onboardingRecord?.trainingState : undefined,
+            languages: onboardingRecord?.trainingPreferenceLanguages || []
+          };
+
+          // Use the merchant-specific auto-assign booking endpoint
+          await bookMerchantTrainingSlot(bookingData);
+          
+          toast.success('Schedule updated and training slot booked successfully!');
+        } catch (bookingError) {
+          console.error('Error booking training slot:', bookingError);
+          toast.error('Schedule updated, but failed to book training slot. Please contact support.');
+        }
+      } else {
+        toast.success('Schedule updated successfully!');
+      }
+      
       // Update local storage
       localStorage.setItem('onboardingRecord', JSON.stringify(updatedRecord));
       setOnboardingRecord(updatedRecord);
       
-      toast.success('Schedule updated successfully!');
     } catch (error: any) {
       console.error('Error saving schedule:', error);
       if (error.response?.status === 404) {
