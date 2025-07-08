@@ -13,14 +13,17 @@ import { ScheduleModule } from './schedule/schedule.module';
 import { HealthModule } from './health/health.module';
 import { MigrationController } from './migration.controller';
 
-import { databaseConfig } from './config/database.config';
+import { DatabaseConfig } from './config/database.config';
 
 @Module({
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
     }),
-    TypeOrmModule.forRoot(databaseConfig),
+    TypeOrmModule.forRootAsync({
+      imports: [ConfigModule],
+      useClass: DatabaseConfig,
+    }),
     PassportModule,
     JwtModule.register({
       secret: process.env.JWT_SECRET || 'your-secret-key',
