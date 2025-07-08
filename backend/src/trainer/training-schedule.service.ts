@@ -334,10 +334,10 @@ export class TrainingScheduleService {
         trainingDate: onboarding.trainingDate,
         trainingState: onboarding.trainingState,
         trainingPreferenceLanguages: onboarding.trainingPreferenceLanguages,
-        trainingPreferenceMode: onboarding.trainingPreferenceMode,
+        onboardingTypes: onboarding.onboardingTypes,
         createdByManager: onboarding.createdByManager ? {
           id: onboarding.createdByManager.id,
-          name: onboarding.createdByManager.name,
+          fullName: onboarding.createdByManager.fullName,
           email: onboarding.createdByManager.email
         } : null,
         createdAt: onboarding.createdAt
