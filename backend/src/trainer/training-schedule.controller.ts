@@ -6,7 +6,8 @@ import {
   Param, 
   Query, 
   UseGuards, 
-  Request 
+  Request,
+  BadRequestException 
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
 import { AuthGuard } from '@nestjs/passport';
@@ -89,8 +90,28 @@ export class TrainingScheduleController {
     @Request() req: any,
     @Query() filters: TrainingScheduleFiltersDto
   ): Promise<TrainingScheduleListDto> {
-    const managerId = req.user.sub;
-    return this.trainingScheduleService.getTrainingSchedulesForManager(managerId, filters);
+    try {
+      console.log('=== Training Schedules Debug ===');
+      console.log('User object:', req.user);
+      console.log('Manager ID:', req.user?.sub);
+      console.log('Filters received:', filters);
+      
+      const managerId = req.user.sub;
+      
+      if (!managerId) {
+        console.error('No manager ID found in request');
+        throw new BadRequestException('Manager ID not found in authentication token');
+      }
+      
+      console.log('Calling service with managerId:', managerId);
+      const result = await this.trainingScheduleService.getTrainingSchedulesForManager(managerId, filters);
+      console.log('Service result:', result);
+      
+      return result;
+    } catch (error) {
+      console.error('Error in getMyTrainingSchedules:', error);
+      throw error;
+    }
   }
 
   @Post('book-auto-assign')
