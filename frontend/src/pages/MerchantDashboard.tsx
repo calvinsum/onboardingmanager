@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../hooks/useAuth';
 import apiService from '../services/api';
+import MerchantTrainingSchedule from '../components/MerchantTrainingSchedule';
 
 const MerchantDashboard: React.FC = () => {
   const { user } = useAuth();
@@ -12,7 +13,8 @@ const MerchantDashboard: React.FC = () => {
     contactPhone: '',
     businessAddress: '',
     businessCategory: '',
-    status: 'pending'
+    status: 'pending',
+    onboardingId: ''
   });
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState(false);
@@ -313,6 +315,11 @@ const MerchantDashboard: React.FC = () => {
           </form>
         </div>
       </div>
+
+      {/* Training Schedule */}
+      {profile.onboardingId && (
+        <MerchantTrainingSchedule onboardingId={profile.onboardingId} />
+      )}
     </div>
   );
 };

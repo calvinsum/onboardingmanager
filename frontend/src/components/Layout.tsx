@@ -95,6 +95,16 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                 Create Merchant
               </Link>
               <Link
+                to="/training-schedules"
+                className={`py-4 px-2 border-b-2 font-medium text-sm transition-colors duration-200 ${
+                  location.pathname === '/training-schedules'
+                    ? 'border-primary-500 text-primary-500'
+                    : 'border-transparent text-text-muted hover:text-text-main hover:border-gray-300'
+                }`}
+              >
+                Training Schedules
+              </Link>
+              <Link
                 to="/trainer-management"
                 className={`py-4 px-2 border-b-2 font-medium text-sm transition-colors duration-200 ${
                   location.pathname === '/trainer-management'

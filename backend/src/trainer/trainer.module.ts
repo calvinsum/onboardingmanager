@@ -4,6 +4,9 @@ import { TrainerService } from './trainer.service';
 import { TrainerController } from './trainer.controller';
 import { TrainingSlotService } from './training-slot.service';
 import { TrainingSlotController } from './training-slot.controller';
+import { RoundRobinService } from './round-robin.service';
+import { TrainingScheduleService } from './training-schedule.service';
+import { TrainingScheduleController, MerchantTrainingScheduleController } from './training-schedule.controller';
 import { Trainer } from './entities/trainer.entity';
 import { TrainingSlot } from './entities/training-slot.entity';
 import { OnboardingManager } from '../onboarding-manager/entities/onboarding-manager.entity';
@@ -13,8 +16,23 @@ import { Onboarding } from '../onboarding/entities/onboarding.entity';
   imports: [
     TypeOrmModule.forFeature([Trainer, TrainingSlot, OnboardingManager, Onboarding])
   ],
-  controllers: [TrainerController, TrainingSlotController],
-  providers: [TrainerService, TrainingSlotService],
-  exports: [TrainerService, TrainingSlotService],
+  controllers: [
+    TrainerController, 
+    TrainingSlotController, 
+    TrainingScheduleController, 
+    MerchantTrainingScheduleController
+  ],
+  providers: [
+    TrainerService, 
+    TrainingSlotService, 
+    RoundRobinService, 
+    TrainingScheduleService
+  ],
+  exports: [
+    TrainerService, 
+    TrainingSlotService, 
+    RoundRobinService, 
+    TrainingScheduleService
+  ],
 })
 export class TrainerModule {} 

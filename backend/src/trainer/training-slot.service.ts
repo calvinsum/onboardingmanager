@@ -94,8 +94,9 @@ export class TrainingSlotService {
 
   /**
    * Get trainers that match the training requirements
+   * Made public to be accessible by TrainingScheduleService
    */
-  private async getMatchingTrainers(
+  async getMatchingTrainers(
     trainingType: TrainingType,
     location?: string,
     languages?: string[]
