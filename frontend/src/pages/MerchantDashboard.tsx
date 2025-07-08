@@ -57,167 +57,261 @@ const MerchantDashboard: React.FC = () => {
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'approved':
-        return 'bg-green-100 text-green-800';
+        return 'status-confirmed';
       case 'rejected':
         return 'bg-red-100 text-red-800';
       case 'suspended':
-        return 'bg-yellow-100 text-yellow-800';
+        return 'status-pending';
       default:
-        return 'bg-gray-100 text-gray-800';
+        return 'status-inactive';
+    }
+  };
+
+  const getStatusIcon = (status: string) => {
+    switch (status) {
+      case 'approved':
+        return '✅';
+      case 'rejected':
+        return '❌';
+      case 'suspended':
+        return '⚠️';
+      default:
+        return '⏳';
     }
   };
 
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-500"></div>
+        <span className="ml-3 text-text-muted">Loading your profile...</span>
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
-      <div className="bg-white shadow rounded-lg p-6">
-        <div className="flex items-center justify-between mb-6">
-          <h1 className="text-2xl font-bold text-gray-900">Merchant Dashboard</h1>
-          <div className="flex items-center space-x-4">
-            <span className="text-sm text-gray-500">Account Status:</span>
-            <span className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(profile.status)}`}>
-              {profile.status.charAt(0).toUpperCase() + profile.status.slice(1)}
-            </span>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <div className="bg-primary-50 p-4 rounded-lg">
-            <h3 className="font-semibold text-primary-900">Welcome</h3>
-            <p className="text-sm text-primary-700">{user?.email}</p>
-          </div>
-          <div className="bg-secondary-50 p-4 rounded-lg">
-            <h3 className="font-semibold text-secondary-900">Business Name</h3>
-            <p className="text-sm text-secondary-700">{profile.businessName || 'Not set'}</p>
-          </div>
-          <div className="bg-green-50 p-4 rounded-lg">
-            <h3 className="font-semibold text-green-900">Contact</h3>
-            <p className="text-sm text-green-700">{profile.contactPhone || 'Not set'}</p>
-          </div>
-        </div>
-
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-              <label htmlFor="businessName" className="block text-sm font-medium text-gray-700">
-                Business Name
-              </label>
-              <input
-                type="text"
-                id="businessName"
-                name="businessName"
-                value={profile.businessName}
-                onChange={handleInputChange}
-                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500"
-                placeholder="Your business name"
-              />
-            </div>
-
-            <div>
-              <label htmlFor="businessRegistrationNumber" className="block text-sm font-medium text-gray-700">
-                Business Registration Number
-              </label>
-              <input
-                type="text"
-                id="businessRegistrationNumber"
-                name="businessRegistrationNumber"
-                value={profile.businessRegistrationNumber}
-                onChange={handleInputChange}
-                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500"
-                placeholder="Registration number"
-              />
-            </div>
-
-            <div>
-              <label htmlFor="contactPersonName" className="block text-sm font-medium text-gray-700">
-                Contact Person Name
-              </label>
-              <input
-                type="text"
-                id="contactPersonName"
-                name="contactPersonName"
-                value={profile.contactPersonName}
-                onChange={handleInputChange}
-                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500"
-                placeholder="Contact person name"
-              />
-            </div>
-
-            <div>
-              <label htmlFor="contactPhone" className="block text-sm font-medium text-gray-700">
-                Contact Phone
-              </label>
-              <input
-                type="tel"
-                id="contactPhone"
-                name="contactPhone"
-                value={profile.contactPhone}
-                onChange={handleInputChange}
-                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500"
-                placeholder="Phone number"
-              />
-            </div>
-
-            <div>
-              <label htmlFor="businessCategory" className="block text-sm font-medium text-gray-700">
-                Business Category
-              </label>
-              <select
-                id="businessCategory"
-                name="businessCategory"
-                value={profile.businessCategory}
-                onChange={handleInputChange}
-                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500"
-              >
-                <option value="">Select a category</option>
-                <option value="retail">Retail</option>
-                <option value="food-beverage">Food & Beverage</option>
-                <option value="services">Services</option>
-                <option value="technology">Technology</option>
-                <option value="healthcare">Healthcare</option>
-                <option value="other">Other</option>
-              </select>
-            </div>
-          </div>
-
+    <div className="space-y-8">
+      {/* Welcome Section */}
+      <div className="card">
+        <div className="flex justify-between items-center">
           <div>
-            <label htmlFor="businessAddress" className="block text-sm font-medium text-gray-700">
-              Business Address
-            </label>
-            <textarea
-              id="businessAddress"
-              name="businessAddress"
-              rows={3}
-              value={profile.businessAddress}
-              onChange={handleInputChange}
-              className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500"
-              placeholder="Full business address"
-            />
+            <h1 className="text-3xl font-bold text-text-main">
+              Welcome, {profile.contactPersonName || user?.email}!
+            </h1>
+            <p className="text-text-muted mt-2">
+              Manage your business profile and track your onboarding progress
+            </p>
           </div>
-
-          {message && (
-            <div className={`p-4 rounded-md ${message.includes('success') ? 'bg-green-50 text-green-800' : 'bg-red-50 text-red-800'}`}>
-              {message}
+          <div className="flex items-center space-x-4">
+            <span className="text-sm font-medium text-text-muted">Account Status:</span>
+            <div className="flex items-center space-x-2">
+              <span className="text-lg">{getStatusIcon(profile.status)}</span>
+              <span className={`status-badge ${getStatusColor(profile.status)}`}>
+                {profile.status.charAt(0).toUpperCase() + profile.status.slice(1)}
+              </span>
             </div>
-          )}
-
-          <div className="flex justify-end">
-            <button
-              type="submit"
-              disabled={updating}
-              className="bg-primary-600 text-white px-6 py-2 rounded-md hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-500 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {updating ? 'Updating...' : 'Update Profile'}
-            </button>
           </div>
-        </form>
+        </div>
+      </div>
+
+      {/* Status Message */}
+      {message && (
+        <div className={`card ${message.includes('successfully') ? 'border-green-200 bg-green-50' : 'border-red-200 bg-red-50'}`}>
+          <div className="flex items-center">
+            <span className="text-lg mr-3">
+              {message.includes('successfully') ? '✅' : '❌'}
+            </span>
+            <p className={`font-medium ${message.includes('successfully') ? 'text-green-800' : 'text-red-800'}`}>
+              {message}
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* Quick Stats */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="card">
+          <div className="flex items-center">
+            <div className="flex-shrink-0">
+              <div className="w-10 h-10 bg-primary-100 rounded-lg flex items-center justify-center">
+                <span className="text-primary-600 font-bold text-lg">👋</span>
+              </div>
+            </div>
+            <div className="ml-4">
+              <h3 className="font-semibold text-text-main">Welcome</h3>
+              <p className="text-sm text-text-muted">{user?.email}</p>
+            </div>
+          </div>
+        </div>
+
+        <div className="card">
+          <div className="flex items-center">
+            <div className="flex-shrink-0">
+              <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+                <span className="text-blue-600 font-bold text-lg">🏢</span>
+              </div>
+            </div>
+            <div className="ml-4">
+              <h3 className="font-semibold text-text-main">Business</h3>
+              <p className="text-sm text-text-muted">{profile.businessName || 'Not set'}</p>
+            </div>
+          </div>
+        </div>
+
+        <div className="card">
+          <div className="flex items-center">
+            <div className="flex-shrink-0">
+              <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
+                <span className="text-green-600 font-bold text-lg">📞</span>
+              </div>
+            </div>
+            <div className="ml-4">
+              <h3 className="font-semibold text-text-main">Contact</h3>
+              <p className="text-sm text-text-muted">{profile.contactPhone || 'Not set'}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Profile Form */}
+      <div className="card">
+        <div className="card-header">
+          <h2 className="text-xl font-bold text-text-main">Business Profile</h2>
+          <p className="text-text-muted mt-1">Update your business information and contact details</p>
+        </div>
+
+        <div className="p-6">
+          <form onSubmit={handleSubmit} className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <label htmlFor="businessName" className="block text-sm font-semibold text-text-main mb-2">
+                  Business Name *
+                </label>
+                <input
+                  type="text"
+                  id="businessName"
+                  name="businessName"
+                  value={profile.businessName}
+                  onChange={handleInputChange}
+                  className="input-field"
+                  placeholder="Enter your business name"
+                  required
+                />
+              </div>
+
+              <div>
+                <label htmlFor="businessRegistrationNumber" className="block text-sm font-semibold text-text-main mb-2">
+                  Business Registration Number *
+                </label>
+                <input
+                  type="text"
+                  id="businessRegistrationNumber"
+                  name="businessRegistrationNumber"
+                  value={profile.businessRegistrationNumber}
+                  onChange={handleInputChange}
+                  className="input-field"
+                  placeholder="Enter registration number"
+                  required
+                />
+              </div>
+
+              <div>
+                <label htmlFor="contactPersonName" className="block text-sm font-semibold text-text-main mb-2">
+                  Contact Person Name *
+                </label>
+                <input
+                  type="text"
+                  id="contactPersonName"
+                  name="contactPersonName"
+                  value={profile.contactPersonName}
+                  onChange={handleInputChange}
+                  className="input-field"
+                  placeholder="Enter contact person name"
+                  required
+                />
+              </div>
+
+              <div>
+                <label htmlFor="contactPhone" className="block text-sm font-semibold text-text-main mb-2">
+                  Contact Phone *
+                </label>
+                <input
+                  type="tel"
+                  id="contactPhone"
+                  name="contactPhone"
+                  value={profile.contactPhone}
+                  onChange={handleInputChange}
+                  className="input-field"
+                  placeholder="Enter phone number"
+                  required
+                />
+              </div>
+
+              <div>
+                <label htmlFor="businessCategory" className="block text-sm font-semibold text-text-main mb-2">
+                  Business Category *
+                </label>
+                <select
+                  id="businessCategory"
+                  name="businessCategory"
+                  value={profile.businessCategory}
+                  onChange={handleInputChange}
+                  className="input-field"
+                  required
+                >
+                  <option value="">Select a category</option>
+                  <option value="retail">Retail</option>
+                  <option value="food-beverage">Food & Beverage</option>
+                  <option value="services">Services</option>
+                  <option value="technology">Technology</option>
+                  <option value="healthcare">Healthcare</option>
+                  <option value="other">Other</option>
+                </select>
+              </div>
+            </div>
+
+            <div>
+              <label htmlFor="businessAddress" className="block text-sm font-semibold text-text-main mb-2">
+                Business Address *
+              </label>
+              <textarea
+                id="businessAddress"
+                name="businessAddress"
+                rows={4}
+                value={profile.businessAddress}
+                onChange={handleInputChange}
+                className="input-field resize-none"
+                placeholder="Enter your complete business address"
+                required
+              />
+            </div>
+
+            <div className="flex justify-end space-x-4 pt-6 border-t border-divider">
+              <button
+                type="button"
+                onClick={fetchProfile}
+                className="btn-secondary"
+                disabled={updating}
+              >
+                Reset Changes
+              </button>
+              <button
+                type="submit"
+                className="btn-primary"
+                disabled={updating}
+              >
+                {updating ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                    Updating...
+                  </>
+                ) : (
+                  'Update Profile'
+                )}
+              </button>
+            </div>
+          </form>
+        </div>
       </div>
     </div>
   );

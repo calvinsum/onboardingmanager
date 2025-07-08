@@ -5,7 +5,7 @@ import { getMyOnboardingRecords, regenerateOnboardingToken } from '../services/a
 import { useAuth } from '../hooks/useAuth';
 
 const OnboardingManagerDashboard = () => {
-  const { user, logout } = useAuth();
+  const { user } = useAuth();
   const navigate = useNavigate();
   const [records, setRecords] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -39,11 +39,7 @@ const OnboardingManagerDashboard = () => {
     return `${diffDays} days left`;
   };
 
-  const handleLogout = () => {
-    logout();
-    toast.success('Logged out successfully');
-    navigate('/login');
-  };
+
 
   const handleRegenerateToken = async (id: string) => {
     try {
@@ -107,148 +103,247 @@ StoreHub Onboarding Team`;
     }
   };
 
+  // Statistics
+  const totalRecords = records.length;
+  const completedRecords = records.filter(r => r.status === 'completed').length;
+  const inProgressRecords = records.filter(r => r.status === 'in_progress').length;
+  const pendingRecords = records.filter(r => r.status === 'created').length;
+
   return (
-    <div className="container mx-auto mt-10 p-6 bg-white rounded-lg shadow-md">
-      <div className="flex justify-between items-center mb-6">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-800">Welcome, {user?.fullName || 'Manager'}!</h1>
-          <p className="text-gray-600">Onboarding Manager Dashboard</p>
-        </div>
-        <div>
-          <Link
-            to="/create-merchant"
-            className="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded mr-4"
-          >
-            Create Merchant
-          </Link>
-          <Link
-            to="/trainer-management"
-            className="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded mr-4"
-          >
-            Trainer Management
-          </Link>
-          <button
-            onClick={handleLogout}
-            className="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded"
-          >
-            Logout
-          </button>
+    <div className="space-y-8">
+      {/* Welcome Section */}
+      <div className="card">
+        <div className="flex justify-between items-center">
+          <div>
+            <h1 className="text-3xl font-bold text-text-main">
+              Welcome back, {user?.fullName || 'Manager'}!
+            </h1>
+            <p className="text-text-muted mt-2">
+              Manage your merchant onboarding processes and track progress
+            </p>
+          </div>
+          <div className="flex space-x-4">
+            <Link
+              to="/create-merchant"
+              className="btn-primary"
+            >
+              + Create Merchant
+            </Link>
+            <Link
+              to="/trainer-management"
+              className="btn-secondary"
+            >
+              Trainer Management
+            </Link>
+          </div>
         </div>
       </div>
-      
-      <div className="mt-8">
-        <h2 className="text-2xl font-semibold text-gray-700 mb-4">My Onboarding Records</h2>
-        {loading ? (
-          <p>Loading records...</p>
-        ) : records.length === 0 ? (
-          <p>No records found.</p>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="min-w-full bg-white border">
-              <thead className="bg-gray-100">
-                <tr>
-                  <th className="py-2 px-4 border-b text-left">Account Name</th>
-                  <th className="py-2 px-4 border-b text-left">PIC Name</th>
-                  <th className="py-2 px-4 border-b text-left">PIC Email</th>
-                  <th className="py-2 px-4 border-b text-left">Status</th>
-                  <th className="py-2 px-4 border-b text-left">Delivery</th>
-                  <th className="py-2 px-4 border-b text-left">Installation</th>
-                  <th className="py-2 px-4 border-b text-left">Training</th>
-                  <th className="py-2 px-4 border-b text-left">EGLD</th>
-                  <th className="py-2 px-4 border-b text-left">Access Token</th>
-                  <th className="py-2 px-4 border-b text-left">Expiry</th>
-                  <th className="py-2 px-4 border-b text-left">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {records.map((record) => (
-                  <tr key={record.id} className="hover:bg-gray-50">
-                    <td className="py-2 px-4 border-b font-medium">{record.accountName || 'N/A'}</td>
-                    <td className="py-2 px-4 border-b">{record.picName}</td>
-                    <td className="py-2 px-4 border-b">{record.picEmail}</td>
-                    <td className="py-2 px-4 border-b">
-                      <span className={`px-2 py-1 text-xs font-semibold rounded-full ${
-                        record.status === 'completed' ? 'bg-green-200 text-green-800' : 
-                        record.status === 'in_progress' ? 'bg-yellow-200 text-yellow-800' : 
-                        'bg-gray-200 text-gray-800'
-                      }`}>
-                        {record.status}
-                      </span>
-                    </td>
-                    <td className="py-2 px-4 border-b">
-                      <span className={`px-2 py-1 text-xs font-semibold rounded-full ${
-                        record.deliveryConfirmed ? 'bg-green-200 text-green-800' : 'bg-gray-200 text-gray-800'
-                      }`}>
-                        {record.deliveryConfirmed ? 'Confirmed' : 'Pending'}
-                      </span>
-                    </td>
-                    <td className="py-2 px-4 border-b">
-                      <span className={`px-2 py-1 text-xs font-semibold rounded-full ${
-                        record.installationConfirmed ? 'bg-green-200 text-green-800' : 'bg-gray-200 text-gray-800'
-                      }`}>
-                        {record.installationConfirmed ? 'Confirmed' : 'Pending'}
-                      </span>
-                    </td>
-                    <td className="py-2 px-4 border-b">
-                      <span className={`px-2 py-1 text-xs font-semibold rounded-full ${
-                        record.trainingConfirmed ? 'bg-green-200 text-green-800' : 'bg-gray-200 text-gray-800'
-                      }`}>
-                        {record.trainingConfirmed ? 'Confirmed' : 'Pending'}
-                      </span>
-                    </td>
-                    <td className="py-2 px-4 border-b">{new Date(record.expectedGoLiveDate).toLocaleDateString()}</td>
-                    <td className="py-2 px-4 border-b">
-                      <div className="flex items-center space-x-2">
-                        <span className="font-mono text-sm bg-gray-100 px-2 py-1 rounded border">
-                          {record.accessToken}
-                        </span>
-                        <button
-                          onClick={() => handleCopyToken(record.accessToken)}
-                          className="text-blue-500 hover:text-blue-700 text-sm"
-                          title="Copy token"
-                        >
-                          📋
-                        </button>
-                      </div>
-                    </td>
-                    <td className="py-2 px-4 border-b">{calculateExpiry(record.tokenExpiryDate)}</td>
-                    <td className="py-2 px-4 border-b">
-                      <div className="flex flex-wrap gap-2">
-                        <button 
-                          onClick={() => navigate(`/view-onboarding/${record.id}`)} 
-                          className="text-gray-600 hover:underline text-sm"
-                        >
-                          View
-                        </button>
-                        <button 
-                          onClick={() => navigate(`/edit-onboarding/${record.id}`)} 
-                          className="text-blue-500 hover:underline text-sm"
-                        >
-                          Edit
-                        </button>
-                        <Link to={`/schedule-onboarding/${record.id}`} className="text-purple-500 hover:underline text-sm">
-                          Schedule
-                        </Link>
-                        <button 
-                          onClick={() => handleRegenerateToken(record.id)} 
-                          className="text-green-500 hover:underline text-sm"
-                        >
-                          Regenerate
-                        </button>
-                        <button 
-                          onClick={() => handleShareWithMerchant(record)} 
-                          className="text-orange-500 hover:underline text-sm font-medium"
-                        >
-                          Share
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+
+      {/* Statistics Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+        <div className="card">
+          <div className="flex items-center">
+            <div className="flex-shrink-0">
+              <div className="w-8 h-8 bg-primary-100 rounded-lg flex items-center justify-center">
+                <span className="text-primary-600 font-bold">📊</span>
+              </div>
+            </div>
+            <div className="ml-4">
+              <p className="text-sm font-medium text-text-muted">Total Records</p>
+              <p className="text-2xl font-bold text-text-main">{totalRecords}</p>
+            </div>
           </div>
-        )}
+        </div>
+
+        <div className="card">
+          <div className="flex items-center">
+            <div className="flex-shrink-0">
+              <div className="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center">
+                <span className="text-green-600 font-bold">✅</span>
+              </div>
+            </div>
+            <div className="ml-4">
+              <p className="text-sm font-medium text-text-muted">Completed</p>
+              <p className="text-2xl font-bold text-text-main">{completedRecords}</p>
+            </div>
+          </div>
+        </div>
+
+        <div className="card">
+          <div className="flex items-center">
+            <div className="flex-shrink-0">
+              <div className="w-8 h-8 bg-yellow-100 rounded-lg flex items-center justify-center">
+                <span className="text-yellow-600 font-bold">⏳</span>
+              </div>
+            </div>
+            <div className="ml-4">
+              <p className="text-sm font-medium text-text-muted">In Progress</p>
+              <p className="text-2xl font-bold text-text-main">{inProgressRecords}</p>
+            </div>
+          </div>
+        </div>
+
+        <div className="card">
+          <div className="flex items-center">
+            <div className="flex-shrink-0">
+              <div className="w-8 h-8 bg-gray-100 rounded-lg flex items-center justify-center">
+                <span className="text-gray-600 font-bold">📋</span>
+              </div>
+            </div>
+            <div className="ml-4">
+              <p className="text-sm font-medium text-text-muted">Pending</p>
+              <p className="text-2xl font-bold text-text-main">{pendingRecords}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Records Table */}
+      <div className="card">
+        <div className="card-header">
+          <h2 className="text-xl font-bold text-text-main">Onboarding Records</h2>
+          <p className="text-text-muted mt-1">Manage and track all merchant onboarding processes</p>
+        </div>
+        
+        <div className="p-6">
+          {loading ? (
+            <div className="flex items-center justify-center py-12">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-500"></div>
+              <span className="ml-3 text-text-muted">Loading records...</span>
+            </div>
+          ) : records.length === 0 ? (
+            <div className="text-center py-12">
+              <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <span className="text-gray-400 text-2xl">📋</span>
+              </div>
+              <h3 className="text-lg font-medium text-text-main mb-2">No records found</h3>
+              <p className="text-text-muted mb-6">Get started by creating your first merchant onboarding record</p>
+              <Link to="/create-merchant" className="btn-primary">
+                Create First Record
+              </Link>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="min-w-full">
+                <thead>
+                  <tr className="table-header">
+                    <th className="py-3 px-4 text-left text-xs font-semibold uppercase tracking-wider">Account</th>
+                    <th className="py-3 px-4 text-left text-xs font-semibold uppercase tracking-wider">PIC Details</th>
+                    <th className="py-3 px-4 text-left text-xs font-semibold uppercase tracking-wider">Status</th>
+                    <th className="py-3 px-4 text-left text-xs font-semibold uppercase tracking-wider">Delivery</th>
+                    <th className="py-3 px-4 text-left text-xs font-semibold uppercase tracking-wider">Installation</th>
+                    <th className="py-3 px-4 text-left text-xs font-semibold uppercase tracking-wider">Training</th>
+                    <th className="py-3 px-4 text-left text-xs font-semibold uppercase tracking-wider">Go Live</th>
+                    <th className="py-3 px-4 text-left text-xs font-semibold uppercase tracking-wider">Access Token</th>
+                    <th className="py-3 px-4 text-left text-xs font-semibold uppercase tracking-wider">Expiry</th>
+                    <th className="py-3 px-4 text-left text-xs font-semibold uppercase tracking-wider">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-divider">
+                  {records.map((record) => (
+                    <tr key={record.id} className="table-row">
+                      <td className="py-4 px-4">
+                        <div className="font-medium text-text-main">{record.accountName || 'N/A'}</div>
+                      </td>
+                      <td className="py-4 px-4">
+                        <div className="text-text-main font-medium">{record.picName}</div>
+                        <div className="text-text-muted text-sm">{record.picEmail}</div>
+                      </td>
+                      <td className="py-4 px-4">
+                        <span className={`status-badge ${
+                          record.status === 'completed' ? 'status-confirmed' : 
+                          record.status === 'in_progress' ? 'status-pending' : 
+                          'status-inactive'
+                        }`}>
+                          {record.status}
+                        </span>
+                      </td>
+                      <td className="py-4 px-4">
+                        <span className={`status-badge ${
+                          record.deliveryConfirmed ? 'status-confirmed' : 'status-pending'
+                        }`}>
+                          {record.deliveryConfirmed ? 'Confirmed' : 'Pending'}
+                        </span>
+                      </td>
+                      <td className="py-4 px-4">
+                        <span className={`status-badge ${
+                          record.installationConfirmed ? 'status-confirmed' : 'status-pending'
+                        }`}>
+                          {record.installationConfirmed ? 'Confirmed' : 'Pending'}
+                        </span>
+                      </td>
+                      <td className="py-4 px-4">
+                        <span className={`status-badge ${
+                          record.trainingConfirmed ? 'status-confirmed' : 'status-pending'
+                        }`}>
+                          {record.trainingConfirmed ? 'Confirmed' : 'Pending'}
+                        </span>
+                      </td>
+                      <td className="py-4 px-4">
+                        <div className="text-text-main text-sm">
+                          {new Date(record.expectedGoLiveDate).toLocaleDateString()}
+                        </div>
+                      </td>
+                      <td className="py-4 px-4">
+                        <div className="flex items-center space-x-2">
+                          <span className="font-mono text-xs bg-light-200 px-2 py-1 rounded border text-text-muted">
+                            {record.accessToken}
+                          </span>
+                          <button
+                            onClick={() => handleCopyToken(record.accessToken)}
+                            className="text-primary-500 hover:text-primary-600 text-sm transition-colors"
+                            title="Copy token"
+                          >
+                            📋
+                          </button>
+                        </div>
+                      </td>
+                      <td className="py-4 px-4">
+                        <div className="text-text-main text-sm">
+                          {calculateExpiry(record.tokenExpiryDate)}
+                        </div>
+                      </td>
+                      <td className="py-4 px-4">
+                        <div className="flex flex-wrap gap-2">
+                          <button 
+                            onClick={() => navigate(`/view-onboarding/${record.id}`)} 
+                            className="text-text-muted hover:text-primary-500 text-sm font-medium transition-colors"
+                          >
+                            View
+                          </button>
+                          <button 
+                            onClick={() => navigate(`/edit-onboarding/${record.id}`)} 
+                            className="text-primary-500 hover:text-primary-600 text-sm font-medium transition-colors"
+                          >
+                            Edit
+                          </button>
+                          <Link 
+                            to={`/schedule-onboarding/${record.id}`} 
+                            className="text-primary-500 hover:text-primary-600 text-sm font-medium transition-colors"
+                          >
+                            Schedule
+                          </Link>
+                          <button 
+                            onClick={() => handleRegenerateToken(record.id)} 
+                            className="text-green-600 hover:text-green-700 text-sm font-medium transition-colors"
+                          >
+                            Regenerate
+                          </button>
+                          <button 
+                            onClick={() => handleShareWithMerchant(record)} 
+                            className="text-primary-500 hover:text-primary-600 text-sm font-medium transition-colors"
+                          >
+                            Share
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
