@@ -298,4 +298,67 @@ export class TrainingScheduleService {
       }
     };
   }
+
+  /**
+   * Debug method to check onboarding record and training slots by account name
+   */
+  async debugOnboardingRecord(accountName: string): Promise<any> {
+    // Find onboarding record by account name
+    const onboarding = await this.onboardingRepository.findOne({
+      where: { accountName },
+      relations: ['createdByManager']
+    });
+
+    if (!onboarding) {
+      return {
+        status: 'not_found',
+        message: `No onboarding record found for account name: ${accountName}`,
+        accountName
+      };
+    }
+
+    // Find training slots for this onboarding record
+    const trainingSlots = await this.trainingSlotRepository.find({
+      where: { onboardingId: onboarding.id },
+      relations: ['trainer', 'onboarding'],
+      order: { date: 'ASC', timeSlot: 'ASC' }
+    });
+
+    return {
+      status: 'found',
+      onboarding: {
+        id: onboarding.id,
+        accountName: onboarding.accountName,
+        picName: onboarding.picName,
+        picEmail: onboarding.picEmail,
+        trainingDate: onboarding.trainingDate,
+        trainingState: onboarding.trainingState,
+        trainingPreferenceLanguages: onboarding.trainingPreferenceLanguages,
+        trainingPreferenceMode: onboarding.trainingPreferenceMode,
+        createdByManager: onboarding.createdByManager ? {
+          id: onboarding.createdByManager.id,
+          name: onboarding.createdByManager.name,
+          email: onboarding.createdByManager.email
+        } : null,
+        createdAt: onboarding.createdAt
+      },
+      trainingSlots: trainingSlots.map(slot => ({
+        id: slot.id,
+        date: slot.date,
+        timeSlot: slot.timeSlot,
+        trainingType: slot.trainingType,
+        location: slot.location,
+        languages: slot.languages,
+        status: slot.status,
+        trainer: slot.trainer ? {
+          id: slot.trainer.id,
+          name: slot.trainer.name,
+          languages: slot.trainer.languages,
+          locations: slot.trainer.locations
+        } : null,
+        createdAt: slot.createdAt
+      })),
+      totalTrainingSlots: trainingSlots.length
+    };
+  }
 } 

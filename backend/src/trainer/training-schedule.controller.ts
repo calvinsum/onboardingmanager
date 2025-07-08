@@ -141,6 +141,13 @@ export class TrainingScheduleController {
 export class MerchantTrainingScheduleController {
   constructor(private readonly trainingScheduleService: TrainingScheduleService) {}
 
+  @Get('debug/onboarding/:accountName')
+  @ApiOperation({ summary: 'Debug endpoint to check onboarding record and training slots by account name' })
+  @ApiResponse({ status: 200, description: 'Debug information retrieved successfully' })
+  async debugOnboardingRecord(@Param('accountName') accountName: string): Promise<any> {
+    return this.trainingScheduleService.debugOnboardingRecord(accountName);
+  }
+
   @Get('onboarding/:onboardingId')
   @ApiOperation({ summary: 'Get training schedule for merchant (no trainer details exposed)' })
   @ApiResponse({ 
