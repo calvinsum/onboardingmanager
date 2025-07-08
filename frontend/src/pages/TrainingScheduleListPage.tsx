@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import api, { getMyTrainingSchedules, getTrainerWorkloadStats } from '../services/api';
+import { getMyTrainingSchedules, getTrainerWorkloadStats } from '../services/api';
 
 interface TrainingSlot {
   id: string;
