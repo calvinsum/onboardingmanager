@@ -212,13 +212,14 @@ const TrainingScheduleListPage: React.FC = () => {
                 Training Type
               </label>
               <select
+                name="trainingType"
                 value={filters.trainingType}
-                onChange={(e) => handleFilterChange('trainingType', e.target.value)}
+                onChange={(e) => handleFilterChange(e.target.name, e.target.value)}
                 className="input-field"
               >
                 <option value="">All Types</option>
-                <option value="ONLINE">Online</option>
-                <option value="ONSITE">Onsite</option>
+                <option value="remote_training">Online</option>
+                <option value="onsite_training">Onsite</option>
               </select>
             </div>
           </div>
