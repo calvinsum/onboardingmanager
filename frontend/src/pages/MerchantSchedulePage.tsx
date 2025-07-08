@@ -766,9 +766,34 @@ const MerchantSchedulePage: React.FC = () => {
           await bookMerchantTrainingSlot(bookingData);
           
           toast.success('Schedule updated and training slot booked successfully!');
-        } catch (bookingError) {
+        } catch (bookingError: any) {
           console.error('Error booking training slot:', bookingError);
-          toast.error('Schedule updated, but failed to book training slot. Please contact support.');
+          
+          // Provide more specific error messages
+          if (bookingError.response?.status === 400) {
+            const errorMessage = bookingError.response?.data?.message || 'No trainers available for your requirements';
+            if (typeof errorMessage === 'string') {
+              toast.error(`Training booking failed: ${errorMessage}`);
+            } else if (Array.isArray(errorMessage)) {
+              toast.error(`Training booking failed: ${errorMessage.join(', ')}`);
+            } else {
+              toast.error('Training booking failed: No trainers available for your location and time slot');
+            }
+          } else if (bookingError.response?.status === 404) {
+            toast.error('Training booking failed: Onboarding record not found');
+          } else {
+            toast.error('Schedule updated, but failed to book training slot. Please contact support.');
+          }
+          
+          // Log detailed error information for debugging
+          console.log('Booking data that failed:', bookingData);
+          console.log('Available trainers may not cover:', {
+            trainingType: bookingData.trainingType,
+            location: bookingData.location,
+            languages: bookingData.languages,
+            timeSlot: bookingData.timeSlot,
+            date: bookingData.date
+          });
         }
       } else {
         toast.success('Schedule updated successfully!');
