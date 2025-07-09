@@ -934,6 +934,10 @@ const MerchantSchedulePage: React.FC = () => {
           <h2 className="text-lg font-semibold text-gray-900 mb-2">Contact Information</h2>
           <div className="space-y-2 text-sm">
             <div>
+              <span className="font-medium text-gray-700">Account Name:</span>
+              <span className="ml-2 text-gray-900">{onboardingRecord.accountName}</span>
+            </div>
+            <div>
               <span className="font-medium text-gray-700">Name:</span>
               <span className="ml-2 text-gray-900">{onboardingRecord.picName}</span>
             </div>

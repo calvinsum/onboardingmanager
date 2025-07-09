@@ -89,6 +89,7 @@ const ViewOnboardingPage = () => {
         <div>
           <h3 className="text-lg font-semibold text-gray-800 mb-2 border-b pb-2">Key Information</h3>
           <dl className="grid grid-cols-1 md:grid-cols-3 gap-x-4 gap-y-4">
+            <DetailItem label="Account Name" value={record.accountName} />
             <DetailItem label="Status" value={<span className={`px-2 py-1 text-xs font-semibold rounded-full ${ record.status === 'completed' ? 'bg-green-200 text-green-800' : record.status === 'in_progress' ? 'bg-yellow-200 text-yellow-800' : 'bg-gray-200 text-gray-800' }`}>{record.status}</span>} />
             <DetailItem label="Expected Go-Live Date" value={new Date(record.expectedGoLiveDate).toLocaleDateString()} />
             <DetailItem label="Created On" value={new Date(record.createdAt).toLocaleString()} />
