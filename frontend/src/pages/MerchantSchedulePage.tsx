@@ -720,12 +720,44 @@ const MerchantSchedulePage: React.FC = () => {
     ...holidays
   ];
 
+  // Create disabled days for training date picker (includes dates before minimum training date)
+  const getTrainingDisabledDays = () => {
+    const minTrainingDate = getMinTrainingDate();
+    const baseDisabledDays = [
+      (date: Date) => isWeekend(date),
+      ...holidays
+    ];
+    
+    if (minTrainingDate) {
+      // Disable all dates before the minimum training date
+      baseDisabledDays.push((date: Date) => date < minTrainingDate);
+    }
+    
+    return baseDisabledDays;
+  };
+
   // Calculate minimum training date (next working day after installation confirmation)
   const getMinTrainingDate = (): Date | undefined => {
-    if (!installationConfirmed || !installationConfirmedDate) {
+    if (!installationConfirmed || !hardwareInstallationDate) {
       return undefined;
     }
-    return calculateMinTrainingDate(installationConfirmedDate, holidays);
+    // Training must be scheduled at least 1 working day after the actual installation date
+    return calculateMinTrainingDate(hardwareInstallationDate, holidays);
+  };
+
+  // Additional validation to prevent training before installation
+  const isTrainingDateValid = (trainingDate: Date | undefined): boolean => {
+    if (!trainingDate || !hardwareInstallationDate) {
+      return true; // Let other validations handle this
+    }
+    
+    const minTrainingDate = getMinTrainingDate();
+    if (!minTrainingDate) {
+      return true;
+    }
+    
+    // Training date must be on or after the minimum training date
+    return trainingDate >= minTrainingDate;
   };
 
   const handleDeliveryConfirm = async () => {
@@ -801,6 +833,12 @@ const MerchantSchedulePage: React.FC = () => {
 
   const handleTrainingConfirm = async () => {
     if (!accessToken) return;
+
+    // Validate training date before confirming
+    if (!isTrainingDateValid(trainingDate)) {
+      toast.error('Training date must be at least one working day after the installation date.');
+      return;
+    }
 
     setSaving(true);
     try {
@@ -885,6 +923,12 @@ const MerchantSchedulePage: React.FC = () => {
 
   const handleSaveSchedule = async () => {
     if (!accessToken) return;
+
+    // Validate training date before saving
+    if (trainingDate && !isTrainingDateValid(trainingDate)) {
+      toast.error('Training date must be at least one working day after the installation date.');
+      return;
+    }
 
     setSaving(true);
     try {
@@ -1088,17 +1132,29 @@ const MerchantSchedulePage: React.FC = () => {
             />
             
             {!trainingConfirmed ? (
-              <MobileDatePicker
-                label="Training Date & Time"
-                selectedDate={trainingDate}
-                onDateChange={setTrainingDate}
-                minDate={getMinTrainingDate()}
-                disabledDays={disabledDays}
-                disabled={!installationConfirmed}
-                includeTime={true}
-                onboardingRecord={onboardingRecord}
-                checkAvailability={true}
-              />
+              <>
+                <MobileDatePicker
+                  label="Training Date & Time"
+                  selectedDate={trainingDate}
+                  onDateChange={setTrainingDate}
+                  minDate={getMinTrainingDate()}
+                  disabledDays={getTrainingDisabledDays()}
+                  disabled={!installationConfirmed}
+                  includeTime={true}
+                  onboardingRecord={onboardingRecord}
+                  checkAvailability={true}
+                />
+                {trainingDate && !isTrainingDateValid(trainingDate) && (
+                  <div className="mt-2 p-3 bg-red-50 border border-red-200 rounded-lg">
+                    <div className="flex items-center">
+                      <span className="text-red-500 mr-2">⚠️</span>
+                      <span className="text-sm text-red-700">
+                        Training date must be at least one working day after the installation date ({hardwareInstallationDate ? format(hardwareInstallationDate, 'PPP') : 'TBD'}).
+                      </span>
+                    </div>
+                  </div>
+                )}
+              </>
             ) : null}
             
             <TrainingConfirmation
@@ -1115,7 +1171,7 @@ const MerchantSchedulePage: React.FC = () => {
             <p>• Confirm delivery before scheduling installation</p>
             <p>• Installation must be scheduled after delivery confirmation</p>
             <p>• Confirm installation before scheduling training</p>
-            <p>• Training must be scheduled at least one day after installation confirmation</p>
+            <p>• Training must be scheduled at least one working day after the installation date</p>
             <p>• Confirm training before completing the onboarding</p>
           </div>
         </div>
