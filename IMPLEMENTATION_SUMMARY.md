@@ -103,6 +103,59 @@ const handleTrainingConfirm = async () => {
 };
 ```
 
+### Issue 4: Merchant UX Fix - Prevent Login Redirect on No Trainers Available
+
+**Problem**: When merchants selected a training schedule but no trainers were available, they were redirected to the login page instead of staying on the same page with a helpful error message.
+
+**Root Cause**: The API service interceptor was only checking for `authToken` but merchants use `merchantAccessToken`. When booking failed, the interceptor incorrectly handled the error as an authentication failure.
+
+**Solution Implemented**:
+- Fixed API service to handle both `authToken` (managers) and `merchantAccessToken` (for merchants)
+- Prevented automatic login redirect for merchant users on 401 errors
+- Improved error messages for training booking failures
+- Added specific handling for "No trainers available" errors
+- Only redirect merchants to login on explicit 401 token expiry
+- Prevent training confirmation when booking fails
+- Provide clear guidance to contact onboarding manager
+
+**Key Code Changes**:
+```typescript
+// Fixed API service interceptor
+this.api.interceptors.request.use(
+  (config) => {
+    // Check for both authToken (for managers) and merchantAccessToken (for merchants)
+    const token = localStorage.getItem('authToken') || localStorage.getItem('merchantAccessToken');
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+  }
+);
+
+// Improved error handling
+this.api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response?.status === 401) {
+      // Only auto-redirect for manager authentication, not for merchant
+      const userType = localStorage.getItem('userType');
+      if (userType === 'manager') {
+        localStorage.removeItem('authToken');
+        localStorage.removeItem('userType');
+        window.location.href = '/login';
+      }
+      // For merchants, let the component handle the error
+    }
+    return Promise.reject(error);
+  }
+);
+
+// Enhanced error messages in merchant schedule page
+if (errorMessage.includes('No trainers available')) {
+  toast.error('No trainers available for your location and language preferences. Please contact your onboarding manager for assistance.');
+}
+```
+
 ## Technical Implementation Details
 
 ### Frontend Components Modified
@@ -136,6 +189,8 @@ const handleTrainingConfirm = async () => {
 - ✅ Backend API endpoints already available
 - ✅ Working day calculations implemented
 - ✅ Training date validation enforced
+- ✅ Merchant UX improved for training booking errors
+- ✅ API service authentication handling fixed
 - ✅ Build successful with no errors
 
 ## Testing Recommendations
@@ -143,4 +198,7 @@ const handleTrainingConfirm = async () => {
 2. Verify slot availability checking works correctly
 3. Test error messages for different scenarios
 4. Confirm working day calculations exclude weekends and holidays
-5. Test validation prevents booking training before installation 
+5. Test validation prevents booking training before installation
+6. **Test merchant UX when no trainers are available** - should stay on page with helpful error message
+7. **Test that merchants are not redirected to login** when booking fails due to no trainers
+8. **Verify error messages guide users to contact onboarding manager** 
