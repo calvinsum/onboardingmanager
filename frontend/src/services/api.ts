@@ -17,7 +17,8 @@ class ApiService {
     // Request interceptor to add auth token
     this.api.interceptors.request.use(
       (config) => {
-        const token = localStorage.getItem('authToken');
+        // Check for both authToken (for managers) and merchantAccessToken (for merchants)
+        const token = localStorage.getItem('authToken') || localStorage.getItem('merchantAccessToken');
         if (token) {
           config.headers.Authorization = `Bearer ${token}`;
         }
@@ -40,9 +41,14 @@ class ApiService {
         });
         
         if (error.response?.status === 401) {
-          localStorage.removeItem('authToken');
-          localStorage.removeItem('userType');
-          window.location.href = '/login';
+          // Only auto-redirect for manager authentication, not for merchant
+          const userType = localStorage.getItem('userType');
+          if (userType === 'manager') {
+            localStorage.removeItem('authToken');
+            localStorage.removeItem('userType');
+            window.location.href = '/login';
+          }
+          // For merchants, let the component handle the error
         }
         return Promise.reject(error);
       }

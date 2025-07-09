@@ -884,17 +884,30 @@ const MerchantSchedulePage: React.FC = () => {
           if (bookingError.response?.status === 400) {
             const errorMessage = bookingError.response?.data?.message || 'No trainers available for your requirements';
             if (typeof errorMessage === 'string') {
-              toast.error(`Training confirmed but booking failed: ${errorMessage}`);
+              if (errorMessage.includes('No trainers available')) {
+                toast.error('No trainers available for your location and language preferences. Please contact your onboarding manager for assistance.');
+              } else {
+                toast.error(`Training booking failed: ${errorMessage}`);
+              }
             } else if (Array.isArray(errorMessage)) {
-              toast.error(`Training confirmed but booking failed: ${errorMessage.join(', ')}`);
+              toast.error(`Training booking failed: ${errorMessage.join(', ')}`);
             } else {
-              toast.error('Training confirmed but booking failed: No trainers available for your location and time slot');
+              toast.error('Training booking failed: No trainers available for your location and time slot. Please contact your onboarding manager for assistance.');
             }
           } else if (bookingError.response?.status === 404) {
-            toast.error('Training confirmed but booking failed: Onboarding record not found');
+            toast.error('Training booking failed: Onboarding record not found');
+          } else if (bookingError.response?.status === 401) {
+            toast.error('Access token expired. Please contact your onboarding manager.');
+            localStorage.removeItem('merchantAccessToken');
+            localStorage.removeItem('onboardingRecord');
+            navigate('/login');
           } else {
-            toast.error('Training confirmed but failed to book training slot. Please contact support.');
+            toast.error('Training booking failed. Please contact your onboarding manager for assistance.');
           }
+          
+          // Don't mark training as confirmed if booking fails
+          setSaving(false);
+          return;
         }
       } else {
         toast.success('Training confirmed successfully!');
@@ -973,16 +986,25 @@ const MerchantSchedulePage: React.FC = () => {
           if (bookingError.response?.status === 400) {
             const errorMessage = bookingError.response?.data?.message || 'No trainers available for your requirements';
             if (typeof errorMessage === 'string') {
-              toast.error(`Training booking failed: ${errorMessage}`);
+              if (errorMessage.includes('No trainers available')) {
+                toast.error('No trainers available for your location and language preferences. Please contact your onboarding manager for assistance.');
+              } else {
+                toast.error(`Training booking failed: ${errorMessage}`);
+              }
             } else if (Array.isArray(errorMessage)) {
               toast.error(`Training booking failed: ${errorMessage.join(', ')}`);
             } else {
-              toast.error('Training booking failed: No trainers available for your location and time slot');
+              toast.error('Training booking failed: No trainers available for your location and time slot. Please contact your onboarding manager for assistance.');
             }
           } else if (bookingError.response?.status === 404) {
             toast.error('Training booking failed: Onboarding record not found');
+          } else if (bookingError.response?.status === 401) {
+            toast.error('Access token expired. Please contact your onboarding manager.');
+            localStorage.removeItem('merchantAccessToken');
+            localStorage.removeItem('onboardingRecord');
+            navigate('/login');
           } else {
-            toast.error('Schedule updated, but failed to book training slot. Please contact support.');
+            toast.error('Schedule updated, but failed to book training slot. Please contact your onboarding manager for assistance.');
           }
           
           // Log detailed error information for debugging
