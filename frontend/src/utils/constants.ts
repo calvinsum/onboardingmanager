@@ -77,6 +77,8 @@ export const calculateMinTrainingDate = (
   installationConfirmedDate: Date,
   holidays: Date[] = []
 ): Date => {
+  // Training must be scheduled at least 1 working day after installation confirmation
+  // This ensures proper time for installation completion and preparation
   return addWorkingDays(installationConfirmedDate, 1, holidays);
 };
 

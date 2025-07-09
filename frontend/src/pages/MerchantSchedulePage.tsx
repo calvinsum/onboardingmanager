@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { DayPicker } from 'react-day-picker';
 import { toast } from 'react-hot-toast';
 import { format, isWeekend, set } from 'date-fns';
-import { updateOnboardingByToken, getPublicHolidays } from '../services/api';
+import { updateOnboardingByToken, getPublicHolidays, getAvailableTrainingSlots } from '../services/api';
 import { DELIVERY_TIME_BY_STATE, calculateMinInstallationDate, calculateMinTrainingDate } from '../utils/constants';
 import { bookMerchantTrainingSlot } from '../services/api'; // Added import for booking training slot
 
@@ -15,7 +15,9 @@ const MobileDatePicker = ({
   minDate, 
   disabledDays, 
   disabled = false, 
-  includeTime = false 
+  includeTime = false,
+  onboardingRecord = null,
+  checkAvailability = false
 }: {
   label: string;
   selectedDate: Date | undefined;
@@ -24,14 +26,80 @@ const MobileDatePicker = ({
   disabledDays: any[];
   disabled?: boolean;
   includeTime?: boolean;
+  onboardingRecord?: any;
+  checkAvailability?: boolean;
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [selectedTime, setSelectedTime] = useState('09:30');
+  const [availableSlots, setAvailableSlots] = useState<any[]>([]);
+  const [loadingSlots, setLoadingSlots] = useState(false);
+  const [slotError, setSlotError] = useState<string | null>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
 
-  const timeSlots = [
+  const defaultTimeSlots = [
     '09:30', '12:00', '14:30', '17:00'
   ];
+
+  // Check slot availability when date changes (only for training slots)
+  useEffect(() => {
+    if (checkAvailability && selectedDate && onboardingRecord) {
+      checkSlotAvailability(selectedDate);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedDate, checkAvailability, onboardingRecord]);
+
+  const checkSlotAvailability = async (date: Date) => {
+    if (!onboardingRecord) return;
+
+    setLoadingSlots(true);
+    setSlotError(null);
+
+    try {
+      // Determine training type based on onboarding record
+      const hasRemoteTraining = onboardingRecord?.onboardingTypes?.includes('remote_training');
+      const hasOnsiteTraining = onboardingRecord?.onboardingTypes?.includes('onsite_training');
+      
+      const trainingType = hasOnsiteTraining && !hasRemoteTraining ? 'onsite_training' : 'remote_training';
+      const location = trainingType === 'onsite_training' ? onboardingRecord?.trainingState : undefined;
+      const languages = onboardingRecord?.trainingPreferenceLanguages?.join(',') || '';
+
+      const dateStr = format(date, 'yyyy-MM-dd');
+      const slots = await getAvailableTrainingSlots(dateStr, trainingType, location, languages);
+      
+      setAvailableSlots(slots);
+      
+      if (slots.length === 0) {
+        // Check if it's due to no trainers matching the criteria
+        const allSlots = await getAvailableTrainingSlots(dateStr, trainingType);
+        if (allSlots.length === 0) {
+          setSlotError('No training slots available for the selected date. Please choose another date.');
+        } else {
+          setSlotError('No trainers available for your location and language preferences. Please contact your onboarding manager.');
+        }
+      }
+    } catch (error) {
+      console.error('Error checking slot availability:', error);
+      setSlotError('Unable to check slot availability. Please try again.');
+    } finally {
+      setLoadingSlots(false);
+    }
+  };
+
+  const getTimeSlots = () => {
+    if (!checkAvailability) {
+      return defaultTimeSlots;
+    }
+    
+    if (loadingSlots) {
+      return [];
+    }
+    
+    if (availableSlots.length === 0) {
+      return [];
+    }
+    
+    return availableSlots.map(slot => slot.timeSlot);
+  };
 
   const handleDaySelect = (date: Date | undefined) => {
     if (date) {
@@ -55,31 +123,35 @@ const MobileDatePicker = ({
     }
   };
 
+  const timeSlots = getTimeSlots();
+
   return (
-    <div className="mb-6">
-      <label className="block text-sm font-medium text-gray-700 mb-2">{label}</label>
+    <div className="space-y-2">
+      <label className="block text-sm font-medium text-gray-700">{label}</label>
       <button
         ref={buttonRef}
         type="button"
-        className={`w-full p-4 border-2 rounded-lg text-left transition-colors ${
-          disabled 
-            ? 'bg-gray-100 border-gray-200 text-gray-400' 
-            : 'bg-white border-gray-300 hover:border-blue-500 focus:border-blue-500'
-        }`}
-        onClick={() => !disabled && setIsOpen(!isOpen)}
+        onClick={() => setIsOpen(true)}
         disabled={disabled}
+        className={`w-full p-3 text-left border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+          disabled
+            ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+            : 'bg-white text-gray-900 hover:bg-gray-50'
+        }`}
       >
         {selectedDate ? (
-          <div className="flex flex-col">
-            <span className="font-medium text-gray-900">{format(selectedDate, 'PPP')}</span>
+          <div>
+            <div className="font-medium">
+              {format(selectedDate, 'EEEE, MMMM d, yyyy')}
+            </div>
             {includeTime && (
-              <span className="text-sm text-blue-600 mt-1">{format(selectedDate, 'HH:mm')}</span>
+              <div className="text-sm text-gray-500 mt-1">
+                {format(selectedDate, 'h:mm a')}
+              </div>
             )}
           </div>
         ) : (
-          <span className="text-gray-500">
-            {disabled ? 'Please select previous date first' : `Select ${includeTime ? 'date & time' : 'date'}`}
-          </span>
+          <span className="text-gray-500">Select {label.toLowerCase()}</span>
         )}
       </button>
       
@@ -104,22 +176,49 @@ const MobileDatePicker = ({
               {includeTime && (
                 <div className="mt-4 pt-4 border-t border-gray-200">
                   <label className="block text-sm font-medium text-gray-700 mb-2">Time Slot</label>
-                  <div className="grid grid-cols-2 gap-2">
-                    {timeSlots.map(time => (
-                      <button
-                        key={time}
-                        type="button"
-                        className={`p-2 text-sm rounded-md border transition-colors ${
-                          selectedTime === time
-                            ? 'bg-blue-500 text-white border-blue-500'
-                            : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
-                        }`}
-                        onClick={() => handleTimeChange(time)}
-                      >
-                        {time}
-                      </button>
-                    ))}
-                  </div>
+                  
+                  {loadingSlots && (
+                    <div className="flex items-center justify-center py-4">
+                      <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-500"></div>
+                      <span className="ml-2 text-sm text-gray-600">Checking availability...</span>
+                    </div>
+                  )}
+                  
+                  {slotError && (
+                    <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+                      <div className="flex items-center">
+                        <span className="text-red-500 mr-2">⚠️</span>
+                        <span className="text-sm text-red-700">{slotError}</span>
+                      </div>
+                    </div>
+                  )}
+                  
+                  {!loadingSlots && !slotError && timeSlots.length > 0 && (
+                    <div className="grid grid-cols-2 gap-2">
+                      {timeSlots.map(time => (
+                        <button
+                          key={time}
+                          type="button"
+                          className={`p-2 text-sm rounded-md border transition-colors ${
+                            selectedTime === time
+                              ? 'bg-blue-500 text-white border-blue-500'
+                              : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+                          }`}
+                          onClick={() => handleTimeChange(time)}
+                        >
+                          {time}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                  
+                  {!loadingSlots && !slotError && timeSlots.length === 0 && selectedDate && checkAvailability && (
+                    <div className="text-center py-4">
+                      <div className="text-gray-500 text-sm">
+                        Please select a date first to view available time slots.
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
@@ -127,10 +226,10 @@ const MobileDatePicker = ({
             <div className="p-4 border-t border-gray-200">
               <button
                 type="button"
-                className="w-full bg-gray-500 text-white py-2 px-4 rounded-md hover:bg-gray-600 transition-colors"
                 onClick={() => setIsOpen(false)}
+                className="w-full px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-500"
               >
-                Cancel
+                Close
               </button>
             </div>
           </div>
@@ -997,6 +1096,8 @@ const MerchantSchedulePage: React.FC = () => {
                 disabledDays={disabledDays}
                 disabled={!installationConfirmed}
                 includeTime={true}
+                onboardingRecord={onboardingRecord}
+                checkAvailability={true}
               />
             ) : null}
             
