@@ -842,16 +842,7 @@ const MerchantSchedulePage: React.FC = () => {
 
     setSaving(true);
     try {
-      const confirmationDate = new Date();
-      const payload = {
-        trainingConfirmed: true,
-        trainingConfirmedDate: confirmationDate.toISOString(),
-        trainingDate: trainingDate?.toISOString(), // Add the training date to the payload
-      };
-
-      const updatedRecord = await updateOnboardingByToken(accessToken, payload);
-      
-      // If training date is set and we haven't booked a training slot yet, book it now
+      // If training date is set, book the training slot FIRST before marking as confirmed
       if (trainingDate && onboardingRecord?.id) {
         try {
           // Determine training type based on onboarding record
@@ -876,7 +867,9 @@ const MerchantSchedulePage: React.FC = () => {
           // Use the merchant-specific auto-assign booking endpoint
           await bookMerchantTrainingSlot(bookingData);
           
-          toast.success('Training confirmed and slot booked successfully!');
+          // Only proceed to mark training as confirmed if booking succeeded
+          console.log('Training slot booked successfully, now marking as confirmed');
+          
         } catch (bookingError: any) {
           console.error('Error booking training slot:', bookingError);
           
@@ -909,15 +902,25 @@ const MerchantSchedulePage: React.FC = () => {
           setSaving(false);
           return;
         }
-      } else {
-        toast.success('Training confirmed successfully!');
       }
+
+      // Only mark training as confirmed AFTER successful booking (or if no booking needed)
+      const confirmationDate = new Date();
+      const payload = {
+        trainingConfirmed: true,
+        trainingConfirmedDate: confirmationDate.toISOString(),
+        trainingDate: trainingDate?.toISOString(), // Add the training date to the payload
+      };
+
+      const updatedRecord = await updateOnboardingByToken(accessToken, payload);
       
       // Update local storage
       localStorage.setItem('onboardingRecord', JSON.stringify(updatedRecord));
       setOnboardingRecord(updatedRecord);
       setTrainingConfirmed(true);
       setTrainingConfirmedDate(confirmationDate);
+      
+      toast.success('Training confirmed and slot booked successfully!');
       
     } catch (error: any) {
       console.error('Error confirming training:', error);

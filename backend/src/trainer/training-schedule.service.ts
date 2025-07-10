@@ -128,6 +128,20 @@ export class TrainingScheduleService {
       throw new NotFoundException('Onboarding record not found');
     }
 
+    // Check if this onboarding record already has a training slot booked
+    const existingSlot = await this.trainingSlotRepository.findOne({
+      where: { 
+        onboardingId,
+        status: SlotStatus.BOOKED 
+      },
+      relations: ['onboarding']
+    });
+
+    if (existingSlot) {
+      // Return the existing slot instead of creating a new one
+      return this.mapToMerchantDto(existingSlot);
+    }
+
     // Get available trainers that match the criteria
     const availableTrainers = await this.trainingSlotService['getMatchingTrainers'](
       trainingType,
