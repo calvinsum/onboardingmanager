@@ -1,204 +1,173 @@
-# Implementation Summary: Training Schedule Fixes
+# StoreHub Merchant Onboarding Implementation Summary
 
-## Issues Addressed
+## Overview
+This document summarizes the implementation of the StoreHub merchant onboarding system, including the backend API, frontend interface, and deployment configuration.
 
-### Issue 1: Training Schedule Date Must Be 1 Working Day After Installation Confirmation
+## System Architecture
 
-**Problem**: Training schedule date should only be available from the next working day after installation is confirmed.
+### Backend (NestJS)
+- **Framework**: NestJS with TypeScript
+- **Database**: PostgreSQL with TypeORM
+- **Authentication**: JWT tokens for managers, token-based access for merchants
+- **Deployment**: Render.com with automatic deployments
 
-**Example**: If installation is confirmed on July 14, 2025, training should be available from July 15, 2025 onwards (excluding weekends and holidays).
+### Frontend (React)
+- **Framework**: React with TypeScript
+- **Styling**: Tailwind CSS
+- **State Management**: React hooks and local storage
+- **Deployment**: Render.com static site
 
-**Solution Implemented**:
-- Enhanced `calculateMinTrainingDate()` function in `frontend/src/utils/constants.ts`
-- Uses `addWorkingDays()` utility that properly excludes weekends and Malaysian public holidays
-- Integrated with holiday API endpoint `/schedule/holidays/{year}?state={state}`
-- Applied in `MerchantSchedulePage.tsx` via `getMinTrainingDate()` function
+## Key Features Implemented
 
-**Key Code Changes**:
-```typescript
-// Calculate minimum training date (next working day after installation confirmation)
-const getMinTrainingDate = (): Date | undefined => {
-  if (!installationConfirmed || !hardwareInstallationDate) {
-    return undefined;
-  }
-  // Training must be scheduled at least 1 working day after the actual installation date
-  return calculateMinTrainingDate(hardwareInstallationDate, holidays);
-};
-```
+### 1. Authentication System
+- **Manager Authentication**: JWT-based login with Google OAuth integration
+- **Merchant Access**: Token-based access without passwords
+- **Protected Routes**: Role-based access control
 
-### Issue 2: Training Slot Availability Checking
+### 2. Onboarding Management
+- **Create Onboarding Records**: Managers can create new merchant onboarding records
+- **Merchant Self-Service**: Merchants can view and schedule their onboarding steps
+- **Progress Tracking**: Multi-step process with delivery, installation, and training phases
 
-**Problem**: The system showed all predefined time slots without checking if trainers were actually available for the merchant's location and language preferences.
+### 3. Training Slot Management
+- **Trainer Management**: Create and manage trainers with location and language preferences
+- **Slot Booking**: Automatic trainer assignment using round-robin algorithm
+- **Availability Checking**: Real-time slot availability based on trainer schedules
 
-**Solution Implemented**:
-- Enhanced `MobileDatePicker` component with slot availability checking
-- Added `checkSlotAvailability()` function that calls `/api/training-slots/available` endpoint
-- Only shows time slots that have available trainers matching:
-  - Training type (remote/onsite)
-  - Location (for onsite training)
-  - Language preferences
-- Provides meaningful error messages:
-  - "No training slots available for the selected date. Please choose another date."
-  - "No trainers available for your location and language preferences. Please contact your onboarding manager."
+### 4. Business Rules Implementation
+- **Working Day Calculations**: Excludes weekends and Malaysian public holidays
+- **Date Validation**: Ensures proper sequencing of delivery → installation → training
+- **Minimum Lead Times**: Enforces business rules for scheduling gaps
 
-**Key Code Changes**:
-```typescript
-const checkSlotAvailability = async (date: Date) => {
-  // ... implementation details
-  const trainingType = hasOnsiteTraining && !hasRemoteTraining ? 'onsite_training' : 'remote_training';
-  const location = trainingType === 'onsite_training' ? onboardingRecord?.trainingState : undefined;
-  const languages = onboardingRecord?.trainingPreferenceLanguages?.join(',') || '';
-  
-  const slots = await getAvailableTrainingSlots(dateStr, trainingType, location, languages);
-  setAvailableSlots(slots);
-};
-```
+## Recent Bug Fixes and Improvements
 
-### Issue 3: Training Date Validation Fix (Latest Update)
+### Training Booking Race Condition Fix (Latest)
+**Problem**: Merchants experienced inconsistent booking states where training appeared unbooked after errors but showed as booked after re-login.
 
-**Problem**: Merchants could book training dates before their installation date, violating the business rule that training must be at least 1 working day after installation.
-
-**Root Cause**: The `getMinTrainingDate()` function was using `installationConfirmedDate` (when user clicked confirm) instead of `hardwareInstallationDate` (the actual scheduled installation date).
+**Root Cause**: The `handleTrainingConfirm` function updated the onboarding record with `trainingConfirmed: true` before attempting to book the training slot. When booking failed, the backend record was already marked as confirmed, but the frontend state wasn't updated, causing inconsistency.
 
 **Solution Implemented**:
+1. **Frontend Changes** (`frontend/src/pages/MerchantSchedulePage.tsx`):
+   - Reordered `handleTrainingConfirm` to book training slot BEFORE marking as confirmed
+   - Training confirmation only happens after successful slot booking
+   - Prevents race condition between frontend state and backend record updates
+
+2. **Backend Changes** (`backend/src/trainer/training-schedule.service.ts`):
+   - Added check in `bookTrainingSlotWithAutoAssign` to prevent duplicate bookings
+   - Returns existing slot if onboarding record already has a booked training slot
+   - Includes onboarding relation in query for proper data mapping
+
+**Impact**: Eliminates inconsistent states where merchants see different booking statuses before and after re-login.
+
+### Training Date Business Rule Enforcement
+**Problem**: Training could be scheduled on the same day as installation, violating business rules.
+
+**Solution**: 
 - Fixed `getMinTrainingDate()` to use `hardwareInstallationDate` instead of `installationConfirmedDate`
 - Added `isTrainingDateValid()` validation function
-- Added validation to `handleTrainingConfirm()` and `handleSaveSchedule()` functions
 - Enhanced date picker with `getTrainingDisabledDays()` to disable invalid dates
-- Added visual validation error message for invalid training dates
-- Updated help text to clarify the business rule
 
-**Key Code Changes**:
-```typescript
-// Fixed minimum training date calculation
-const getMinTrainingDate = (): Date | undefined => {
-  if (!installationConfirmed || !hardwareInstallationDate) {
-    return undefined;
-  }
-  // Training must be scheduled at least 1 working day after the actual installation date
-  return calculateMinTrainingDate(hardwareInstallationDate, holidays);
-};
+### Training Slot Availability Checking
+**Problem**: System showed all time slots without checking trainer availability.
 
-// Added validation function
-const isTrainingDateValid = (trainingDate: Date | undefined): boolean => {
-  if (!trainingDate || !hardwareInstallationDate) {
-    return true;
-  }
-  
-  const minTrainingDate = getMinTrainingDate();
-  if (!minTrainingDate) {
-    return true;
-  }
-  
-  return trainingDate >= minTrainingDate;
-};
+**Solution**:
+- Enhanced `MobileDatePicker` with `checkSlotAvailability()` function
+- Only shows time slots with available trainers matching location, language, training type
+- Provides meaningful error messages for different scenarios
 
-// Added validation to save and confirm functions
-const handleTrainingConfirm = async () => {
-  if (!isTrainingDateValid(trainingDate)) {
-    toast.error('Training date must be at least one working day after the installation date.');
-    return;
-  }
-  // ... rest of function
-};
-```
+### Merchant Authentication Fix
+**Problem**: Merchants redirected to login page on booking failures instead of seeing error messages.
 
-### Issue 4: Merchant UX Fix - Prevent Login Redirect on No Trainers Available
-
-**Problem**: When merchants selected a training schedule but no trainers were available, they were redirected to the login page instead of staying on the same page with a helpful error message.
-
-**Root Cause**: The API service interceptor was only checking for `authToken` but merchants use `merchantAccessToken`. When booking failed, the interceptor incorrectly handled the error as an authentication failure.
-
-**Solution Implemented**:
-- Fixed API service to handle both `authToken` (managers) and `merchantAccessToken` (for merchants)
+**Solution**:
+- Fixed API service to handle both `authToken` (managers) and `merchantAccessToken` (merchants)
 - Prevented automatic login redirect for merchant users on 401 errors
-- Improved error messages for training booking failures
-- Added specific handling for "No trainers available" errors
-- Only redirect merchants to login on explicit 401 token expiry
-- Prevent training confirmation when booking fails
-- Provide clear guidance to contact onboarding manager
+- Improved error handling with guidance to contact onboarding manager
 
-**Key Code Changes**:
-```typescript
-// Fixed API service interceptor
-this.api.interceptors.request.use(
-  (config) => {
-    // Check for both authToken (for managers) and merchantAccessToken (for merchants)
-    const token = localStorage.getItem('authToken') || localStorage.getItem('merchantAccessToken');
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
-    return config;
-  }
-);
+## Database Schema
 
-// Improved error handling
-this.api.interceptors.response.use(
-  (response) => response,
-  (error) => {
-    if (error.response?.status === 401) {
-      // Only auto-redirect for manager authentication, not for merchant
-      const userType = localStorage.getItem('userType');
-      if (userType === 'manager') {
-        localStorage.removeItem('authToken');
-        localStorage.removeItem('userType');
-        window.location.href = '/login';
-      }
-      // For merchants, let the component handle the error
-    }
-    return Promise.reject(error);
-  }
-);
+### Core Entities
+- **Onboarding**: Main record with merchant details and scheduling information
+- **OnboardingManager**: User accounts for managers
+- **Trainer**: Trainer profiles with location and language capabilities
+- **TrainingSlot**: Booked training sessions with trainer assignments
 
-// Enhanced error messages in merchant schedule page
-if (errorMessage.includes('No trainers available')) {
-  toast.error('No trainers available for your location and language preferences. Please contact your onboarding manager for assistance.');
-}
-```
+### Key Relationships
+- Onboarding belongs to OnboardingManager (created by)
+- TrainingSlot belongs to Trainer and Onboarding
+- Round-robin assignment ensures fair trainer workload distribution
 
-## Technical Implementation Details
+## API Endpoints
 
-### Frontend Components Modified
-- `frontend/src/pages/MerchantSchedulePage.tsx`
-  - Enhanced `MobileDatePicker` component with availability checking
-  - Added slot availability validation and error handling
-  - Fixed training date validation logic
-  - Added visual validation feedback
+### Manager Endpoints
+- `POST /api/auth/login` - Manager authentication
+- `GET /api/onboarding` - List all onboarding records
+- `POST /api/onboarding` - Create new onboarding record
+- `GET /api/trainers` - Manage trainers
+- `GET /api/training-schedules` - View all training schedules
 
-### Backend API Endpoints Used
-- `GET /api/training-slots/available` - Check available training slots
-- `GET /api/schedule/holidays/{year}?state={state}` - Get public holidays
+### Merchant Endpoints
+- `GET /api/onboarding/by-token/:token` - Get onboarding details by access token
+- `PUT /api/onboarding/by-token/:token` - Update onboarding record
 - `POST /api/merchant-training-schedules/book-auto-assign` - Book training slot
+- `GET /api/training-slots/available` - Check slot availability
+- `GET /api/schedule/holidays/:year` - Get public holidays
 
-### Business Rules Enforced
-- Training slots only show if trainers are available for:
-  - Merchant's location (for onsite training)
-  - Merchant's language preferences
-  - Selected date and time
-- Training date must be at least 1 working day after installation date
-- Weekends and public holidays are excluded from working day calculations
+## Deployment Configuration
 
-### Error Handling
-- Graceful handling of no available trainers
-- Clear error messages for different scenarios
-- Validation prevents invalid date selection
-- Visual feedback for validation errors
+### Environment Variables
+- Database connection strings
+- JWT secrets
+- Google OAuth credentials
+- API base URLs
 
-## Deployment Status
-- ✅ Frontend changes committed and pushed to production
-- ✅ Backend API endpoints already available
-- ✅ Working day calculations implemented
-- ✅ Training date validation enforced
-- ✅ Merchant UX improved for training booking errors
-- ✅ API service authentication handling fixed
-- ✅ Build successful with no errors
+### Render.com Services
+- Backend: Node.js service with PostgreSQL database
+- Frontend: Static site with automatic builds
+- Environment-specific configurations
 
-## Testing Recommendations
-1. Test training date selection with various installation dates
-2. Verify slot availability checking works correctly
-3. Test error messages for different scenarios
-4. Confirm working day calculations exclude weekends and holidays
-5. Test validation prevents booking training before installation
-6. **Test merchant UX when no trainers are available** - should stay on page with helpful error message
-7. **Test that merchants are not redirected to login** when booking fails due to no trainers
-8. **Verify error messages guide users to contact onboarding manager** 
+## Testing and Quality Assurance
+
+### Manual Testing Scenarios
+1. **Complete Onboarding Flow**: Manager creates → Merchant schedules → Training booked
+2. **Error Handling**: No trainers available, invalid dates, expired tokens
+3. **Business Rules**: Date validation, working day calculations
+4. **Authentication**: Manager and merchant access patterns
+
+### Production Monitoring
+- Error tracking through application logs
+- Database performance monitoring
+- User experience validation
+
+## Known Limitations and Future Improvements
+
+### Current Limitations
+1. **Trainer Management**: Limited to basic CRUD operations
+2. **Notification System**: No automated email/SMS notifications
+3. **Reporting**: Basic listing views without advanced analytics
+4. **Mobile Optimization**: Responsive but not native mobile app
+
+### Planned Improvements
+1. **Enhanced Notifications**: Email/SMS alerts for scheduling updates
+2. **Advanced Reporting**: Dashboard with metrics and analytics
+3. **Calendar Integration**: Sync with Google Calendar/Outlook
+4. **Mobile App**: Native iOS/Android applications
+5. **Multi-language Support**: Internationalization for different markets
+
+## Maintenance and Support
+
+### Regular Tasks
+- Database backups and maintenance
+- Security updates and patches
+- Performance monitoring and optimization
+- User feedback collection and analysis
+
+### Support Procedures
+- Error log monitoring and alerting
+- User issue escalation process
+- System health checks and monitoring
+- Documentation updates and maintenance
+
+---
+
+*Last Updated: January 2025*
+*Version: 1.2.0* 
