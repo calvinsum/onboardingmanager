@@ -45,11 +45,24 @@ const TermsAndConditionsPage: React.FC = () => {
         if (currentTerms) {
           setTermsConditions(currentTerms);
         } else {
-          setError('No terms and conditions are currently active. Please contact support.');
+          // Temporary workaround: If no T&C available, redirect to scheduling after 5 seconds
+          setError('No terms and conditions are currently active. Redirecting to scheduling in 5 seconds...');
+          setTimeout(() => {
+            navigate('/merchant-schedule');
+          }, 5000);
         }
       } catch (error: any) {
         console.error('Error fetching terms:', error);
-        setError('Failed to load terms and conditions. Please try again.');
+        
+        // Check if this is a 404 error (no terms found)
+        if (error.response?.status === 404) {
+          setError('Terms and conditions are being set up. Redirecting to scheduling in 5 seconds...');
+          setTimeout(() => {
+            navigate('/merchant-schedule');
+          }, 5000);
+        } else {
+          setError('Failed to load terms and conditions. Please try again.');
+        }
       } finally {
         setLoading(false);
       }
