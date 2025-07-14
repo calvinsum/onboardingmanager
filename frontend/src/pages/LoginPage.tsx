@@ -169,15 +169,15 @@ const LoginPage: React.FC = () => {
               
               <div className="text-center">
                 <p className="text-xs text-text-muted">
-                  Need help? Contact your onboarding manager or{' '}
-                  <button
-                    type="button"
-                    onClick={() => setUserType('onboarding_manager')}
-                    className="text-primary-600 hover:text-primary-700 underline"
-                  >
-                    manager sign in
-                  </button>
+                  Need help? Contact your onboarding manager.
                 </p>
+                <button
+                  type="button"
+                  onClick={() => setUserType('onboarding_manager')}
+                  className="text-xs text-primary-600 hover:text-primary-700 underline mt-1"
+                >
+                  Onboarding manager sign in
+                </button>
               </div>
             </div>
           )}
