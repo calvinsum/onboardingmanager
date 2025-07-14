@@ -1,5 +1,6 @@
 {
   "dependencies": {
+    "pg": "^8.16.3",
     "react-day-picker": "^9.8.0"
   }
 }

@@ -162,7 +162,7 @@ const TermsAndConditionsPage: React.FC = () => {
               <img 
                 src="/StoreHub_logo.png" 
                 alt="StoreHub Logo" 
-                className="h-12 w-12 object-contain"
+                className="h-24 w-24 object-contain drop-shadow-sm"
                 onError={(e) => {
                   console.error('Logo failed to load');
                   e.currentTarget.style.display = 'none';
@@ -261,7 +261,7 @@ const TermsAndConditionsPage: React.FC = () => {
                   <button
                     type="submit"
                     disabled={!agreed || !fullName.trim() || submitting}
-                    className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    className="btn-primary disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {submitting ? 'Submitting...' : 'Agree and Continue'}
                   </button>
