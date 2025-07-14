@@ -23,18 +23,15 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center space-x-4">
-              {/* Logo placeholder - will be replaced with actual logo */}
+              {/* Logo */}
               <div className="flex items-center space-x-3">
                 <img 
                   src="/StoreHub_logo.png" 
                   alt="StoreHub Logo" 
-                  className="w-8 h-8 object-contain"
+                  className="w-10 h-10 object-contain"
                 />
                 <div>
-                  <h1 className="text-xl font-bold text-white">
-                    StoreHub
-                  </h1>
-                  <p className="text-xs text-text-sidebar">
+                  <p className="text-sm font-medium text-white">
                     Merchant Onboarding
                   </p>
                 </div>

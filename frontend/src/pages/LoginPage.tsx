@@ -44,15 +44,14 @@ const LoginPage: React.FC = () => {
         {/* Logo and Header */}
         <div className="text-center">
           <div className="flex justify-center mb-6">
-            <div className="flex items-center space-x-3">
+            <div className="flex flex-col items-center space-y-3">
               <img 
                 src="/StoreHub_logo.png" 
                 alt="StoreHub Logo" 
-                className="w-12 h-12 object-contain"
+                className="w-20 h-20 object-contain"
               />
-              <div className="text-left">
-                <h1 className="text-2xl font-bold text-text-main">StoreHub</h1>
-                <p className="text-sm text-text-muted">Merchant Onboarding</p>
+              <div className="text-center">
+                <p className="text-lg font-medium text-text-muted">Merchant Onboarding</p>
               </div>
             </div>
           </div>
