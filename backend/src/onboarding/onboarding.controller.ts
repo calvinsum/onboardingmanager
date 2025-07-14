@@ -316,7 +316,11 @@ export class MerchantOnboardingController {
   @UseInterceptors(FilesInterceptor('files', 10, {
     storage: diskStorage({
       destination: (req, file, cb) => {
-        const uploadDir = join(process.cwd(), 'uploads');
+        // Use system temp directory instead of ./uploads
+        const uploadDir = process.env.NODE_ENV === 'production' 
+          ? '/tmp/uploads' 
+          : join(process.cwd(), 'uploads');
+        
         if (!existsSync(uploadDir)) {
           mkdirSync(uploadDir, { recursive: true });
         }
