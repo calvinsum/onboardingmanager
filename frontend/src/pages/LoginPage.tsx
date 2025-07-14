@@ -48,7 +48,7 @@ const LoginPage: React.FC = () => {
               <img 
                 src="/StoreHub_logo.png" 
                 alt="StoreHub Logo" 
-                className="w-20 h-20 object-contain"
+                className="w-40 h-40 object-contain"
               />
               <div className="text-center">
                 <p className="text-lg font-medium text-text-muted">Merchant Onboarding</p>
