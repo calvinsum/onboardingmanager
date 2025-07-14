@@ -3,7 +3,8 @@ import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiParam, ApiQuery, 
 import { AuthGuard } from '@nestjs/passport';
 import { FilesInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
-import { extname } from 'path';
+import { extname, join } from 'path';
+import { existsSync, mkdirSync } from 'fs';
 import { OnboardingService } from './onboarding.service';
 import { TermsConditionsService } from './terms-conditions.service';
 import { CreateOnboardingDto } from './dto/create-onboarding.dto';
@@ -270,7 +271,13 @@ export class MerchantOnboardingController {
   @ApiResponse({ status: 201, description: 'Files uploaded successfully' })
   @UseInterceptors(FilesInterceptor('files', 10, {
     storage: diskStorage({
-      destination: './uploads',
+      destination: (req, file, cb) => {
+        const uploadDir = join(process.cwd(), 'uploads');
+        if (!existsSync(uploadDir)) {
+          mkdirSync(uploadDir, { recursive: true });
+        }
+        cb(null, uploadDir);
+      },
       filename: (req, file, cb) => {
         const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
         cb(null, `${uniqueSuffix}${extname(file.originalname)}`);
