@@ -106,10 +106,30 @@ StoreHub Onboarding Team`;
 
   const handleDownloadAttachments = async (onboardingId: string) => {
     try {
-      // TODO: Implement actual download functionality
-      // For now, show a placeholder message
-      toast.success('Download functionality will be implemented with file upload backend.');
-      console.log('Download attachments for onboarding:', onboardingId);
+      const response = await fetch(`${process.env.REACT_APP_API_URL || 'https://onboardingmanager.onrender.com/api'}/onboarding/download-attachments/${onboardingId}`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('authToken')}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch attachments');
+      }
+
+      const attachments = await response.json();
+      
+      if (attachments.length === 0) {
+        toast.error('No attachments found for this onboarding record.');
+        return;
+      }
+
+      // For now, show attachment information
+      const attachmentList = attachments.map((att: any) => `${att.originalName} (${(att.fileSize / 1024).toFixed(1)} KB)`).join('\n');
+      toast.success(`Found ${attachments.length} attachment(s):\n${attachmentList}`);
+      
+      console.log('Attachments for onboarding:', onboardingId, attachments);
     } catch (error) {
       toast.error('Failed to download attachments.');
       console.error(error);
@@ -246,8 +266,10 @@ StoreHub Onboarding Team`;
                     <th className="py-3 px-4 text-left text-xs font-semibold uppercase tracking-wider">Delivery</th>
                     <th className="py-3 px-4 text-left text-xs font-semibold uppercase tracking-wider">Installation</th>
                     <th className="py-3 px-4 text-left text-xs font-semibold uppercase tracking-wider">Training</th>
-                    <th className="py-3 px-4 text-left text-xs font-semibold uppercase tracking-wider">Product Setup</th>                    <th className="py-3 px-4 text-left text-xs font-semibold uppercase tracking-wider">Go Live</th>
-                    <th className="py-3 px-4 text-left text-xs font-semibold uppercase tracking-wider">Attachments</th>                    <th className="py-3 px-4 text-left text-xs font-semibold uppercase tracking-wider">Access Token</th>
+                    <th className="py-3 px-4 text-left text-xs font-semibold uppercase tracking-wider">Product Setup</th>
+                    <th className="py-3 px-4 text-left text-xs font-semibold uppercase tracking-wider">Go Live</th>
+                    <th className="py-3 px-4 text-left text-xs font-semibold uppercase tracking-wider">Attachments</th>
+                    <th className="py-3 px-4 text-left text-xs font-semibold uppercase tracking-wider">Access Token</th>
                     <th className="py-3 px-4 text-left text-xs font-semibold uppercase tracking-wider">Expiry</th>
                     <th className="py-3 px-4 text-left text-xs font-semibold uppercase tracking-wider">Actions</th>
                   </tr>
@@ -320,13 +342,19 @@ StoreHub Onboarding Team`;
                         }`}>
                           {record.trainingConfirmed ? 'Confirmed' : 'Pending'}
                         </span>
+                      </td>
                       <td className="py-4 px-4">
                         <span className={`status-badge ${
                           record.productSetupConfirmed ? 'status-confirmed' : 'status-pending'
                         }`}>
                           {record.productSetupConfirmed ? 'Confirmed' : 'Pending'}
                         </span>
-                      </td>                      </td>
+                      </td>
+                      <td className="py-4 px-4">
+                        <div className="text-text-main text-sm">
+                          {new Date(record.expectedGoLiveDate).toLocaleDateString()}
+                        </div>
+                      </td>
                       <td className="py-4 px-4">
                         <div className="flex items-center space-x-2">
                           {record.productSetupAttachments && record.productSetupAttachments.length > 0 ? (
@@ -346,22 +374,18 @@ StoreHub Onboarding Team`;
                             <span className="text-text-muted text-sm">No files</span>
                           )}
                         </div>
-                      </td>                      <td className="py-4 px-4">
-                        <div className="text-text-main text-sm">
-                          {new Date(record.expectedGoLiveDate).toLocaleDateString()}
-                        </div>
                       </td>
                       <td className="py-4 px-4">
                         <div className="flex items-center space-x-2">
-                          <span className="font-mono text-xs bg-light-200 px-2 py-1 rounded border text-text-muted">
+                          <span className="text-text-main text-sm font-mono bg-gray-100 px-2 py-1 rounded">
                             {record.accessToken}
                           </span>
                           <button
                             onClick={() => handleCopyToken(record.accessToken)}
-                            className="text-primary-500 hover:text-primary-600 text-sm transition-colors"
+                            className="text-blue-500 hover:text-blue-700 text-xs"
                             title="Copy token"
                           >
-                            📋
+                            📋 Copy
                           </button>
                         </div>
                       </td>

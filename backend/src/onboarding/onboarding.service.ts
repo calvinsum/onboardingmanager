@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Onboarding, OnboardingStatus } from './entities/onboarding.entity';
 import { TermsConditions } from './entities/terms-conditions.entity';
+import { ProductSetupAttachment } from './entities/product-setup-attachment.entity';
 import { Merchant } from '../merchant/entities/merchant.entity';
 import { OnboardingManager } from '../onboarding-manager/entities/onboarding-manager.entity';
 import { CreateOnboardingDto } from './dto/create-onboarding.dto';
@@ -17,6 +18,8 @@ export class OnboardingService {
     private onboardingRepository: Repository<Onboarding>,
     @InjectRepository(TermsConditions)
     private termsConditionsRepository: Repository<TermsConditions>,
+    @InjectRepository(ProductSetupAttachment)
+    private attachmentRepository: Repository<ProductSetupAttachment>,
     @InjectRepository(Merchant)
     private merchantRepository: Repository<Merchant>,
     @InjectRepository(OnboardingManager)
@@ -372,6 +375,66 @@ export class OnboardingService {
     };
   }
 
+  async uploadProductSetupAttachments(token: string, files: Express.Multer.File[]): Promise<Onboarding> {
+    const onboarding = await this.onboardingRepository.findOne({
+      where: { accessToken: token },
+      relations: ['productSetupAttachments'],
+    });
+
+    if (!onboarding) {
+      throw new NotFoundException('Invalid or expired token');
+    }
+
+    // Check if token is expired
+    if (new Date() > onboarding.tokenExpiryDate) {
+      throw new BadRequestException('Access token has expired');
+    }
+
+    // Create attachment records
+    const attachments = files.map(file => {
+      const attachment = new ProductSetupAttachment();
+      attachment.originalName = file.originalname;
+      attachment.storedName = file.filename;
+      attachment.mimeType = file.mimetype;
+      attachment.fileSize = file.size;
+      attachment.filePath = file.path;
+      attachment.onboardingId = onboarding.id;
+      return attachment;
+    });
+
+    // Save attachments to database
+    await this.attachmentRepository.save(attachments);
+
+    // Update onboarding record to mark product setup as confirmed
+    onboarding.productSetupConfirmed = true;
+    onboarding.productSetupConfirmedDate = new Date();
+    
+    await this.onboardingRepository.save(onboarding);
+
+    // Return updated onboarding with attachments
+    return this.onboardingRepository.findOne({
+      where: { id: onboarding.id },
+      relations: ['productSetupAttachments', 'createdByManager', 'merchant'],
+    });
+  }
+
+  async getAttachmentsForDownload(onboardingId: string, managerId: string): Promise<ProductSetupAttachment[]> {
+    // Verify the manager has access to this onboarding record
+    const onboarding = await this.onboardingRepository.findOne({
+      where: { 
+        id: onboardingId,
+        createdByManagerId: managerId 
+      },
+      relations: ['productSetupAttachments'],
+    });
+
+    if (!onboarding) {
+      throw new NotFoundException('Onboarding record not found or access denied');
+    }
+
+    return onboarding.productSetupAttachments;
+  }
+
   private generateAccessToken(): string {
     // Generate a secure random token
     const randomBytes = crypto.randomBytes(32);
@@ -401,6 +464,13 @@ export class OnboardingService {
       where: { createdByManagerId: managerId },
       relations: ['createdByManager', 'merchant'],
       order: { createdAt: 'DESC' },
+    });
+  }
+
+  async getMyOnboardings(managerId: string): Promise<Onboarding[]> {
+    return this.onboardingRepository.find({
+      where: { createdByManagerId: managerId },
+      relations: ['createdByManager', 'merchant', 'acknowledgedTermsVersion', 'productSetupAttachments'],
     });
   }
 

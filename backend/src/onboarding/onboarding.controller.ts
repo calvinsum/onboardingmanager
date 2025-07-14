@@ -1,6 +1,9 @@
-import { Controller, Get, Post, Body, Param, Patch, UseGuards, Request, Query } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiParam, ApiQuery } from '@nestjs/swagger';
+import { Controller, Get, Post, Body, Param, Patch, UseGuards, Request, Query, UseInterceptors, UploadedFiles } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiParam, ApiQuery, ApiConsumes } from '@nestjs/swagger';
 import { AuthGuard } from '@nestjs/passport';
+import { FilesInterceptor } from '@nestjs/platform-express';
+import { diskStorage } from 'multer';
+import { extname } from 'path';
 import { OnboardingService } from './onboarding.service';
 import { TermsConditionsService } from './terms-conditions.service';
 import { CreateOnboardingDto } from './dto/create-onboarding.dto';
@@ -185,6 +188,14 @@ export class OnboardingController {
   async activateTermsConditions(@Param('id') id: string): Promise<TermsConditions> {
     return this.termsConditionsService.activateTermsConditions(id);
   }
+
+  @Get('download-attachments/:id')
+  @ApiOperation({ summary: 'Download all attachments for an onboarding record' })
+  @ApiResponse({ status: 200, description: 'Attachments downloaded successfully' })
+  async downloadAttachments(@Param('id') id: string, @Request() req: any): Promise<any> {
+    const managerId = req.user.id;
+    return this.onboardingService.getAttachmentsForDownload(id, managerId);
+  }
 }
 
 // Public endpoint for merchant access using token
@@ -251,5 +262,43 @@ export class MerchantOnboardingController {
   @ApiResponse({ status: 200, description: 'Active terms and conditions', type: TermsConditions })
   async getActiveTermsConditionsPublic(): Promise<TermsConditions> {
     return this.termsConditionsService.getActiveTermsConditions();
+  }
+
+  @Post('upload-attachments/:token')
+  @ApiOperation({ summary: 'Upload product setup attachments' })
+  @ApiConsumes('multipart/form-data')
+  @ApiResponse({ status: 201, description: 'Files uploaded successfully' })
+  @UseInterceptors(FilesInterceptor('files', 10, {
+    storage: diskStorage({
+      destination: './uploads',
+      filename: (req, file, cb) => {
+        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+        cb(null, `${uniqueSuffix}${extname(file.originalname)}`);
+      },
+    }),
+    fileFilter: (req, file, cb) => {
+      const allowedMimes = [
+        'image/jpeg',
+        'image/png',
+        'image/gif',
+        'application/pdf',
+        'application/msword',
+        'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+      ];
+      if (allowedMimes.includes(file.mimetype)) {
+        cb(null, true);
+      } else {
+        cb(new Error('Invalid file type'), false);
+      }
+    },
+    limits: {
+      fileSize: 10 * 1024 * 1024, // 10MB limit
+    },
+  }))
+  async uploadAttachments(
+    @Param('token') token: string,
+    @UploadedFiles() files: Express.Multer.File[],
+  ): Promise<Onboarding> {
+    return this.onboardingService.uploadProductSetupAttachments(token, files);
   }
 } 

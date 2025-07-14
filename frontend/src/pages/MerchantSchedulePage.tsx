@@ -966,33 +966,40 @@ const MerchantSchedulePage: React.FC = () => {
 
     setSaving(true);
     try {
-      // TODO: Upload attachments to server
-      // For now, we'll just confirm without uploading
-      
-      const confirmationDate = new Date();
-      const payload = {
-        productSetupConfirmed: true,
-        productSetupConfirmedDate: confirmationDate.toISOString(),
-      };
+      // Upload attachments to server
+      const formData = new FormData();
+      attachments.forEach(file => {
+        formData.append('files', file);
+      });
 
-      const updatedRecord = await updateOnboardingByToken(accessToken, payload);
+      const response = await fetch(`${process.env.REACT_APP_API_URL || 'https://onboardingmanager.onrender.com/api'}/merchant-onboarding/upload-attachments/${accessToken}`, {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to upload files');
+      }
+
+      const updatedRecord = await response.json();
       
       // Update local storage
       localStorage.setItem('onboardingRecord', JSON.stringify(updatedRecord));
       setOnboardingRecord(updatedRecord);
       setProductSetupConfirmed(true);
-      setProductSetupConfirmedDate(confirmationDate);
+      setProductSetupConfirmedDate(new Date(updatedRecord.productSetupConfirmedDate));
       
-      toast.success('Product setup confirmed successfully!');
+      toast.success(`Product setup confirmed successfully! ${attachments.length} file(s) uploaded.`);
     } catch (error: any) {
       console.error('Error confirming product setup:', error);
-      if (error.response?.status === 404) {
+      if (error.message?.includes('expired')) {
         toast.error('Access token expired. Please contact your onboarding manager.');
         localStorage.removeItem('merchantAccessToken');
         localStorage.removeItem('onboardingRecord');
         navigate('/login');
       } else {
-        toast.error('Failed to confirm product setup. Please try again.');
+        toast.error(`Failed to upload files: ${error.message}`);
       }
     } finally {
       setSaving(false);
