@@ -162,7 +162,11 @@ const TermsAndConditionsPage: React.FC = () => {
               <img 
                 src="/StoreHub_logo.png" 
                 alt="StoreHub Logo" 
-                className="h-8 w-8"
+                className="h-12 w-12 object-contain"
+                onError={(e) => {
+                  console.error('Logo failed to load');
+                  e.currentTarget.style.display = 'none';
+                }}
               />
               <h1 className="text-xl font-bold text-gray-900">Merchant Onboarding</h1>
             </div>
