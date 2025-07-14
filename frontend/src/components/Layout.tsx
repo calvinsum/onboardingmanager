@@ -28,9 +28,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                 <img 
                   src="/StoreHub_logo.png" 
                   alt="StoreHub Logo" 
-                  className={`w-20 h-20 object-contain ${
-                    isOnboardingManager ? 'filter brightness-0 invert' : ''
-                  }`}
+                  className="w-20 h-20 object-contain"
                 />
                 <div>
                   <p className="text-sm font-medium text-white">
