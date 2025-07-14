@@ -197,6 +197,27 @@ export class OnboardingController {
     const managerId = req.user.id;
     return this.onboardingService.getAttachmentsForDownload(id, managerId);
   }
+
+  @Get('test-token/:token')
+  @ApiOperation({ summary: 'Test token validation' })
+  @ApiResponse({ status: 200, description: 'Token validation result' })
+  async testToken(@Param('token') token: string): Promise<any> {
+    try {
+      const onboarding = await this.onboardingService.getOnboardingByToken(token);
+      return {
+        success: true,
+        onboardingId: onboarding.id,
+        accountName: onboarding.accountName,
+        tokenExpiry: onboarding.tokenExpiryDate,
+        isExpired: new Date() > onboarding.tokenExpiryDate
+      };
+    } catch (error) {
+      return {
+        success: false,
+        error: error.message
+      };
+    }
+  }
 }
 
 // Public endpoint for merchant access using token

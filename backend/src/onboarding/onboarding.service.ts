@@ -376,46 +376,73 @@ export class OnboardingService {
   }
 
   async uploadProductSetupAttachments(token: string, files: Express.Multer.File[]): Promise<Onboarding> {
-    const onboarding = await this.onboardingRepository.findOne({
-      where: { accessToken: token },
-      relations: ['productSetupAttachments'],
-    });
+    try {
+      console.log('📁 Starting file upload for token:', token);
+      console.log('📄 Number of files:', files.length);
+      
+      const onboarding = await this.onboardingRepository.findOne({
+        where: { accessToken: token },
+        relations: ['productSetupAttachments'],
+      });
 
-    if (!onboarding) {
-      throw new NotFoundException('Invalid or expired token');
+      if (!onboarding) {
+        console.error('❌ Invalid token:', token);
+        throw new NotFoundException('Invalid or expired token');
+      }
+
+      console.log('✅ Found onboarding record:', onboarding.id);
+
+      // Check if token is expired
+      if (new Date() > onboarding.tokenExpiryDate) {
+        console.error('❌ Token expired:', onboarding.tokenExpiryDate);
+        throw new BadRequestException('Access token has expired');
+      }
+
+      console.log('✅ Token is valid, processing files...');
+
+      // Create attachment records
+      const attachments = files.map(file => {
+        console.log('📎 Processing file:', file.originalname, 'Size:', file.size);
+        const attachment = new ProductSetupAttachment();
+        attachment.originalName = file.originalname;
+        attachment.storedName = file.filename;
+        attachment.mimeType = file.mimetype;
+        attachment.fileSize = file.size;
+        attachment.filePath = file.path;
+        attachment.onboardingId = onboarding.id;
+        return attachment;
+      });
+
+      console.log('💾 Saving attachments to database...');
+      
+      // Save attachments to database
+      await this.attachmentRepository.save(attachments);
+      
+      console.log('✅ Attachments saved successfully');
+
+      // Update onboarding record to mark product setup as confirmed
+      onboarding.productSetupConfirmed = true;
+      onboarding.productSetupConfirmedDate = new Date();
+      
+      console.log('💾 Updating onboarding record...');
+      await this.onboardingRepository.save(onboarding);
+      
+      console.log('✅ Onboarding record updated successfully');
+
+      // Return updated onboarding with attachments
+      const result = await this.onboardingRepository.findOne({
+        where: { id: onboarding.id },
+        relations: ['productSetupAttachments', 'createdByManager', 'merchant'],
+      });
+      
+      console.log('✅ File upload completed successfully');
+      return result;
+      
+    } catch (error) {
+      console.error('❌ Error in uploadProductSetupAttachments:', error.message);
+      console.error('❌ Stack trace:', error.stack);
+      throw error;
     }
-
-    // Check if token is expired
-    if (new Date() > onboarding.tokenExpiryDate) {
-      throw new BadRequestException('Access token has expired');
-    }
-
-    // Create attachment records
-    const attachments = files.map(file => {
-      const attachment = new ProductSetupAttachment();
-      attachment.originalName = file.originalname;
-      attachment.storedName = file.filename;
-      attachment.mimeType = file.mimetype;
-      attachment.fileSize = file.size;
-      attachment.filePath = file.path;
-      attachment.onboardingId = onboarding.id;
-      return attachment;
-    });
-
-    // Save attachments to database
-    await this.attachmentRepository.save(attachments);
-
-    // Update onboarding record to mark product setup as confirmed
-    onboarding.productSetupConfirmed = true;
-    onboarding.productSetupConfirmedDate = new Date();
-    
-    await this.onboardingRepository.save(onboarding);
-
-    // Return updated onboarding with attachments
-    return this.onboardingRepository.findOne({
-      where: { id: onboarding.id },
-      relations: ['productSetupAttachments', 'createdByManager', 'merchant'],
-    });
   }
 
   async getAttachmentsForDownload(onboardingId: string, managerId: string): Promise<ProductSetupAttachment[]> {
