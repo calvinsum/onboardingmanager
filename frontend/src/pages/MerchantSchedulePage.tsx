@@ -661,7 +661,6 @@ const MerchantSchedulePage: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
 
-  const [hardwareDeliveryDate, setHardwareDeliveryDate] = useState<Date | undefined>();
   const [hardwareInstallationDate, setHardwareInstallationDate] = useState<Date | undefined>();
   const [trainingDate, setTrainingDate] = useState<Date | undefined>();
   const [deliveryConfirmed, setDeliveryConfirmed] = useState(false);
@@ -692,10 +691,7 @@ const MerchantSchedulePage: React.FC = () => {
         const fetchedHolidays = await getPublicHolidays(new Date().getFullYear(), '10');
         setHolidays(fetchedHolidays.map((h: any) => new Date(h.date)));
 
-        // Set existing dates if available
-        if (record.hardwareDeliveryDate) {
-          setHardwareDeliveryDate(new Date(record.hardwareDeliveryDate));
-        }
+                  // Set existing dates if available
         if (record.hardwareInstallationDate) {
           setHardwareInstallationDate(new Date(record.hardwareInstallationDate));
         }
@@ -851,7 +847,7 @@ const MerchantSchedulePage: React.FC = () => {
   };
 
   const handleTrainingConfirm = async () => {
-    if (!accessToken) return;
+    if (!accessToken || !trainingDate) return;
 
     // Validate training date before confirming
     if (!isTrainingDateValid(trainingDate)) {
@@ -861,8 +857,8 @@ const MerchantSchedulePage: React.FC = () => {
 
     setSaving(true);
     try {
-      // If training date is set, book the training slot FIRST before marking as confirmed
-      if (trainingDate && onboardingRecord?.id) {
+      // First, book the training slot
+      if (onboardingRecord?.id) {
         try {
           // Determine training type based on onboarding record
           const hasRemoteTraining = onboardingRecord?.onboardingTypes?.includes('remote_training');
@@ -886,8 +882,20 @@ const MerchantSchedulePage: React.FC = () => {
           // Use the merchant-specific auto-assign booking endpoint
           await bookMerchantTrainingSlot(bookingData);
           
-          // Only proceed to mark training as confirmed if booking succeeded
-          console.log('Training slot booked successfully, now marking as confirmed');
+          // Only mark as confirmed if booking succeeds
+          const payload = {
+            trainingDate: trainingDate.toISOString(),
+            trainingConfirmed: true
+          };
+
+          const updatedRecord = await updateOnboardingByToken(accessToken, payload);
+          
+          toast.success('Training confirmed and slot booked successfully!');
+          
+          // Update local storage and state
+          localStorage.setItem('onboardingRecord', JSON.stringify(updatedRecord));
+          setOnboardingRecord(updatedRecord);
+          setTrainingConfirmed(true);
           
         } catch (bookingError: any) {
           console.error('Error booking training slot:', bookingError);
@@ -914,32 +922,21 @@ const MerchantSchedulePage: React.FC = () => {
             localStorage.removeItem('onboardingRecord');
             navigate('/login');
           } else {
-            toast.error('Training booking failed. Please contact your onboarding manager for assistance.');
+            toast.error('Failed to book training slot. Please contact your onboarding manager for assistance.');
           }
           
-          // Don't mark training as confirmed if booking fails
-          setSaving(false);
-          return;
+          // Log detailed error information for debugging
+          const hasOnsiteTraining = onboardingRecord?.trainingPreferenceMode?.includes('onsite_training');
+          const hasRemoteTraining = onboardingRecord?.trainingPreferenceMode?.includes('remote_training');
+          console.log('Training booking failed with requirements:', {
+            trainingType: hasOnsiteTraining && !hasRemoteTraining ? 'onsite_training' : 'remote_training',
+            location: (hasOnsiteTraining && !hasRemoteTraining) ? onboardingRecord?.trainingState : undefined,
+            languages: onboardingRecord?.trainingPreferenceLanguages || [],
+            timeSlot: format(trainingDate, 'HH:mm'),
+            date: trainingDate.toISOString().split('T')[0]
+          });
         }
       }
-
-      // Only mark training as confirmed AFTER successful booking (or if no booking needed)
-      const confirmationDate = new Date();
-      const payload = {
-        trainingConfirmed: true,
-        trainingConfirmedDate: confirmationDate.toISOString(),
-        trainingDate: trainingDate?.toISOString(), // Add the training date to the payload
-      };
-
-      const updatedRecord = await updateOnboardingByToken(accessToken, payload);
-      
-      // Update local storage
-      localStorage.setItem('onboardingRecord', JSON.stringify(updatedRecord));
-      setOnboardingRecord(updatedRecord);
-      setTrainingConfirmed(true);
-      setTrainingConfirmedDate(confirmationDate);
-      
-      toast.success('Training confirmed and slot booked successfully!');
       
     } catch (error: any) {
       console.error('Error confirming training:', error);
@@ -956,116 +953,8 @@ const MerchantSchedulePage: React.FC = () => {
     }
   };
 
-  const handleSaveSchedule = async () => {
-    if (!accessToken) return;
-
-    // Validate training date before saving
-    if (trainingDate && !isTrainingDateValid(trainingDate)) {
-      toast.error('Training date must be at least one working day after the installation date.');
-      return;
-    }
-
-    setSaving(true);
-    try {
-      const payload = {
-        hardwareDeliveryDate: hardwareDeliveryDate?.toISOString(),
-        hardwareInstallationDate: hardwareInstallationDate?.toISOString(),
-        trainingDate: trainingDate?.toISOString(),
-      };
-
-      const updatedRecord = await updateOnboardingByToken(accessToken, payload);
-      
-      // If training date is set and we haven't booked a training slot yet, book it now
-      if (trainingDate && onboardingRecord?.id) {
-        try {
-          // Determine training type based on onboarding record
-          const hasRemoteTraining = onboardingRecord?.onboardingTypes?.includes('remote_training');
-          const hasOnsiteTraining = onboardingRecord?.onboardingTypes?.includes('onsite_training');
-          
-          // Default to remote if both are selected, otherwise use the available option
-          const trainingType = hasOnsiteTraining && !hasRemoteTraining ? 'onsite_training' : 'remote_training';
-          
-          // Extract time slot from training date
-          const timeSlot = format(trainingDate, 'HH:mm');
-          
-          const bookingData = {
-            onboardingId: onboardingRecord.id,
-            date: trainingDate.toISOString().split('T')[0],
-            timeSlot,
-            trainingType,
-            location: trainingType === 'onsite_training' ? onboardingRecord?.trainingState : undefined,
-            languages: onboardingRecord?.trainingPreferenceLanguages || []
-          };
-
-          // Use the merchant-specific auto-assign booking endpoint
-          await bookMerchantTrainingSlot(bookingData);
-          
-          toast.success('Schedule updated and training slot booked successfully!');
-        } catch (bookingError: any) {
-          console.error('Error booking training slot:', bookingError);
-          
-          // Provide more specific error messages
-          if (bookingError.response?.status === 400) {
-            const errorMessage = bookingError.response?.data?.message || 'No trainers available for your requirements';
-            if (typeof errorMessage === 'string') {
-              if (errorMessage.includes('No trainers available')) {
-                toast.error('No trainers available for your location and language preferences. Please contact your onboarding manager for assistance.');
-              } else {
-                toast.error(`Training booking failed: ${errorMessage}`);
-              }
-            } else if (Array.isArray(errorMessage)) {
-              toast.error(`Training booking failed: ${errorMessage.join(', ')}`);
-            } else {
-              toast.error('Training booking failed: No trainers available for your location and time slot. Please contact your onboarding manager for assistance.');
-            }
-          } else if (bookingError.response?.status === 404) {
-            toast.error('Training booking failed: Onboarding record not found');
-          } else if (bookingError.response?.status === 401) {
-            toast.error('Access token expired. Please contact your onboarding manager.');
-            localStorage.removeItem('merchantAccessToken');
-            localStorage.removeItem('onboardingRecord');
-            navigate('/login');
-          } else {
-            toast.error('Schedule updated, but failed to book training slot. Please contact your onboarding manager for assistance.');
-          }
-          
-          // Log detailed error information for debugging
-          const hasOnsiteTraining = onboardingRecord?.trainingPreferenceMode?.includes('onsite_training');
-          const hasRemoteTraining = onboardingRecord?.trainingPreferenceMode?.includes('remote_training');
-          console.log('Training booking failed with requirements:', {
-            trainingType: hasOnsiteTraining && !hasRemoteTraining ? 'onsite_training' : 'remote_training',
-            location: (hasOnsiteTraining && !hasRemoteTraining) ? onboardingRecord?.trainingState : undefined,
-            languages: onboardingRecord?.trainingPreferenceLanguages || [],
-            timeSlot: format(trainingDate, 'HH:mm'),
-            date: trainingDate.toISOString().split('T')[0]
-          });
-        }
-      } else {
-        toast.success('Schedule updated successfully!');
-      }
-      
-      // Update local storage
-      localStorage.setItem('onboardingRecord', JSON.stringify(updatedRecord));
-      setOnboardingRecord(updatedRecord);
-      
-    } catch (error: any) {
-      console.error('Error saving schedule:', error);
-      if (error.response?.status === 404) {
-        toast.error('Access token expired. Please contact your onboarding manager.');
-        localStorage.removeItem('merchantAccessToken');
-        localStorage.removeItem('onboardingRecord');
-        navigate('/login');
-      } else {
-        toast.error('Failed to save schedule. Please try again.');
-      }
-    } finally {
-      setSaving(false);
-    }
-  };
-
   const handleLogout = () => {
     localStorage.removeItem('merchantAccessToken');
-    localStorage.removeItem('userType');
     localStorage.removeItem('onboardingRecord');
     navigate('/login');
   };
@@ -1219,17 +1108,6 @@ const MerchantSchedulePage: React.FC = () => {
             <p>• Training must be scheduled at least one working day after the installation date</p>
             <p>• Confirm training before completing the onboarding</p>
           </div>
-        </div>
-
-        {/* Save Button */}
-        <div className="sticky bottom-0 bg-white border-t p-4 -mx-4">
-          <button
-            onClick={handleSaveSchedule}
-            disabled={saving || !deliveryConfirmed || !installationConfirmed || !trainingDate || !trainingConfirmed}
-            className="w-full bg-blue-600 text-white py-3 px-4 rounded-lg font-medium hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-          >
-            {saving ? 'Saving...' : 'Save Schedule'}
-          </button>
         </div>
       </div>
     </div>
