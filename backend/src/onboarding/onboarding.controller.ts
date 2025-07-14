@@ -286,6 +286,29 @@ export class MerchantOnboardingController {
     return this.termsConditionsService.getActiveTermsConditions();
   }
 
+  @Post('test-upload/:token')
+  @ApiOperation({ summary: 'Test upload without files' })
+  @ApiResponse({ status: 200, description: 'Test upload result' })
+  async testUpload(@Param('token') token: string): Promise<any> {
+    try {
+      // Test the service method without actual files
+      const mockFiles = [
+        {
+          originalname: 'test.pdf',
+          filename: 'test-123.pdf',
+          mimetype: 'application/pdf',
+          size: 1024,
+          path: '/tmp/test-123.pdf'
+        }
+      ] as Express.Multer.File[];
+      
+      const result = await this.onboardingService.uploadProductSetupAttachments(token, mockFiles);
+      return { success: true, onboardingId: result.id };
+    } catch (error) {
+      return { success: false, error: error.message };
+    }
+  }
+
   @Post('upload-attachments/:token')
   @ApiOperation({ summary: 'Upload product setup attachments' })
   @ApiConsumes('multipart/form-data')
