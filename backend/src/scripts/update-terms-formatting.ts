@@ -2,10 +2,10 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from '../app.module';
 import { TermsConditionsService } from '../onboarding/terms-conditions.service';
 
-const termsContent = `StoreHub Merchant Onboarding Terms and Conditions
+const updatedTermsContent = `StoreHub Merchant Onboarding Terms and Conditions
 
-Version: 1.1
-Effective Date: January 1, 2025
+Version: 1.2
+Effective Date: January 15, 2025
 
 1. ACCEPTANCE OF TERMS
 
@@ -180,42 +180,32 @@ Contact No: +60392126688
 
 By clicking "Agree and Continue", you acknowledge that you have read, understood, and agree to be bound by these Terms and Conditions.
 
-Last Updated: January 1, 2025`;
+Last Updated: January 15, 2025`;
 
-async function createInitialTerms() {
+async function updateTermsFormatting() {
   const app = await NestFactory.createApplicationContext(AppModule);
   const termsService = app.get(TermsConditionsService);
 
   try {
-    console.log('Creating initial Terms and Conditions...');
+    console.log('Updating Terms and Conditions formatting...');
     
     const terms = await termsService.createTermsConditions(
-      '1.1',
-      termsContent,
-      new Date('2025-01-01')
+      '1.2',
+      updatedTermsContent,
+      new Date('2025-01-15')
     );
 
-    console.log('✅ Terms and Conditions created successfully!');
+    console.log('✅ Terms and Conditions updated successfully!');
     console.log(`📄 Version: ${terms.version}`);
     console.log(`🆔 ID: ${terms.id}`);
     console.log(`📅 Effective Date: ${terms.effectiveDate}`);
     console.log(`✅ Active: ${terms.isActive}`);
     
   } catch (error) {
-    console.error('❌ Error creating Terms and Conditions:', error);
-    
-    if (error.message?.includes('duplicate')) {
-      console.log('💡 Terms and Conditions may already exist. Checking existing terms...');
-      try {
-        const existingTerms = await termsService.getActiveTermsConditions();
-        console.log(`📄 Existing Terms - Version: ${existingTerms.version}, ID: ${existingTerms.id}`);
-      } catch (checkError) {
-        console.log('No existing terms found.');
-      }
-    }
+    console.error('❌ Error updating Terms and Conditions:', error);
   }
 
   await app.close();
 }
 
-createInitialTerms(); 
+updateTermsFormatting(); 

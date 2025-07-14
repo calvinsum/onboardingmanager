@@ -1,6 +1,4 @@
-import { NestFactory } from '@nestjs/core';
-import { AppModule } from '../app.module';
-import { TermsConditionsService } from '../onboarding/terms-conditions.service';
+const { Client } = require('pg');
 
 const termsContent = `StoreHub Merchant Onboarding Terms and Conditions
 
@@ -182,40 +180,59 @@ By clicking "Agree and Continue", you acknowledge that you have read, understood
 
 Last Updated: January 1, 2025`;
 
-async function createInitialTerms() {
-  const app = await NestFactory.createApplicationContext(AppModule);
-  const termsService = app.get(TermsConditionsService);
+async function createTermsAndConditions() {
+  const client = new Client({
+    connectionString: process.env.DATABASE_URL,
+    ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
+  });
 
   try {
-    console.log('Creating initial Terms and Conditions...');
+    await client.connect();
+    console.log('✅ Connected to database');
+
+    // First, deactivate any existing active terms
+    const deactivateQuery = `
+      UPDATE terms_conditions 
+      SET "isActive" = false 
+      WHERE "isActive" = true
+    `;
     
-    const terms = await termsService.createTermsConditions(
+    await client.query(deactivateQuery);
+    console.log('📝 Deactivated existing terms');
+
+    // Create new terms and conditions
+    const insertQuery = `
+      INSERT INTO terms_conditions (
+        id, version, content, "isActive", "effectiveDate", "createdAt", "updatedAt"
+      ) VALUES (
+        gen_random_uuid(), $1, $2, true, $3, NOW(), NOW()
+      ) RETURNING *
+    `;
+
+    const result = await client.query(insertQuery, [
       '1.1',
       termsContent,
-      new Date('2025-01-01')
-    );
+      '2025-01-01'
+    ]);
 
+    const newTerms = result.rows[0];
     console.log('✅ Terms and Conditions created successfully!');
-    console.log(`📄 Version: ${terms.version}`);
-    console.log(`🆔 ID: ${terms.id}`);
-    console.log(`📅 Effective Date: ${terms.effectiveDate}`);
-    console.log(`✅ Active: ${terms.isActive}`);
-    
+    console.log(`📄 Version: ${newTerms.version}`);
+    console.log(`🆔 ID: ${newTerms.id}`);
+    console.log(`📅 Effective Date: ${newTerms.effectiveDate}`);
+    console.log(`✅ Active: ${newTerms.isActive}`);
+
   } catch (error) {
     console.error('❌ Error creating Terms and Conditions:', error);
     
     if (error.message?.includes('duplicate')) {
-      console.log('💡 Terms and Conditions may already exist. Checking existing terms...');
-      try {
-        const existingTerms = await termsService.getActiveTermsConditions();
-        console.log(`📄 Existing Terms - Version: ${existingTerms.version}, ID: ${existingTerms.id}`);
-      } catch (checkError) {
-        console.log('No existing terms found.');
-      }
+      console.log('💡 Terms and Conditions may already exist.');
     }
+  } finally {
+    await client.end();
+    console.log('📡 Database connection closed');
   }
-
-  await app.close();
 }
 
-createInitialTerms(); 
+// Run the function
+createTermsAndConditions().catch(console.error); 
