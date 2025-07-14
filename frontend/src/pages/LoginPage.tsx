@@ -45,9 +45,11 @@ const LoginPage: React.FC = () => {
         <div className="text-center">
           <div className="flex justify-center mb-6">
             <div className="flex items-center space-x-3">
-              <div className="w-12 h-12 bg-primary-500 rounded-xl flex items-center justify-center shadow-medium">
-                <span className="text-white font-bold text-2xl">S</span>
-              </div>
+              <img 
+                src="/StoreHub_logo.png" 
+                alt="StoreHub Logo" 
+                className="w-12 h-12 object-contain"
+              />
               <div className="text-left">
                 <h1 className="text-2xl font-bold text-text-main">StoreHub</h1>
                 <p className="text-sm text-text-muted">Merchant Onboarding</p>
