@@ -6,6 +6,8 @@ services:
     buildCommand: npm install && npm run build
     startCommand: npm run start:prod
     healthCheckPath: /api/health
+    # Add post-deploy hook to seed terms and conditions
+    postDeployCommand: npm run seed:terms || echo "Terms seeding completed or already exists"
     envVars:
       - key: NODE_ENV
         value: production
