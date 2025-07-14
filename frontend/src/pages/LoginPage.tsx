@@ -64,70 +64,6 @@ const LoginPage: React.FC = () => {
 
         {/* Main Login Card */}
         <div className="card">
-          {/* User Type Selection */}
-          <div className="mb-6">
-            <fieldset>
-              <legend className="text-sm font-semibold text-text-main mb-3">I am a:</legend>
-              <div className="grid grid-cols-2 gap-4">
-                <label className={`cursor-pointer rounded-lg border-2 p-4 transition-all duration-200 ${
-                  userType === 'merchant' 
-                    ? 'border-primary-500 bg-primary-50' 
-                    : 'border-divider hover:border-primary-300'
-                }`}>
-                  <input
-                    type="radio"
-                    name="user-type"
-                    value="merchant"
-                    checked={userType === 'merchant'}
-                    onChange={(e) => setUserType(e.target.value as 'merchant')}
-                    className="sr-only"
-                  />
-                  <div className="flex items-center justify-center">
-                    <div className="text-center">
-                      <div className="text-2xl mb-2">🏪</div>
-                      <div className={`font-semibold ${
-                        userType === 'merchant' ? 'text-primary-600' : 'text-text-main'
-                      }`}>
-                        Merchant
-                      </div>
-                      <div className="text-xs text-text-muted mt-1">
-                        Access with token
-                      </div>
-                    </div>
-                  </div>
-                </label>
-
-                <label className={`cursor-pointer rounded-lg border-2 p-4 transition-all duration-200 ${
-                  userType === 'onboarding_manager' 
-                    ? 'border-primary-500 bg-primary-50' 
-                    : 'border-divider hover:border-primary-300'
-                }`}>
-                  <input
-                    type="radio"
-                    name="user-type"
-                    value="onboarding_manager"
-                    checked={userType === 'onboarding_manager'}
-                    onChange={(e) => setUserType(e.target.value as 'onboarding_manager')}
-                    className="sr-only"
-                  />
-                  <div className="flex items-center justify-center">
-                    <div className="text-center">
-                      <div className="text-2xl mb-2">👨‍💼</div>
-                      <div className={`font-semibold ${
-                        userType === 'onboarding_manager' ? 'text-primary-600' : 'text-text-main'
-                      }`}>
-                        Manager
-                      </div>
-                      <div className="text-xs text-text-muted mt-1">
-                        Sign in with Google
-                      </div>
-                    </div>
-                  </div>
-                </label>
-              </div>
-            </fieldset>
-          </div>
-
           {/* Onboarding Manager Google Login */}
           {userType === 'onboarding_manager' && (
             <div className="space-y-4">
@@ -158,6 +94,16 @@ const LoginPage: React.FC = () => {
                 <p className="text-xs text-text-muted">
                   Only @storehub.com email addresses are allowed
                 </p>
+              </div>
+              
+              <div className="text-center">
+                <button
+                  type="button"
+                  onClick={() => setUserType('merchant')}
+                  className="text-xs text-text-muted hover:text-primary-600 underline"
+                >
+                  ← Back to merchant login
+                </button>
               </div>
             </div>
           )}
@@ -223,7 +169,14 @@ const LoginPage: React.FC = () => {
               
               <div className="text-center">
                 <p className="text-xs text-text-muted">
-                  Need help? Contact your onboarding manager
+                  Need help? Contact your onboarding manager or{' '}
+                  <button
+                    type="button"
+                    onClick={() => setUserType('onboarding_manager')}
+                    className="text-primary-600 hover:text-primary-700 underline"
+                  >
+                    manager sign in
+                  </button>
                 </p>
               </div>
             </div>
