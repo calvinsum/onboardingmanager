@@ -2,6 +2,7 @@ import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateCol
 import { ApiProperty } from '@nestjs/swagger';
 import { Merchant } from '../../merchant/entities/merchant.entity';
 import { OnboardingManager } from '../../onboarding-manager/entities/onboarding-manager.entity';
+import { TermsConditions } from './terms-conditions.entity';
 
 export enum OnboardingType {
   HARDWARE_DELIVERY = 'hardware_delivery',
@@ -194,4 +195,25 @@ export class Onboarding {
   @ApiProperty({ description: 'Scheduled date for onsite training', nullable: true })
   @Column({ type: 'timestamp', nullable: true })
   onsiteTrainingDate: Date | null;
+
+  // Terms and Conditions Acknowledgment
+  @ApiProperty({ description: 'Terms and Conditions acknowledgment status' })
+  @Column({ default: false })
+  termsAccepted: boolean;
+
+  @ApiProperty({ description: 'Name provided during T&C acknowledgment' })
+  @Column({ nullable: true })
+  termsAcknowledgmentName: string;
+
+  @ApiProperty({ description: 'Date when T&C was acknowledged' })
+  @Column({ type: 'timestamp', nullable: true })
+  termsAcknowledgedDate: Date;
+
+  @ApiProperty({ description: 'Version of T&C that was acknowledged', type: () => TermsConditions })
+  @ManyToOne(() => TermsConditions, { nullable: true })
+  @JoinColumn({ name: 'acknowledgedTermsVersionId' })
+  acknowledgedTermsVersion?: TermsConditions;
+
+  @Column({ nullable: true })
+  acknowledgedTermsVersionId?: string;
 } 

@@ -2,16 +2,22 @@ import { Controller, Get, Post, Body, Param, Patch, UseGuards, Request, Query } 
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiParam, ApiQuery } from '@nestjs/swagger';
 import { AuthGuard } from '@nestjs/passport';
 import { OnboardingService } from './onboarding.service';
+import { TermsConditionsService } from './terms-conditions.service';
 import { CreateOnboardingDto } from './dto/create-onboarding.dto';
 import { UpdateOnboardingDto } from './dto/update-onboarding.dto';
+import { AcknowledgeTermsDto, CreateTermsConditionsDto, UpdateTermsConditionsDto } from './dto/acknowledge-terms.dto';
 import { Onboarding, OnboardingStatus } from './entities/onboarding.entity';
+import { TermsConditions } from './entities/terms-conditions.entity';
 
 @ApiTags('onboarding')
 @Controller('onboarding')
 @ApiBearerAuth()
 @UseGuards(AuthGuard('jwt'))
 export class OnboardingController {
-  constructor(private readonly onboardingService: OnboardingService) {}
+  constructor(
+    private readonly onboardingService: OnboardingService,
+    private readonly termsConditionsService: TermsConditionsService,
+  ) {}
 
   @Get('debug')
   @ApiOperation({ summary: 'Debug endpoint to test authentication and manager lookup' })
@@ -132,13 +138,63 @@ export class OnboardingController {
   ): Promise<Onboarding> {
     return this.onboardingService.linkMerchant(id, merchantId);
   }
+
+  // Terms and Conditions Management (Manager only)
+  @Post('terms-conditions')
+  @ApiOperation({ summary: 'Create new terms and conditions' })
+  @ApiResponse({ status: 201, description: 'Terms and conditions created successfully', type: TermsConditions })
+  async createTermsConditions(
+    @Body() createTermsConditionsDto: CreateTermsConditionsDto,
+  ): Promise<TermsConditions> {
+    return this.termsConditionsService.createTermsConditions(
+      createTermsConditionsDto.version,
+      createTermsConditionsDto.content,
+      new Date(createTermsConditionsDto.effectiveDate),
+    );
+  }
+
+  @Get('terms-conditions')
+  @ApiOperation({ summary: 'Get all terms and conditions versions' })
+  @ApiResponse({ status: 200, description: 'List of terms and conditions', type: [TermsConditions] })
+  async getAllTermsConditions(): Promise<TermsConditions[]> {
+    return this.termsConditionsService.getAllTermsConditions();
+  }
+
+  @Get('terms-conditions/active')
+  @ApiOperation({ summary: 'Get active terms and conditions' })
+  @ApiResponse({ status: 200, description: 'Active terms and conditions', type: TermsConditions })
+  async getActiveTermsConditions(): Promise<TermsConditions> {
+    return this.termsConditionsService.getActiveTermsConditions();
+  }
+
+  @Patch('terms-conditions/:id')
+  @ApiOperation({ summary: 'Update terms and conditions content' })
+  @ApiParam({ name: 'id', description: 'Terms and conditions ID' })
+  @ApiResponse({ status: 200, description: 'Terms and conditions updated successfully', type: TermsConditions })
+  async updateTermsConditions(
+    @Param('id') id: string,
+    @Body() updateTermsConditionsDto: UpdateTermsConditionsDto,
+  ): Promise<TermsConditions> {
+    return this.termsConditionsService.updateTermsConditions(id, updateTermsConditionsDto.content);
+  }
+
+  @Patch('terms-conditions/:id/activate')
+  @ApiOperation({ summary: 'Activate terms and conditions version' })
+  @ApiParam({ name: 'id', description: 'Terms and conditions ID' })
+  @ApiResponse({ status: 200, description: 'Terms and conditions activated successfully', type: TermsConditions })
+  async activateTermsConditions(@Param('id') id: string): Promise<TermsConditions> {
+    return this.termsConditionsService.activateTermsConditions(id);
+  }
 }
 
 // Public endpoint for merchant access using token
 @ApiTags('merchant-onboarding')
 @Controller('merchant-onboarding')
 export class MerchantOnboardingController {
-  constructor(private readonly onboardingService: OnboardingService) {}
+  constructor(
+    private readonly onboardingService: OnboardingService,
+    private readonly termsConditionsService: TermsConditionsService,
+  ) {}
 
   @Get('access/:token')
   @ApiOperation({ summary: 'Access onboarding record using token' })
@@ -168,5 +224,32 @@ export class MerchantOnboardingController {
   async checkTokenExpiry(@Param('token') token: string): Promise<{ expired: boolean }> {
     const expired = await this.onboardingService.isTokenExpired(token);
     return { expired };
+  }
+
+  // Terms and Conditions for Merchants
+  @Get('terms-conditions/check/:token')
+  @ApiOperation({ summary: 'Check terms and conditions acknowledgment status' })
+  @ApiParam({ name: 'token', description: 'Access token' })
+  @ApiResponse({ status: 200, description: 'Terms acknowledgment status' })
+  async checkTermsAcknowledgment(@Param('token') token: string): Promise<{ acknowledged: boolean; currentTerms?: TermsConditions }> {
+    return this.onboardingService.checkTermsAcknowledgmentByToken(token);
+  }
+
+  @Post('terms-conditions/acknowledge/:token')
+  @ApiOperation({ summary: 'Acknowledge terms and conditions' })
+  @ApiParam({ name: 'token', description: 'Access token' })
+  @ApiResponse({ status: 200, description: 'Terms and conditions acknowledged successfully', type: Onboarding })
+  async acknowledgeTerms(
+    @Param('token') token: string,
+    @Body() acknowledgeTermsDto: AcknowledgeTermsDto,
+  ): Promise<Onboarding> {
+    return this.onboardingService.acknowledgeTermsByToken(token, acknowledgeTermsDto);
+  }
+
+  @Get('terms-conditions/active')
+  @ApiOperation({ summary: 'Get active terms and conditions (public)' })
+  @ApiResponse({ status: 200, description: 'Active terms and conditions', type: TermsConditions })
+  async getActiveTermsConditionsPublic(): Promise<TermsConditions> {
+    return this.termsConditionsService.getActiveTermsConditions();
   }
 } 

@@ -2,10 +2,12 @@ import { Injectable, NotFoundException, BadRequestException } from '@nestjs/comm
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Onboarding, OnboardingStatus } from './entities/onboarding.entity';
+import { TermsConditions } from './entities/terms-conditions.entity';
 import { Merchant } from '../merchant/entities/merchant.entity';
 import { OnboardingManager } from '../onboarding-manager/entities/onboarding-manager.entity';
 import { CreateOnboardingDto } from './dto/create-onboarding.dto';
 import { UpdateOnboardingDto } from './dto/update-onboarding.dto';
+import { AcknowledgeTermsDto } from './dto/acknowledge-terms.dto';
 import * as crypto from 'crypto';
 
 @Injectable()
@@ -13,6 +15,8 @@ export class OnboardingService {
   constructor(
     @InjectRepository(Onboarding)
     private onboardingRepository: Repository<Onboarding>,
+    @InjectRepository(TermsConditions)
+    private termsConditionsRepository: Repository<TermsConditions>,
     @InjectRepository(Merchant)
     private merchantRepository: Repository<Merchant>,
     @InjectRepository(OnboardingManager)
@@ -284,6 +288,72 @@ export class OnboardingService {
     await this.onboardingRepository.save(onboarding);
 
     return this.getOnboardingById(id);
+  }
+
+  async acknowledgeTermsByToken(token: string, acknowledgeTermsDto: AcknowledgeTermsDto): Promise<Onboarding> {
+    const onboarding = await this.onboardingRepository.findOne({
+      where: { accessToken: token },
+      relations: ['createdByManager', 'merchant', 'acknowledgedTermsVersion'],
+    });
+
+    if (!onboarding) {
+      throw new NotFoundException('Invalid or expired token');
+    }
+
+    // Check if token is expired
+    if (new Date() > onboarding.tokenExpiryDate) {
+      throw new BadRequestException('Access token has expired');
+    }
+
+    // Verify the terms version exists
+    const termsVersion = await this.termsConditionsRepository.findOne({
+      where: { id: acknowledgeTermsDto.termsVersionId },
+    });
+
+    if (!termsVersion) {
+      throw new NotFoundException('Terms and conditions version not found');
+    }
+
+    // Update onboarding record with acknowledgment
+    onboarding.termsAccepted = true;
+    onboarding.termsAcknowledgmentName = acknowledgeTermsDto.name;
+    onboarding.termsAcknowledgedDate = new Date();
+    onboarding.acknowledgedTermsVersion = termsVersion;
+    onboarding.acknowledgedTermsVersionId = termsVersion.id;
+
+    return this.onboardingRepository.save(onboarding);
+  }
+
+  async checkTermsAcknowledgmentByToken(token: string): Promise<{ acknowledged: boolean; currentTerms?: TermsConditions }> {
+    const onboarding = await this.onboardingRepository.findOne({
+      where: { accessToken: token },
+      relations: ['acknowledgedTermsVersion'],
+    });
+
+    if (!onboarding) {
+      throw new NotFoundException('Invalid or expired token');
+    }
+
+    // Check if token is expired
+    if (new Date() > onboarding.tokenExpiryDate) {
+      throw new BadRequestException('Access token has expired');
+    }
+
+    // Get current active terms
+    const currentTerms = await this.termsConditionsRepository.findOne({
+      where: { isActive: true },
+    });
+
+    // Check if terms have been acknowledged and if it's the current version
+    const acknowledged = onboarding.termsAccepted && 
+                        onboarding.acknowledgedTermsVersion && 
+                        currentTerms && 
+                        onboarding.acknowledgedTermsVersion.id === currentTerms.id;
+
+    return {
+      acknowledged,
+      currentTerms: currentTerms || undefined,
+    };
   }
 
   private generateAccessToken(): string {

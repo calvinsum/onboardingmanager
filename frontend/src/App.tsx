@@ -17,6 +17,7 @@ import ScheduleOnboardingPage from './pages/ScheduleOnboardingPage';
 import MerchantSchedulePage from './pages/MerchantSchedulePage';
 import TrainerManagementPage from './pages/TrainerManagementPage';
 import TrainingScheduleListPage from './pages/TrainingScheduleListPage';
+import TermsAndConditionsPage from './pages/TermsAndConditionsPage';
 import './App.css';
 
 // Force frontend redeployment to pick up new API URL environment variables
@@ -31,6 +32,7 @@ function App() {
             <Route path="/register" element={<RegisterPage />} />
             <Route path="/auth/callback" element={<GoogleCallback />} />
             <Route path="/debug" element={<DebugAuth />} />
+            <Route path="/terms-and-conditions" element={<TermsAndConditionsPage />} />
             
             {/* Merchant token-based route (no auth required) */}
             <Route path="/merchant-schedule" element={<MerchantSchedulePage />} />

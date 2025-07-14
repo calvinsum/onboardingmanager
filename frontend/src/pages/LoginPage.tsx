@@ -24,8 +24,8 @@ const LoginPage: React.FC = () => {
       localStorage.setItem('userType', 'merchant');
       localStorage.setItem('onboardingRecord', JSON.stringify(onboardingRecord));
       
-      // Navigate to merchant dashboard
-      navigate('/merchant-schedule');
+      // Navigate to terms and conditions page first
+      navigate('/terms-and-conditions');
     } catch (error: any) {
       setError('Invalid or expired access token. Please check your token and try again.');
     } finally {

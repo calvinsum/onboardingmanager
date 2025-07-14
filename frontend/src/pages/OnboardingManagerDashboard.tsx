@@ -230,6 +230,8 @@ StoreHub Onboarding Team`;
                     <th className="py-3 px-4 text-left text-xs font-semibold uppercase tracking-wider">Account</th>
                     <th className="py-3 px-4 text-left text-xs font-semibold uppercase tracking-wider">PIC Details</th>
                     <th className="py-3 px-4 text-left text-xs font-semibold uppercase tracking-wider">Status</th>
+                    <th className="py-3 px-4 text-left text-xs font-semibold uppercase tracking-wider">T&C Status</th>
+                    <th className="py-3 px-4 text-left text-xs font-semibold uppercase tracking-wider">Acknowledged By</th>
                     <th className="py-3 px-4 text-left text-xs font-semibold uppercase tracking-wider">Delivery</th>
                     <th className="py-3 px-4 text-left text-xs font-semibold uppercase tracking-wider">Installation</th>
                     <th className="py-3 px-4 text-left text-xs font-semibold uppercase tracking-wider">Training</th>
@@ -248,15 +250,44 @@ StoreHub Onboarding Team`;
                       <td className="py-4 px-4">
                         <div className="text-text-main font-medium">{record.picName}</div>
                         <div className="text-text-muted text-sm">{record.picEmail}</div>
+                        <div className="text-text-muted text-sm">{record.picPhone}</div>
                       </td>
                       <td className="py-4 px-4">
-                        <span className={`status-badge ${
-                          record.status === 'completed' ? 'status-confirmed' : 
-                          record.status === 'in_progress' ? 'status-pending' : 
-                          'status-inactive'
+                        <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${
+                          record.status === 'completed' ? 'bg-green-100 text-green-800' :
+                          record.status === 'in_progress' ? 'bg-yellow-100 text-yellow-800' :
+                          'bg-gray-100 text-gray-800'
                         }`}>
-                          {record.status}
+                          {record.status?.replace('_', ' ').toUpperCase()}
                         </span>
+                      </td>
+                      <td className="py-4 px-4">
+                        {record.termsAccepted ? (
+                          <div className="flex items-center">
+                            <span className="inline-flex px-2 py-1 text-xs font-medium rounded-full bg-green-100 text-green-800">
+                              ✓ Acknowledged
+                            </span>
+                            {record.termsAcknowledgedDate && (
+                              <div className="text-text-muted text-xs ml-2">
+                                {new Date(record.termsAcknowledgedDate).toLocaleDateString()}
+                              </div>
+                            )}
+                          </div>
+                        ) : (
+                          <span className="inline-flex px-2 py-1 text-xs font-medium rounded-full bg-red-100 text-red-800">
+                            ✗ Pending
+                          </span>
+                        )}
+                      </td>
+                      <td className="py-4 px-4">
+                        <div className="text-text-main text-sm">
+                          {record.termsAcknowledgmentName || 'Not acknowledged'}
+                        </div>
+                        {record.acknowledgedTermsVersion && (
+                          <div className="text-text-muted text-xs">
+                            Version: {record.acknowledgedTermsVersion.version}
+                          </div>
+                        )}
                       </td>
                       <td className="py-4 px-4">
                         <span className={`status-badge ${

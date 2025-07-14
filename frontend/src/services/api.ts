@@ -445,4 +445,49 @@ export const bookMerchantTrainingSlot = async (bookingData: {
   return response.data;
 };
 
+// Terms and Conditions API functions
+export const getActiveTermsConditions = async () => {
+  const response = await axios.get(`${API_BASE_URL}/merchant-onboarding/terms-conditions/active`);
+  return response.data;
+};
+
+export const checkTermsAcknowledgment = async (token: string) => {
+  const response = await axios.get(`${API_BASE_URL}/merchant-onboarding/terms-conditions/check/${token}`);
+  return response.data;
+};
+
+export const acknowledgeTerms = async (token: string, data: { name: string; termsVersionId: string }) => {
+  const response = await axios.post(`${API_BASE_URL}/merchant-onboarding/terms-conditions/acknowledge/${token}`, data);
+  return response.data;
+};
+
+// Manager-only functions for Terms and Conditions management
+export const createTermsConditions = async (data: { version: string; content: string; effectiveDate: string }) => {
+  const response = await axios.post(`${API_BASE_URL}/onboarding/terms-conditions`, data, {
+    headers: { Authorization: `Bearer ${localStorage.getItem('authToken')}` }
+  });
+  return response.data;
+};
+
+export const getAllTermsConditions = async () => {
+  const response = await axios.get(`${API_BASE_URL}/onboarding/terms-conditions`, {
+    headers: { Authorization: `Bearer ${localStorage.getItem('authToken')}` }
+  });
+  return response.data;
+};
+
+export const updateTermsConditions = async (id: string, data: { content: string }) => {
+  const response = await axios.patch(`${API_BASE_URL}/onboarding/terms-conditions/${id}`, data, {
+    headers: { Authorization: `Bearer ${localStorage.getItem('authToken')}` }
+  });
+  return response.data;
+};
+
+export const activateTermsConditions = async (id: string) => {
+  const response = await axios.patch(`${API_BASE_URL}/onboarding/terms-conditions/${id}/activate`, {}, {
+    headers: { Authorization: `Bearer ${localStorage.getItem('authToken')}` }
+  });
+  return response.data;
+};
+
 export default api; 
