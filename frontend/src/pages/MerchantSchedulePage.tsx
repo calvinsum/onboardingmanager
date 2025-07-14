@@ -4,7 +4,7 @@ import { DayPicker } from 'react-day-picker';
 import { toast } from 'react-hot-toast';
 import { format, isWeekend, set } from 'date-fns';
 import { updateOnboardingByToken, getPublicHolidays, getAvailableTrainingSlots } from '../services/api';
-import { DELIVERY_TIME_BY_STATE, calculateMinInstallationDate, calculateMinTrainingDate } from '../utils/constants';
+import { DELIVERY_TIME_BY_STATE, calculateMinInstallationDate, calculateMinTrainingDate, addWorkingDays } from '../utils/constants';
 import { bookMerchantTrainingSlot } from '../services/api'; // Added import for booking training slot
 
 // Mobile-friendly Date Picker component
@@ -243,11 +243,13 @@ const MobileDatePicker = ({
 const DeliveryConfirmation = ({ 
   onboardingRecord, 
   onConfirm, 
-  isConfirmed 
+  isConfirmed,
+  holidays = []
 }: {
   onboardingRecord: any;
   onConfirm: () => void;
   isConfirmed: boolean;
+  holidays?: Date[];
 }) => {
   const [showDetails, setShowDetails] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
@@ -273,6 +275,23 @@ const DeliveryConfirmation = ({
   };
 
   if (isConfirmed) {
+    // Calculate estimated delivery date
+    const deliveryConfirmedDate = onboardingRecord?.deliveryConfirmedDate 
+      ? new Date(onboardingRecord.deliveryConfirmedDate) 
+      : new Date();
+    
+    // Get the maximum delivery time for the state (use max for estimate)
+    const deliveryTime = DELIVERY_TIME_BY_STATE[onboardingRecord?.deliveryState] || { min: 3, max: 5 };
+    const estimatedDeliveryDate = addWorkingDays(deliveryConfirmedDate, deliveryTime.max, holidays);
+    
+    // Format date as dd/mm/yyyy
+    const formatDate = (date: Date) => {
+      const day = date.getDate().toString().padStart(2, '0');
+      const month = (date.getMonth() + 1).toString().padStart(2, '0');
+      const year = date.getFullYear();
+      return `${day}/${month}/${year}`;
+    };
+
     return (
       <div className="mb-6">
         <div className="bg-green-50 border border-green-200 rounded-lg p-4">
@@ -285,7 +304,7 @@ const DeliveryConfirmation = ({
             <div className="ml-3">
               <h3 className="text-sm font-medium text-green-800">Delivery Confirmed</h3>
               <p className="text-sm text-green-700 mt-1">
-                Your hardware will be delivered within {deliveryTimeText}
+                Your hardware will be delivered within {deliveryTime.max} working day{deliveryTime.max > 1 ? 's' : ''}, estimated {formatDate(estimatedDeliveryDate)}
               </p>
             </div>
           </div>
@@ -1132,6 +1151,7 @@ const MerchantSchedulePage: React.FC = () => {
               onboardingRecord={onboardingRecord}
               onConfirm={handleDeliveryConfirm}
               isConfirmed={deliveryConfirmed}
+              holidays={holidays}
             />
             
             {!installationConfirmed ? (
