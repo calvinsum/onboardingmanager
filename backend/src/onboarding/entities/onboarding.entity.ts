@@ -1,12 +1,13 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, ManyToOne, JoinColumn, Index } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, ManyToOne, JoinColumn, Index, OneToMany } from 'typeorm';
 import { ApiProperty } from '@nestjs/swagger';
 import { Merchant } from '../../merchant/entities/merchant.entity';
 import { OnboardingManager } from '../../onboarding-manager/entities/onboarding-manager.entity';
 import { TermsConditions } from './terms-conditions.entity';
-
+import { ProductSetupAttachment } from './product-setup-attachment.entity';
 export enum OnboardingType {
   HARDWARE_DELIVERY = 'hardware_delivery',
   HARDWARE_INSTALLATION = 'hardware_installation',
+  PRODUCT_SETUP = 'product_setup',
   REMOTE_TRAINING = 'remote_training',
   ONSITE_TRAINING = 'onsite_training',
 }
@@ -56,6 +57,14 @@ export class Onboarding {
   @ApiProperty({ description: 'Date when training was confirmed' })
   @Column({ type: 'timestamp', nullable: true })
   trainingConfirmedDate: Date;
+
+  @ApiProperty({ description: 'Product setup confirmation status' })
+  @Column({ default: false })
+  productSetupConfirmed: boolean;
+
+  @ApiProperty({ description: 'Date when product setup was confirmed' })
+  @Column({ type: 'timestamp', nullable: true })
+  productSetupConfirmedDate: Date;
 
   // Delivery Address
   @ApiProperty({ description: 'Delivery address line 1' })
@@ -216,4 +225,7 @@ export class Onboarding {
 
   @Column({ nullable: true })
   acknowledgedTermsVersionId?: string;
-} 
+
+  @ApiProperty({ description: 'Product setup attachments', type: () => [ProductSetupAttachment] })
+  @OneToMany(() => ProductSetupAttachment, (attachment) => attachment.onboarding)
+  productSetupAttachments: ProductSetupAttachment[];} 

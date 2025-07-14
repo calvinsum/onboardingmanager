@@ -69,6 +69,7 @@ export class OnboardingService {
       deliveryConfirmedDate,
       installationConfirmedDate,
       trainingConfirmedDate,
+      productSetupConfirmedDate,
       ...restOfDto 
     } = updateOnboardingDto;
     
@@ -103,6 +104,9 @@ export class OnboardingService {
       updatePayload.trainingConfirmedDate = new Date(trainingConfirmedDate);
     }
 
+    if (productSetupConfirmedDate) {
+      updatePayload.productSetupConfirmedDate = new Date(productSetupConfirmedDate);
+    }
     // Auto-set delivery confirmation date if delivery is being confirmed and no date provided
     if (updateOnboardingDto.deliveryConfirmed && !onboarding.deliveryConfirmed && !deliveryConfirmedDate) {
       updatePayload.deliveryConfirmedDate = new Date();
@@ -117,7 +121,11 @@ export class OnboardingService {
     if (updateOnboardingDto.trainingConfirmed && !onboarding.trainingConfirmed && !trainingConfirmedDate) {
       updatePayload.trainingConfirmedDate = new Date();
     }
-    
+
+    // Auto-set product setup confirmation date if product setup is being confirmed and no date provided
+    if (updateOnboardingDto.productSetupConfirmed && !onboarding.productSetupConfirmed && !productSetupConfirmedDate) {
+      updatePayload.productSetupConfirmedDate = new Date();
+    }    
     // `merge` will update the `onboarding` entity with the new values
     const updatedOnboarding = this.onboardingRepository.merge(onboarding, updatePayload);
 
@@ -194,6 +202,7 @@ export class OnboardingService {
       deliveryConfirmedDate,
       installationConfirmedDate,
       trainingConfirmedDate,
+      productSetupConfirmedDate,
       ...restOfDto 
     } = updateOnboardingDto;
     
@@ -228,7 +237,10 @@ export class OnboardingService {
       updatePayload.trainingConfirmedDate = new Date(trainingConfirmedDate);
     }
 
-    // Auto-set delivery confirmation date if delivery is being confirmed and no date provided
+
+    if (productSetupConfirmedDate) {
+      updatePayload.productSetupConfirmedDate = new Date(productSetupConfirmedDate);
+    }    // Auto-set delivery confirmation date if delivery is being confirmed and no date provided
     if (updateOnboardingDto.deliveryConfirmed && !onboarding.deliveryConfirmed && !deliveryConfirmedDate) {
       updatePayload.deliveryConfirmedDate = new Date();
     }
@@ -242,7 +254,11 @@ export class OnboardingService {
     if (updateOnboardingDto.trainingConfirmed && !onboarding.trainingConfirmed && !trainingConfirmedDate) {
       updatePayload.trainingConfirmedDate = new Date();
     }
-    
+
+    // Auto-set product setup confirmation date if product setup is being confirmed and no date provided
+    if (updateOnboardingDto.productSetupConfirmed && !onboarding.productSetupConfirmed && !productSetupConfirmedDate) {
+      updatePayload.productSetupConfirmedDate = new Date();
+    }    
     // `merge` will update the `onboarding` entity with the new values
     const updatedOnboarding = this.onboardingRepository.merge(onboarding, updatePayload);
 

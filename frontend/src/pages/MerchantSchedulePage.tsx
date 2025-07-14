@@ -6,7 +6,7 @@ import { format, isWeekend, set } from 'date-fns';
 import { updateOnboardingByToken, getPublicHolidays, getAvailableTrainingSlots } from '../services/api';
 import { DELIVERY_TIME_BY_STATE, calculateMinInstallationDate, calculateMinTrainingDate, addWorkingDays } from '../utils/constants';
 import { bookMerchantTrainingSlot } from '../services/api'; // Added import for booking training slot
-
+import ProductSetupConfirmation from '../components/ProductSetupConfirmation';
 // Mobile-friendly Date Picker component
 const MobileDatePicker = ({ 
   label, 
@@ -671,7 +671,9 @@ const MerchantSchedulePage: React.FC = () => {
   const [trainingConfirmed, setTrainingConfirmed] = useState(false);
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [trainingConfirmedDate, setTrainingConfirmedDate] = useState<Date | undefined>();
-
+  const [productSetupConfirmed, setProductSetupConfirmed] = useState(false);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const [productSetupConfirmedDate, setProductSetupConfirmedDate] = useState<Date | undefined>();
   useEffect(() => {
     const fetchData = async () => {
       const token = localStorage.getItem('merchantAccessToken');
@@ -719,7 +721,13 @@ const MerchantSchedulePage: React.FC = () => {
           // If training was confirmed previously, use the confirmation date from record or fallback to current date
           setTrainingConfirmedDate(record.trainingConfirmedDate ? new Date(record.trainingConfirmedDate) : new Date());
         }
-      } catch (error) {
+
+        // Check if product setup is already confirmed
+        if (record.productSetupConfirmed) {
+          setProductSetupConfirmed(true);
+          // If product setup was confirmed previously, use the confirmation date from record or fallback to current date
+          setProductSetupConfirmedDate(record.productSetupConfirmedDate ? new Date(record.productSetupConfirmedDate) : new Date());
+        }      } catch (error) {
         console.error('Error fetching holidays:', error);
         toast.error('Failed to load calendar data');
       } finally {
@@ -953,6 +961,43 @@ const MerchantSchedulePage: React.FC = () => {
     }
   };
 
+  const handleProductSetupConfirm = async (attachments: File[]) => {
+    if (!accessToken) return;
+
+    setSaving(true);
+    try {
+      // TODO: Upload attachments to server
+      // For now, we'll just confirm without uploading
+      
+      const confirmationDate = new Date();
+      const payload = {
+        productSetupConfirmed: true,
+        productSetupConfirmedDate: confirmationDate.toISOString(),
+      };
+
+      const updatedRecord = await updateOnboardingByToken(accessToken, payload);
+      
+      // Update local storage
+      localStorage.setItem('onboardingRecord', JSON.stringify(updatedRecord));
+      setOnboardingRecord(updatedRecord);
+      setProductSetupConfirmed(true);
+      setProductSetupConfirmedDate(confirmationDate);
+      
+      toast.success('Product setup confirmed successfully!');
+    } catch (error: any) {
+      console.error('Error confirming product setup:', error);
+      if (error.response?.status === 404) {
+        toast.error('Access token expired. Please contact your onboarding manager.');
+        localStorage.removeItem('merchantAccessToken');
+        localStorage.removeItem('onboardingRecord');
+        navigate('/login');
+      } else {
+        toast.error('Failed to confirm product setup. Please try again.');
+      }
+    } finally {
+      setSaving(false);
+    }
+  };
   const handleLogout = () => {
     localStorage.removeItem('merchantAccessToken');
     localStorage.removeItem('onboardingRecord');
@@ -1098,7 +1143,13 @@ const MerchantSchedulePage: React.FC = () => {
               trainingDate={trainingDate}
               disabled={saving}
             />
-          </div>
+            
+            <ProductSetupConfirmation
+              onboardingRecord={onboardingRecord}
+              onConfirm={handleProductSetupConfirm}
+              isConfirmed={productSetupConfirmed}
+              disabled={saving}
+            />          </div>
 
           <div className="mt-6 text-xs text-gray-500">
             <p>• Weekends and public holidays are not available</p>
@@ -1106,7 +1157,7 @@ const MerchantSchedulePage: React.FC = () => {
             <p>• Installation must be scheduled after delivery confirmation</p>
             <p>• Confirm installation before scheduling training</p>
             <p>• Training must be scheduled at least one working day after the installation date</p>
-            <p>• Confirm training before completing the onboarding</p>
+            <p>• Complete product setup and upload documentation before finishing onboarding</p>            <p>• Confirm training before completing the onboarding</p>
           </div>
         </div>
       </div>

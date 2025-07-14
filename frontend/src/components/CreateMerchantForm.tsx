@@ -152,7 +152,7 @@ const CreateMerchantForm: React.FC<CreateMerchantFormProps> = ({ onSubmit, initi
         <div>
           <h3 className="text-lg font-semibold text-gray-700 mb-2">Onboarding Types</h3>
           <div className="grid grid-cols-2 gap-4">
-            {['hardware_delivery', 'hardware_installation', 'remote_training', 'onsite_training'].map(type => (
+            {['hardware_delivery', 'hardware_installation', 'product_setup', 'remote_training', 'onsite_training'].map(type => (
               <label key={type} className="flex items-center space-x-2">
                 <input
                   type="checkbox"

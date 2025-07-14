@@ -54,4 +54,13 @@ export class UpdateOnboardingDto extends PartialType(CreateOnboardingDto) {
   @IsOptional()
   @IsDateString()
   trainingDate?: string;
-} 
+
+  @ApiProperty({ description: 'Product setup confirmation status', required: false })
+  @IsOptional()
+  @IsBoolean()
+  productSetupConfirmed?: boolean;
+
+  @ApiProperty({ description: 'Date when product setup was confirmed', required: false })
+  @IsOptional()
+  @IsDateString()
+  productSetupConfirmedDate?: string;} 

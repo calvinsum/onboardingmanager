@@ -78,7 +78,7 @@ Instructions:
    - Hardware Delivery
    - Hardware Installation
    - Training Session
-
+   - Product Setup
 If you have any questions, please don't hesitate to reach out.
 
 Best regards,
@@ -103,7 +103,18 @@ StoreHub Onboarding Team`;
     }
   };
 
-  // Statistics
+
+  const handleDownloadAttachments = async (onboardingId: string) => {
+    try {
+      // TODO: Implement actual download functionality
+      // For now, show a placeholder message
+      toast.success('Download functionality will be implemented with file upload backend.');
+      console.log('Download attachments for onboarding:', onboardingId);
+    } catch (error) {
+      toast.error('Failed to download attachments.');
+      console.error(error);
+    }
+  };  // Statistics
   const totalRecords = records.length;
   const completedRecords = records.filter(r => r.status === 'completed').length;
   const inProgressRecords = records.filter(r => r.status === 'in_progress').length;
@@ -235,8 +246,8 @@ StoreHub Onboarding Team`;
                     <th className="py-3 px-4 text-left text-xs font-semibold uppercase tracking-wider">Delivery</th>
                     <th className="py-3 px-4 text-left text-xs font-semibold uppercase tracking-wider">Installation</th>
                     <th className="py-3 px-4 text-left text-xs font-semibold uppercase tracking-wider">Training</th>
-                    <th className="py-3 px-4 text-left text-xs font-semibold uppercase tracking-wider">Go Live</th>
-                    <th className="py-3 px-4 text-left text-xs font-semibold uppercase tracking-wider">Access Token</th>
+                    <th className="py-3 px-4 text-left text-xs font-semibold uppercase tracking-wider">Product Setup</th>                    <th className="py-3 px-4 text-left text-xs font-semibold uppercase tracking-wider">Go Live</th>
+                    <th className="py-3 px-4 text-left text-xs font-semibold uppercase tracking-wider">Attachments</th>                    <th className="py-3 px-4 text-left text-xs font-semibold uppercase tracking-wider">Access Token</th>
                     <th className="py-3 px-4 text-left text-xs font-semibold uppercase tracking-wider">Expiry</th>
                     <th className="py-3 px-4 text-left text-xs font-semibold uppercase tracking-wider">Actions</th>
                   </tr>
@@ -309,8 +320,33 @@ StoreHub Onboarding Team`;
                         }`}>
                           {record.trainingConfirmed ? 'Confirmed' : 'Pending'}
                         </span>
-                      </td>
                       <td className="py-4 px-4">
+                        <span className={`status-badge ${
+                          record.productSetupConfirmed ? 'status-confirmed' : 'status-pending'
+                        }`}>
+                          {record.productSetupConfirmed ? 'Confirmed' : 'Pending'}
+                        </span>
+                      </td>                      </td>
+                      <td className="py-4 px-4">
+                        <div className="flex items-center space-x-2">
+                          {record.productSetupAttachments && record.productSetupAttachments.length > 0 ? (
+                            <>
+                              <span className="text-sm text-text-main">
+                                {record.productSetupAttachments.length} file{record.productSetupAttachments.length > 1 ? 's' : ''}
+                              </span>
+                              <button
+                                onClick={() => handleDownloadAttachments(record.id)}
+                                className="text-blue-500 hover:text-blue-700 text-xs"
+                                title="Download all attachments"
+                              >
+                                📥 Download All
+                              </button>
+                            </>
+                          ) : (
+                            <span className="text-text-muted text-sm">No files</span>
+                          )}
+                        </div>
+                      </td>                      <td className="py-4 px-4">
                         <div className="text-text-main text-sm">
                           {new Date(record.expectedGoLiveDate).toLocaleDateString()}
                         </div>

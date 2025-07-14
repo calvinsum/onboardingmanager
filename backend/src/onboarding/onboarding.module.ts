@@ -6,11 +6,11 @@ import { TermsConditionsService } from './terms-conditions.service';
 import { Onboarding } from './entities/onboarding.entity';
 import { TermsConditions } from './entities/terms-conditions.entity';
 import { Merchant } from '../merchant/entities/merchant.entity';
-import { OnboardingManager } from '../onboarding-manager/entities/onboarding-manager.entity';
+import { ProductSetupAttachment } from './entities/product-setup-attachment.entity';import { OnboardingManager } from '../onboarding-manager/entities/onboarding-manager.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Onboarding, TermsConditions, Merchant, OnboardingManager]),
+    TypeOrmModule.forFeature([Onboarding, TermsConditions, Merchant, OnboardingManager, ProductSetupAttachment]),
   ],
   controllers: [OnboardingController, MerchantOnboardingController],
   providers: [OnboardingService, TermsConditionsService],
