@@ -25,7 +25,7 @@ async function bootstrap() {
     credentials: true,
   });
 
-  // Swagger documentation
+  // Swagger configuration
   const config = new DocumentBuilder()
     .setTitle('StoreHub Merchant Onboarding API')
     .setDescription('API for StoreHub merchant onboarding process')
@@ -55,206 +55,234 @@ async function createInitialTermsIfNeeded(app: any) {
     const { TermsConditionsService } = await import('./onboarding/terms-conditions.service');
     const termsService = app.get(TermsConditionsService);
     
-    // Check if active terms exist
+    // Check if active terms exist and their version
     try {
-      await termsService.getActiveTermsConditions();
-      console.log('✅ Terms & Conditions already exist');
-      return;
+      const activeTerms = await termsService.getActiveTermsConditions();
+      
+      if (activeTerms.version === '1.1') {
+        console.log('📝 Updating Terms & Conditions from v1.1 to v1.2 with new formatting...');
+        // Create new version with updated formatting
+        await createTermsV12(termsService);
+        return;
+      } else if (activeTerms.version === '1.2') {
+        console.log('✅ Terms & Conditions v1.2 already exist');
+        return;
+      } else {
+        console.log('✅ Terms & Conditions already exist');
+        return;
+      }
     } catch (error) {
       // No active terms found, create them
-      console.log('📝 Creating initial Terms & Conditions...');
+      console.log('📝 Creating initial Terms & Conditions v1.2...');
+      await createTermsV12(termsService);
+      return;
     }
+  } catch (error) {
+    console.error('❌ Error managing Terms & Conditions:', error);
+  }
+}
 
-    const termsContent = `# StoreHub Merchant Onboarding Terms and Conditions
+async function createTermsV12(termsService: any) {
+  const termsContent = `StoreHub Merchant Onboarding Terms and Conditions
 
-**Version:** 1.1
-**Effective Date:** January 1, 2025
+Version: 1.2
+Effective Date: January 15, 2025
 
-## 1. ACCEPTANCE OF TERMS
+1. ACCEPTANCE OF TERMS
 
 By proceeding with the StoreHub merchant onboarding process, you acknowledge that you have read, understood, and agree to be bound by these Terms and Conditions ("Terms"). These Terms constitute a legally binding agreement between you ("Merchant") and StoreHub Sdn Bhd ("StoreHub", "we", "us", or "our").
 
-## 2. ONBOARDING PROCESS
+2. ONBOARDING PROCESS
 
-### 2.1 Hardware Delivery
+2.1 Hardware Delivery
 
-* StoreHub will deliver the necessary point-of-sale hardware to your specified delivery address.
-* Delivery timelines are estimates and may vary based on location and circumstances.
-* You are responsible for ensuring someone is available to receive the delivery.
-* Any damage during delivery must be reported within 24 hours.
+- StoreHub will deliver the necessary point-of-sale hardware to your specified delivery address.
+- Delivery timelines are estimates and may vary based on location and circumstances.
+- You are responsible for providing accurate delivery information and ensuring someone is available to receive the hardware.
 
-### 2.2 Installation Services
+2.2 Payment & Contact Responsibility
 
-* Professional installation services will be scheduled at your convenience.
-* You must provide a suitable environment for hardware installation, including accessible Wi-Fi, LAN cables, and power points.
-* Installation includes basic setup and initial configuration.
-* Additional customization may incur extra charges.
+- Payment for StoreHub services must be completed within 72 hours of hardware delivery.
+- You must provide accurate contact information and respond to StoreHub communications promptly.
+- Failure to complete payment within the specified timeframe may result in service suspension.
 
-### 2.3 Training Requirements
+3. STORE SETUP AND SCHEDULING TERMS
 
-* Mandatory training sessions will be conducted either remotely or on-site.
-* Training covers system operation, basic troubleshooting, and best practices.
-* All designated staff members must complete the training program.
-* Additional training sessions may be requested at standard rates. Training sessions conducted outside normal working hours or on public holidays may be requested at non-standard rates.
+3.1 Installation Scheduling
 
-## 3. MERCHANT OBLIGATIONS
+- Store setup appointments must be scheduled through the StoreHub onboarding system.
+- Appointments are subject to trainer availability and must be confirmed at least 24 hours in advance.
+- Rescheduling requests must be made at least 12 hours before the scheduled appointment.
 
-### 3.1 Information Accuracy
+3.2 Installation Environment Requirements
 
-* All information provided during onboarding must be accurate and complete.
-* You must promptly notify us of any changes to your business details.
-* False or misleading information may result in service termination.
+- You must ensure your store has stable Wi-Fi connectivity with minimum 10 Mbps speed.
+- Adequate power points must be available near the point-of-sale location.
+- LAN cables and network infrastructure must be properly installed and functional.
+- The installation area must be clean, accessible, and ready for setup.
 
-### 3.2 Compliance
+3.3 Training Session Pricing
 
-* You agree to comply with all applicable laws and regulations.
-* Your business must maintain all necessary licenses and permits.
-* You are responsible for tax compliance and reporting.
+- Standard training sessions during business hours (9 AM - 6 PM, Monday-Friday) are included in the package.
+- Training sessions outside standard hours may incur additional charges as per current pricing.
+- Emergency or urgent setup requests may be subject to premium pricing.
 
-### 3.3 System Usage
+4. MERCHANT OBLIGATIONS
 
-* The StoreHub system must be used in accordance with our usage guidelines.
-* Unauthorized modifications or tampering is strictly prohibited.
-* You are responsible for maintaining the security of your login credentials.
+4.1 Information Accuracy
 
-## 4. SERVICE LEVEL AGREEMENTS
+- You must provide complete and accurate business information during onboarding.
+- Any changes to business details must be communicated to StoreHub immediately.
+- False or misleading information may result in service termination.
 
-### 4.2 Support Services
+4.2 System Usage
 
-* Technical support available during business hours.
-* Emergency support for critical issues.
-* Regular system updates and maintenance.
+- You agree to use the StoreHub system in accordance with provided guidelines.
+- Unauthorized modifications to hardware or software are prohibited.
+- You are responsible for training your staff on proper system usage.
 
-## 5. FEES AND PAYMENT
+4.3 Compliance
 
-### 5.3 Payment & Contact Responsibility
+- You must comply with all applicable local laws and regulations.
+- Business licenses and permits must be valid and up-to-date.
+- You are responsible for tax compliance and reporting.
 
-* All outstanding payments must be fully settled no later than 72 hours before the scheduled go-live date. Failure to do so may result in postponement or suspension of service activation.
-* The Merchant is responsible for ensuring the availability of the designated contact person during scheduled installation and training. Changes to contact details must be communicated at least 24 working hours in advance.
+5. SERVICE LEVELS AND SUPPORT
 
-## 6. STORE SETUP AND SCHEDULING TERMS
+5.1 Technical Support
 
-### 6.1 Store Setup Readiness
+- StoreHub provides technical support during standard business hours.
+- Support requests can be submitted through designated channels.
+- Response times may vary based on issue complexity and priority.
 
-* Merchants must submit the complete product list at least seven (7) working days prior to the scheduled go-live date.
-* Clear photos or proof of store readiness (e.g., setup area, Wi-Fi, LAN cables, power outlets) must be provided upon request.
-* If the store is not ready on the scheduled date, StoreHub reserves the right to reschedule. Rescheduling fees as per StoreHub's service policy will apply.
+5.2 Maintenance and Updates
 
-### 6.2 Scheduling & Delivery
+- Regular system maintenance may cause temporary service interruptions.
+- Software updates will be deployed as needed for security and functionality.
+- Hardware maintenance schedules will be communicated in advance.
 
-* Once an installation or training date is confirmed, changes made less than 48 hours prior are subject to rescheduling charges.
-* StoreHub is not liable for delivery issues if the Merchant or representative is not present at the confirmed delivery time. Redelivery, if applicable, may incur additional charges.
+6. FEES AND PAYMENT TERMS
 
-## 7. DATA PROTECTION AND PRIVACY
+6.1 Service Fees
 
-### 7.1 Data Collection
+- Monthly service fees are due in advance on the agreed billing date.
+- Late payment may result in service suspension and additional charges.
+- Fee structures are subject to change with reasonable notice.
 
-* We collect and process data necessary for service provision.
-* All data handling complies with applicable privacy laws.
-* You retain ownership of your business data.
+6.2 Hardware Costs
 
-### 7.2 Data Security
+- Hardware costs are separate from monthly service fees.
+- Payment terms for hardware will be specified in your service agreement.
+- Hardware remains StoreHub property unless otherwise specified.
 
-* We implement industry-standard security measures.
-* Regular security audits and updates.
-* Incident response procedures in place.
+7. DATA PROTECTION AND PRIVACY
 
-## 8. LIABILITY AND WARRANTIES
+7.1 Data Collection
 
-### 8.1 Service Warranties
+- StoreHub collects business and transaction data necessary for service provision.
+- Personal data is handled in accordance with applicable privacy laws.
+- You consent to data processing for service delivery and improvement.
 
-* We warrant that services will be provided with reasonable care and skill.
-* Hardware warranties as per manufacturer specifications.
-* Software functionality as described in documentation.
+7.2 Data Security
 
-### 8.2 Limitation of Liability
+- StoreHub implements reasonable security measures to protect your data.
+- You are responsible for maintaining secure access credentials.
+- Data breaches will be reported as required by law.
 
-* Our liability is limited to the value of services provided.
-* We are not liable for indirect or consequential damages.
-* Force majeure events are excluded from liability.
+8. LIABILITY AND INDEMNIFICATION
 
-## 9. TERMINATION
+8.1 Limitation of Liability
 
-### 9.1 Termination Rights
+- StoreHub's liability is limited to the value of services provided.
+- We are not liable for indirect, consequential, or punitive damages.
+- Force majeure events are excluded from liability claims.
 
-* Either party may terminate with 30 days written notice.
-* Immediate termination for material breach.
-* Termination procedures and data return.
+8.2 Merchant Indemnification
 
-### 9.2 Post-Termination
+- You agree to indemnify StoreHub against claims arising from your use of services.
+- This includes third-party claims related to your business operations.
+- Legal costs and damages may be recovered from you.
 
-* Return of hardware and materials.
-* Data export and deletion procedures.
-* Final billing and settlement.
+9. TERMINATION
 
-## 10. INTELLECTUAL PROPERTY
+9.1 Termination by Merchant
 
-### 10.1 StoreHub IP
+- You may terminate services with 30 days written notice.
+- Outstanding fees must be paid before termination.
+- Hardware must be returned in good condition.
 
-* All StoreHub software and systems remain our property.
-* Limited license granted for business use only.
-* No reverse engineering or copying permitted.
+9.2 Termination by StoreHub
 
-### 10.2 Merchant IP
+- We may terminate services for breach of terms or non-payment.
+- Immediate termination may occur for serious violations.
+- Termination procedures will be communicated clearly.
 
-* You retain ownership of your business data and content.
-* License granted to us for service provision purposes.
-* Confidentiality of proprietary information.
+10. INTELLECTUAL PROPERTY
 
-## 11. GENERAL PROVISIONS
+10.1 StoreHub Property
 
-### 11.1 Governing Law
+- All software, systems, and documentation remain StoreHub property.
+- You receive a limited license to use our systems for business purposes.
+- Unauthorized copying or distribution is prohibited.
 
-* These Terms are governed by Malaysian law.
-* Disputes subject to Malaysian court jurisdiction.
-* Alternative dispute resolution procedures.
+10.2 Merchant Content
 
-### 11.2 Amendments
+- You retain ownership of your business data and content.
+- StoreHub receives limited rights to process data for service delivery.
+- Confidential information will be protected appropriately.
 
-* We may update these Terms with reasonable notice.
-* Continued use constitutes acceptance of changes.
-* Material changes require explicit consent.
+11. GENERAL PROVISIONS
 
-### 11.3 Severability
+11.1 Governing Law
 
-* Invalid provisions do not affect remaining Terms.
-* Reasonable interpretation of ambiguous clauses.
-* Good faith performance expected.
+- These Terms are governed by Malaysian law.
+- Disputes subject to Malaysian court jurisdiction.
+- Alternative dispute resolution procedures.
 
-## 12. CONTACT INFORMATION
+11.2 Amendments
+
+- We may update these Terms with reasonable notice.
+- Continued use constitutes acceptance of changes.
+- Material changes require explicit consent.
+
+11.3 Severability
+
+- Invalid provisions do not affect remaining Terms.
+- Reasonable interpretation of ambiguous clauses.
+- Good faith performance expected.
+
+12. CONTACT INFORMATION
 
 For questions about these Terms and Conditions, please contact:
 
-**StoreHub Sdn Bhd**
-Email: [care@storehub.com](mailto:care@storehub.com)
+StoreHub Sdn Bhd
+Email: care@storehub.com
 Contact No: +60392126688
 
-**By clicking "Agree and Continue", you acknowledge that you have read, understood, and agree to be bound by these Terms and Conditions.**
+By clicking "Agree and Continue", you acknowledge that you have read, understood, and agree to be bound by these Terms and Conditions.
 
-*Last Updated: January 1, 2025*`;
+Last Updated: January 15, 2025`;
 
+  try {
     const terms = await termsService.createTermsConditions(
-      '1.1',
+      '1.2',
       termsContent,
-      new Date('2025-01-01')
+      new Date('2025-01-15')
     );
 
-    console.log('✅ Terms and Conditions created successfully!');
+    console.log('✅ Terms and Conditions v1.2 created successfully!');
     console.log(`📄 Version: ${terms.version}`);
     console.log(`🆔 ID: ${terms.id}`);
     console.log(`📅 Effective Date: ${terms.effectiveDate}`);
     console.log(`✅ Active: ${terms.isActive}`);
     
   } catch (error) {
-    console.error('❌ Error creating Terms and Conditions:', error);
+    console.error('❌ Error creating Terms and Conditions v1.2:', error);
     
     if (error.message?.includes('duplicate')) {
-      console.log('💡 Terms and Conditions may already exist.');
+      console.log('💡 Terms and Conditions v1.2 may already exist.');
     }
   }
 }
 
-bootstrap().catch(err => {
-  console.error('❌ Error starting the application:', err);
-  process.exit(1);
-}); 
+bootstrap(); 
