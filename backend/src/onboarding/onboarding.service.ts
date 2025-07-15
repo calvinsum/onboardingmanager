@@ -266,14 +266,15 @@ export class OnboardingService {
           attachment.cloudinaryUrl = cloudinaryResult.secure_url;
           attachment.mimeType = file.mimetype;
           attachment.fileSize = file.size;
-          attachment.onboarding = onboarding;
+          // Only set the foreign key, not the relationship to avoid conflicts
           attachment.onboardingId = onboarding.id;
           
           console.log('📝 Created attachment object:', {
             originalName: attachment.originalName,
             cloudinaryPublicId: attachment.cloudinaryPublicId,
             fileSize: attachment.fileSize,
-            onboardingId: attachment.onboardingId
+            onboardingId: attachment.onboardingId,
+            onboardingIdType: typeof attachment.onboardingId
           });
           
           attachments.push(attachment);
@@ -285,15 +286,104 @@ export class OnboardingService {
 
       console.log('💾 Saving', attachments.length, 'attachments to database...');
       
-      // Save all attachments to database
-      let savedAttachments;
-      try {
-        savedAttachments = await this.attachmentRepository.save(attachments);
-        console.log('💾 Database save successful:', savedAttachments.length, 'attachments');
-      } catch (dbError) {
-        console.error('❌ Database save failed:', dbError);
-        throw new BadRequestException(`Database save failed: ${dbError.message}`);
+      // Use a more direct approach with insert() to bypass entity management issues
+      const savedAttachments = [];
+      for (let i = 0; i < attachments.length; i++) {
+        const attachment = attachments[i];
+        try {
+          console.log(`💾 Inserting attachment ${i + 1}/${attachments.length}:`, {
+            originalName: attachment.originalName,
+            onboardingId: attachment.onboardingId,
+            onboardingIdType: typeof attachment.onboardingId
+          });
+          
+          // Prepare the insert data
+          const insertData = {
+            originalName: attachment.originalName,
+            cloudinaryPublicId: attachment.cloudinaryPublicId,
+            cloudinaryUrl: attachment.cloudinaryUrl,
+            mimeType: attachment.mimeType,
+            fileSize: attachment.fileSize,
+            onboardingId: onboarding.id,  // Direct reference to the UUID
+            uploadedAt: new Date()
+          };
+          
+          console.log('🔍 Insert data:', insertData);
+          console.log('🔍 onboarding.id details:', {
+            value: onboarding.id,
+            type: typeof onboarding.id,
+            length: onboarding.id?.length,
+            isNull: onboarding.id === null,
+            isUndefined: onboarding.id === undefined
+          });
+          
+          // Use insert() with plain object to avoid entity management issues
+          // Add retry logic for transient database issues
+          let insertResult;
+          let retryCount = 0;
+          const maxRetries = 3;
+          
+          while (retryCount < maxRetries) {
+            try {
+              insertResult = await this.attachmentRepository.insert(insertData);
+              break; // Success, exit retry loop
+            } catch (retryError) {
+              retryCount++;
+              console.warn(`⚠️ Insert attempt ${retryCount} failed:`, retryError.message);
+              
+              if (retryCount >= maxRetries) {
+                // Final fallback: try using the entity save method
+                console.warn('🔄 Falling back to entity save method...');
+                try {
+                  const fallbackAttachment = new ProductSetupAttachment();
+                  Object.assign(fallbackAttachment, insertData);
+                  const savedAttachment = await this.attachmentRepository.save(fallbackAttachment);
+                  insertResult = { identifiers: [{ id: savedAttachment.id }] };
+                  console.log('✅ Fallback save successful');
+                  break;
+                } catch (fallbackError) {
+                  console.error('❌ Fallback save also failed:', fallbackError.message);
+                  throw retryError; // Re-throw the original error
+                }
+              }
+              
+              // Wait a bit before retrying
+              await new Promise(resolve => setTimeout(resolve, 100 * retryCount));
+            }
+          }
+          
+          console.log(`✅ Inserted attachment ${i + 1}:`, insertResult.identifiers[0]);
+          
+          // Fetch the saved attachment for the response
+          const savedAttachment = await this.attachmentRepository.findOne({
+            where: { id: insertResult.identifiers[0].id }
+          });
+          
+          if (savedAttachment) {
+            savedAttachments.push(savedAttachment);
+          }
+          
+        } catch (dbError) {
+          console.error(`❌ Database insert failed for attachment ${i + 1}:`, attachment.originalName, dbError);
+          console.error('❌ Full error details:', {
+            message: dbError.message,
+            code: dbError.code,
+            detail: dbError.detail,
+            query: dbError.query,
+            parameters: dbError.parameters,
+            stack: dbError.stack
+          });
+          console.error('❌ Attachment data:', {
+            originalName: attachment.originalName,
+            onboardingId: onboarding.id,
+            onboardingExists: !!onboarding,
+            onboardingEntityId: onboarding?.id
+          });
+          throw new BadRequestException(`Database insert failed for ${attachment.originalName}: ${dbError.message}`);
+        }
       }
+      
+      console.log('💾 All attachments inserted successfully:', savedAttachments.length);
       
       console.log('💾 Saved', savedAttachments.length, 'attachments to database');
 
