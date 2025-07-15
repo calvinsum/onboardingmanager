@@ -29,6 +29,12 @@ services:
         fromDatabase:
           name: storehub-postgres
           property: connectionString
+      - key: CLOUDINARY_CLOUD_NAME
+        value: YOUR_CLOUDINARY_CLOUD_NAME_HERE
+      - key: CLOUDINARY_API_KEY
+        value: YOUR_CLOUDINARY_API_KEY_HERE
+      - key: CLOUDINARY_API_SECRET
+        value: YOUR_CLOUDINARY_API_SECRET_HERE
 
 databases:
   - name: storehub-postgres
