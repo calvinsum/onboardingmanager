@@ -142,6 +142,17 @@ export class MerchantOnboardingController {
     return this.onboardingService.acknowledgeTerms(token, acknowledgeTermsDto);
   }
 
+  @Patch('update/:token')
+  @ApiOperation({ summary: 'Update onboarding record by token' })
+  @ApiParam({ name: 'token', description: 'Access token' })
+  @ApiResponse({ status: 200, description: 'Onboarding record updated successfully', type: Onboarding })
+  async updateByToken(
+    @Param('token') token: string,
+    @Body() updateOnboardingDto: UpdateOnboardingDto,
+  ): Promise<Onboarding> {
+    return this.onboardingService.updateByToken(token, updateOnboardingDto);
+  }
+
   @Patch('training-status/:token')
   @ApiOperation({ summary: 'Update training status' })
   @ApiParam({ name: 'token', description: 'Access token' })

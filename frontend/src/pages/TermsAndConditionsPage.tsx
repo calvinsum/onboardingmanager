@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
-import { acknowledgeTerms, checkTermsAcknowledgment } from '../services/api';
+import { acknowledgeTerms, getOnboardingByToken, getActiveTermsConditions } from '../services/api';
 
 interface TermsConditions {
   id: string;
@@ -31,17 +31,17 @@ const TermsAndConditionsPage: React.FC = () => {
       }
 
       try {
-        // Check if terms are already acknowledged
-        const acknowledgmentStatus = await checkTermsAcknowledgment(accessToken);
+        // Get onboarding details to check if terms are already acknowledged
+        const onboardingDetails = await getOnboardingByToken(accessToken);
         
-        if (acknowledgmentStatus.acknowledged) {
-          // Already acknowledged current terms, redirect to scheduling
+        if (onboardingDetails.termsAcknowledgedDate) {
+          // Already acknowledged terms, redirect to scheduling
           navigate('/merchant-schedule');
           return;
         }
 
-        // Get current terms to display
-        const currentTerms = acknowledgmentStatus.currentTerms;
+        // Get current active terms to display
+        const currentTerms = await getActiveTermsConditions();
         if (currentTerms) {
           setTermsConditions(currentTerms);
         } else {

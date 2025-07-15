@@ -104,6 +104,39 @@ export class OnboardingService {
     return await this.onboardingRepository.save(onboarding);
   }
 
+  async updateByToken(token: string, updateOnboardingDto: UpdateOnboardingDto): Promise<Onboarding> {
+    const onboarding = await this.findByToken(token);
+
+    // Convert date strings to Date objects if needed
+    if (updateOnboardingDto.expectedGoLiveDate) {
+      updateOnboardingDto.expectedGoLiveDate = new Date(updateOnboardingDto.expectedGoLiveDate).toISOString();
+    }
+    if (updateOnboardingDto.deliveryConfirmedDate) {
+      updateOnboardingDto.deliveryConfirmedDate = new Date(updateOnboardingDto.deliveryConfirmedDate).toISOString();
+    }
+    if (updateOnboardingDto.installationConfirmedDate) {
+      updateOnboardingDto.installationConfirmedDate = new Date(updateOnboardingDto.installationConfirmedDate).toISOString();
+    }
+    if (updateOnboardingDto.trainingConfirmedDate) {
+      updateOnboardingDto.trainingConfirmedDate = new Date(updateOnboardingDto.trainingConfirmedDate).toISOString();
+    }
+    if (updateOnboardingDto.productSetupConfirmedDate) {
+      updateOnboardingDto.productSetupConfirmedDate = new Date(updateOnboardingDto.productSetupConfirmedDate).toISOString();
+    }
+    if (updateOnboardingDto.hardwareDeliveryDate) {
+      updateOnboardingDto.hardwareDeliveryDate = new Date(updateOnboardingDto.hardwareDeliveryDate).toISOString();
+    }
+    if (updateOnboardingDto.hardwareInstallationDate) {
+      updateOnboardingDto.hardwareInstallationDate = new Date(updateOnboardingDto.hardwareInstallationDate).toISOString();
+    }
+    if (updateOnboardingDto.trainingDate) {
+      updateOnboardingDto.trainingDate = new Date(updateOnboardingDto.trainingDate).toISOString();
+    }
+
+    Object.assign(onboarding, updateOnboardingDto);
+    return await this.onboardingRepository.save(onboarding);
+  }
+
   async remove(id: string, managerId: string): Promise<void> {
     const onboarding = await this.findOne(id, managerId);
     await this.onboardingRepository.remove(onboarding);

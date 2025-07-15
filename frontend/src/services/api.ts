@@ -451,11 +451,6 @@ export const getActiveTermsConditions = async () => {
   return response.data;
 };
 
-export const checkTermsAcknowledgment = async (token: string) => {
-  const response = await axios.get(`${API_BASE_URL}/merchant-onboarding/terms-conditions/check/${token}`);
-  return response.data;
-};
-
 export const acknowledgeTerms = async (token: string, data: { name: string; termsVersionId: string }) => {
   const response = await axios.post(`${API_BASE_URL}/merchant-onboarding/acknowledge-terms/${token}`, data);
   return response.data;
