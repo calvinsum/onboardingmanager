@@ -187,7 +187,7 @@ export const createMerchantOnboarding = async (data: any) => {
 };
 
 export const getMyOnboardingRecords = async () => {
-  const response = await api.get('/onboarding/my-records');
+  const response = await api.get('/onboarding');
   return response.data;
 };
 
