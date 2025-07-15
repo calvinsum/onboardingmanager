@@ -9,6 +9,15 @@ const OnboardingManagerDashboard = () => {
   const navigate = useNavigate();
   const [records, setRecords] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [attachmentModal, setAttachmentModal] = useState<{
+    isOpen: boolean;
+    attachments: any[];
+    onboardingId: string;
+  }>({
+    isOpen: false,
+    attachments: [],
+    onboardingId: '',
+  });
 
   useEffect(() => {
     const fetchRecords = async () => {
@@ -106,6 +115,8 @@ StoreHub Onboarding Team`;
 
   const handleViewAttachments = async (onboardingId: string) => {
     try {
+      console.log('🔍 Fetching attachments for onboarding:', onboardingId);
+      
       const response = await fetch(`${process.env.REACT_APP_API_URL || 'https://onboardingmanager.onrender.com/api'}/onboarding/${onboardingId}/attachments`, {
         method: 'GET',
         headers: {
@@ -115,29 +126,78 @@ StoreHub Onboarding Team`;
       });
 
       if (!response.ok) {
-        throw new Error('Failed to fetch attachments');
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
       }
 
       const attachments = await response.json();
+      console.log('📎 Received attachments:', attachments);
+      console.log('📊 Number of attachments:', attachments.length);
       
       if (attachments.length === 0) {
         toast.error('No attachments found for this onboarding record.');
         return;
       }
 
-      // Open each Cloudinary URL in a new tab
-      attachments.forEach((attachment: any) => {
-        if (attachment.cloudinaryUrl) {
-          window.open(attachment.cloudinaryUrl, '_blank');
-        }
+      // Show attachments in modal
+      setAttachmentModal({
+        isOpen: true,
+        attachments: attachments,
+        onboardingId: onboardingId,
       });
       
-      toast.success(`Opened ${attachments.length} attachment(s) in new tabs.`);
+      toast.success(`Found ${attachments.length} file(s)`);
+      
     } catch (error) {
+      console.error('❌ Error fetching attachments:', error);
       toast.error('Failed to view attachments.');
-      console.error(error);
     }
-  };  // Statistics
+  };
+
+  const handleDownloadAttachment = (attachment: any) => {
+    try {
+      // Create a temporary link element and trigger download
+      const link = document.createElement('a');
+      link.href = attachment.cloudinaryUrl;
+      link.download = attachment.originalName;
+      link.target = '_blank';
+      link.rel = 'noopener noreferrer';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+      toast.success(`Downloading ${attachment.originalName}...`);
+    } catch (error) {
+      console.error('Error downloading file:', error);
+      toast.error('Failed to download file. Please try again.');
+    }
+  };
+
+  const handleViewAttachment = (attachment: any) => {
+    try {
+      // Open in new tab for viewing
+      window.open(attachment.cloudinaryUrl, '_blank', 'noopener,noreferrer');
+    } catch (error) {
+      console.error('Error viewing file:', error);
+      toast.error('Failed to open file. Please try again.');
+    }
+  };
+
+  const formatFileSize = (bytes: number) => {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+  };
+
+  const closeAttachmentModal = () => {
+    setAttachmentModal({
+      isOpen: false,
+      attachments: [],
+      onboardingId: '',
+    });
+  };
+  // Statistics
   const totalRecords = records.length;
   const completedRecords = records.filter(r => r.status === 'completed').length;
   const inProgressRecords = records.filter(r => r.status === 'in_progress').length;
@@ -439,6 +499,88 @@ StoreHub Onboarding Team`;
           )}
         </div>
       </div>
+
+      {/* Attachment Modal */}
+      {attachmentModal.isOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-4xl w-full mx-4 max-h-[80vh] overflow-y-auto">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-bold text-gray-800">Uploaded Files</h2>
+              <button
+                onClick={closeAttachmentModal}
+                className="text-gray-500 hover:text-gray-700 text-2xl"
+              >
+                ×
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              {attachmentModal.attachments.length === 0 ? (
+                <div className="text-center py-8">
+                  <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <span className="text-gray-400 text-2xl">📁</span>
+                  </div>
+                  <h3 className="text-lg font-medium text-gray-800 mb-2">No Files Found</h3>
+                  <p className="text-gray-500">No attachments have been uploaded for this onboarding record.</p>
+                </div>
+              ) : (
+                attachmentModal.attachments.map((attachment, index) => (
+                  <div
+                    key={attachment.id || index}
+                    className="border rounded-lg p-4 flex items-center justify-between hover:bg-gray-50 transition-colors"
+                  >
+                    <div className="flex items-center space-x-4">
+                      <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+                        <span className="text-blue-600 font-bold">
+                          {attachment.mimeType?.includes('image') ? '🖼️' : 
+                           attachment.mimeType?.includes('pdf') ? '📄' : 
+                           attachment.mimeType?.includes('word') ? '📝' : '📎'}
+                        </span>
+                      </div>
+                      <div className="flex-1">
+                        <h3 className="font-medium text-gray-800">{attachment.originalName}</h3>
+                        <p className="text-sm text-gray-500">
+                          {formatFileSize(attachment.fileSize)} • {attachment.mimeType}
+                        </p>
+                        {attachment.createdAt && (
+                          <p className="text-xs text-gray-400">
+                            Uploaded: {new Date(attachment.createdAt).toLocaleString()}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <button
+                        onClick={() => handleViewAttachment(attachment)}
+                        className="px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600 text-sm transition-colors"
+                        title="View file in new tab"
+                      >
+                        👁️ View
+                      </button>
+                      <button
+                        onClick={() => handleDownloadAttachment(attachment)}
+                        className="px-3 py-1 bg-green-500 text-white rounded hover:bg-green-600 text-sm transition-colors"
+                        title="Download file"
+                      >
+                        📥 Download
+                      </button>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+
+            <div className="mt-6 flex justify-end">
+              <button
+                onClick={closeAttachmentModal}
+                className="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

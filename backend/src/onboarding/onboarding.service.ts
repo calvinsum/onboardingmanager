@@ -245,6 +245,15 @@ export class OnboardingService {
       // Save all attachments to database
       const savedAttachments = await this.attachmentRepository.save(attachments);
       console.log('💾 Saved', savedAttachments.length, 'attachments to database');
+      savedAttachments.forEach((attachment, index) => {
+        console.log(`💾 Saved attachment ${index + 1}:`, {
+          id: attachment.id,
+          originalName: attachment.originalName,
+          fileSize: attachment.fileSize,
+          cloudinaryUrl: attachment.cloudinaryUrl,
+          onboardingId: attachment.onboardingId,
+        });
+      });
 
       // Update onboarding status
       onboarding.productSetupConfirmed = true;
@@ -255,10 +264,14 @@ export class OnboardingService {
       console.log('✅ Updated onboarding status to COMPLETED');
 
       // Return updated onboarding with attachments
-      return await this.onboardingRepository.findOne({
+      const finalOnboarding = await this.onboardingRepository.findOne({
         where: { id: onboarding.id },
         relations: ['productSetupAttachments'],
       });
+      
+      console.log('📋 Final onboarding record has', finalOnboarding.productSetupAttachments.length, 'attachments');
+      
+      return finalOnboarding;
 
     } catch (error) {
       console.error('❌ Error in uploadProductSetupAttachments:', error.message);
@@ -268,6 +281,8 @@ export class OnboardingService {
   }
 
   async getAttachmentsForDownload(onboardingId: string, managerId: string): Promise<ProductSetupAttachment[]> {
+    console.log('🔍 Getting attachments for onboarding:', onboardingId, 'Manager:', managerId);
+    
     // Verify the manager has access to this onboarding record
     const onboarding = await this.onboardingRepository.findOne({
       where: { 
@@ -278,8 +293,21 @@ export class OnboardingService {
     });
 
     if (!onboarding) {
+      console.error('❌ Onboarding record not found or access denied');
       throw new NotFoundException('Onboarding record not found or access denied');
     }
+
+    console.log('✅ Found onboarding record with attachments:', onboarding.productSetupAttachments.length);
+    onboarding.productSetupAttachments.forEach((attachment, index) => {
+      console.log(`📎 Attachment ${index + 1}:`, {
+        id: attachment.id,
+        originalName: attachment.originalName,
+        fileSize: attachment.fileSize,
+        mimeType: attachment.mimeType,
+        cloudinaryUrl: attachment.cloudinaryUrl,
+        cloudinaryPublicId: attachment.cloudinaryPublicId,
+      });
+    });
 
     return onboarding.productSetupAttachments;
   }
