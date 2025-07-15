@@ -2,9 +2,6 @@ import { Controller, Get, Post, Body, Param, Patch, UseGuards, Request, Query, U
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiParam, ApiQuery, ApiConsumes } from '@nestjs/swagger';
 import { AuthGuard } from '@nestjs/passport';
 import { FilesInterceptor } from '@nestjs/platform-express';
-import { diskStorage } from 'multer';
-import { extname, join } from 'path';
-import { existsSync, mkdirSync } from 'fs';
 import { OnboardingService } from './onboarding.service';
 import { TermsConditionsService } from './terms-conditions.service';
 import { CreateOnboardingDto } from './dto/create-onboarding.dto';
@@ -23,143 +20,65 @@ export class OnboardingController {
     private readonly termsConditionsService: TermsConditionsService,
   ) {}
 
-  @Get('debug')
-  @ApiOperation({ summary: 'Debug endpoint to test authentication and manager lookup' })
-  async debugAuth(@Request() req: any): Promise<any> {
-    try {
-      console.log('=== DEBUG ENDPOINT ===');
-      console.log('User from JWT:', JSON.stringify(req.user, null, 2));
-      
-      const managerId = req.user.id;
-      console.log('Extracted managerId:', managerId);
-      
-      // Test manager lookup
-      const result = await this.onboardingService.debugManagerLookup(managerId);
-      
-      return {
-        success: true,
-        user: req.user,
-        managerId,
-        managerFound: result.found,
-        manager: result.manager,
-        timestamp: new Date().toISOString()
-      };
-    } catch (error) {
-      console.error('Debug endpoint error:', error);
-      return {
-        success: false,
-        error: error.message,
-        stack: error.stack,
-        timestamp: new Date().toISOString()
-      };
-    }
-  }
-
   @Post()
   @ApiOperation({ summary: 'Create a new onboarding record' })
   @ApiResponse({ status: 201, description: 'Onboarding record created successfully', type: Onboarding })
-  @ApiResponse({ status: 400, description: 'Bad request' })
-  @ApiResponse({ status: 401, description: 'Unauthorized' })
-  async createOnboarding(
+  async create(
     @Body() createOnboardingDto: CreateOnboardingDto,
     @Request() req: any,
   ): Promise<Onboarding> {
-    const managerId = req.user.id;
-    return this.onboardingService.createOnboarding(createOnboardingDto, managerId);
+    return this.onboardingService.createOnboarding(createOnboardingDto, req.user.id);
   }
 
   @Get()
-  @ApiOperation({ summary: 'Get all onboarding records' })
+  @ApiOperation({ summary: 'Get all onboarding records for the manager' })
   @ApiResponse({ status: 200, description: 'List of onboarding records', type: [Onboarding] })
-  @ApiResponse({ status: 401, description: 'Unauthorized' })
-  async getAllOnboardings(): Promise<Onboarding[]> {
-    return this.onboardingService.getAllOnboardings();
-  }
-
-  @Get('my-records')
-  @ApiOperation({ summary: 'Get onboarding records created by current manager' })
-  @ApiResponse({ status: 200, description: 'List of onboarding records', type: [Onboarding] })
-  @ApiResponse({ status: 401, description: 'Unauthorized' })
-  async getMyOnboardings(@Request() req: any): Promise<Onboarding[]> {
-    const managerId = req.user.id;
-    return this.onboardingService.getOnboardingsByManager(managerId);
+  async findAll(@Request() req: any): Promise<Onboarding[]> {
+    return this.onboardingService.findAll(req.user.id);
   }
 
   @Get(':id')
-  @ApiOperation({ summary: 'Get onboarding record by ID' })
+  @ApiOperation({ summary: 'Get a specific onboarding record' })
   @ApiParam({ name: 'id', description: 'Onboarding ID' })
   @ApiResponse({ status: 200, description: 'Onboarding record found', type: Onboarding })
-  @ApiResponse({ status: 404, description: 'Onboarding record not found' })
-  @ApiResponse({ status: 401, description: 'Unauthorized' })
-  async getOnboardingById(@Param('id') id: string): Promise<Onboarding> {
-    return this.onboardingService.getOnboardingById(id);
+  async findOne(@Param('id') id: string, @Request() req: any): Promise<Onboarding> {
+    return this.onboardingService.findOne(id, req.user.id);
   }
 
   @Patch(':id')
   @ApiOperation({ summary: 'Update an onboarding record' })
   @ApiParam({ name: 'id', description: 'Onboarding ID' })
   @ApiResponse({ status: 200, description: 'Onboarding record updated successfully', type: Onboarding })
-  @ApiResponse({ status: 404, description: 'Onboarding record not found' })
-  async updateOnboarding(
+  async update(
     @Param('id') id: string,
     @Body() updateOnboardingDto: UpdateOnboardingDto,
+    @Request() req: any,
   ): Promise<Onboarding> {
-    return this.onboardingService.updateOnboarding(id, updateOnboardingDto);
+    return this.onboardingService.update(id, updateOnboardingDto, req.user.id);
   }
 
-  @Patch(':id/status')
-  @ApiOperation({ summary: 'Update onboarding status' })
+  @Get(':id/attachments')
+  @ApiOperation({ summary: 'Get attachments for download' })
   @ApiParam({ name: 'id', description: 'Onboarding ID' })
-  @ApiResponse({ status: 200, description: 'Onboarding status updated', type: Onboarding })
-  @ApiResponse({ status: 404, description: 'Onboarding record not found' })
-  @ApiResponse({ status: 401, description: 'Unauthorized' })
-  async updateOnboardingStatus(
-    @Param('id') id: string,
-    @Body('status') status: OnboardingStatus,
-  ): Promise<Onboarding> {
-    return this.onboardingService.updateOnboardingStatus(id, status);
+  @ApiResponse({ status: 200, description: 'List of attachments' })
+  async getAttachments(@Param('id') id: string, @Request() req: any) {
+    return this.onboardingService.getAttachmentsForDownload(id, req.user.id);
   }
 
-  @Post(':id/regenerate-token')
-  @ApiOperation({ summary: 'Regenerate access token for onboarding' })
-  @ApiParam({ name: 'id', description: 'Onboarding ID' })
-  @ApiResponse({ status: 200, description: 'Token regenerated successfully', type: Onboarding })
-  @ApiResponse({ status: 404, description: 'Onboarding record not found' })
-  @ApiResponse({ status: 401, description: 'Unauthorized' })
-  async regenerateToken(@Param('id') id: string): Promise<Onboarding> {
-    return this.onboardingService.regenerateToken(id);
-  }
-
-  @Patch(':id/link-merchant')
-  @ApiOperation({ summary: 'Link merchant to onboarding record' })
-  @ApiParam({ name: 'id', description: 'Onboarding ID' })
-  @ApiResponse({ status: 200, description: 'Merchant linked successfully', type: Onboarding })
-  @ApiResponse({ status: 404, description: 'Onboarding or merchant not found' })
-  @ApiResponse({ status: 401, description: 'Unauthorized' })
-  async linkMerchant(
-    @Param('id') id: string,
-    @Body('merchantId') merchantId: string,
-  ): Promise<Onboarding> {
-    return this.onboardingService.linkMerchant(id, merchantId);
-  }
-
-  // Terms and Conditions Management (Manager only)
+  // Terms and Conditions Management
   @Post('terms-conditions')
   @ApiOperation({ summary: 'Create new terms and conditions' })
   @ApiResponse({ status: 201, description: 'Terms and conditions created successfully', type: TermsConditions })
   async createTermsConditions(
     @Body() createTermsConditionsDto: CreateTermsConditionsDto,
+    @Request() req: any,
   ): Promise<TermsConditions> {
-    return this.termsConditionsService.createTermsConditions(
-      createTermsConditionsDto.version,
-      createTermsConditionsDto.content,
-      new Date(createTermsConditionsDto.effectiveDate),
-    );
+    return this.termsConditionsService.createTermsConditions(createTermsConditionsDto.version, createTermsConditionsDto.content, new Date());
   }
 
-  @Get('terms-conditions')
+  @Get('terms-conditions/all')
   @ApiOperation({ summary: 'Get all terms and conditions versions' })
-  @ApiResponse({ status: 200, description: 'List of terms and conditions', type: [TermsConditions] })
+  @ApiResponse({ status: 200, description: 'List of all terms and conditions', type: [TermsConditions] })
   async getAllTermsConditions(): Promise<TermsConditions[]> {
     return this.termsConditionsService.getAllTermsConditions();
   }
@@ -172,12 +91,13 @@ export class OnboardingController {
   }
 
   @Patch('terms-conditions/:id')
-  @ApiOperation({ summary: 'Update terms and conditions content' })
+  @ApiOperation({ summary: 'Update terms and conditions' })
   @ApiParam({ name: 'id', description: 'Terms and conditions ID' })
   @ApiResponse({ status: 200, description: 'Terms and conditions updated successfully', type: TermsConditions })
   async updateTermsConditions(
     @Param('id') id: string,
     @Body() updateTermsConditionsDto: UpdateTermsConditionsDto,
+    @Request() req: any,
   ): Promise<TermsConditions> {
     return this.termsConditionsService.updateTermsConditions(id, updateTermsConditionsDto.content);
   }
@@ -186,41 +106,15 @@ export class OnboardingController {
   @ApiOperation({ summary: 'Activate terms and conditions version' })
   @ApiParam({ name: 'id', description: 'Terms and conditions ID' })
   @ApiResponse({ status: 200, description: 'Terms and conditions activated successfully', type: TermsConditions })
-  async activateTermsConditions(@Param('id') id: string): Promise<TermsConditions> {
+  async activateTermsConditions(
+    @Param('id') id: string,
+    @Request() req: any,
+  ): Promise<TermsConditions> {
     return this.termsConditionsService.activateTermsConditions(id);
-  }
-
-  @Get('download-attachments/:id')
-  @ApiOperation({ summary: 'Download all attachments for an onboarding record' })
-  @ApiResponse({ status: 200, description: 'Attachments downloaded successfully' })
-  async downloadAttachments(@Param('id') id: string, @Request() req: any): Promise<any> {
-    const managerId = req.user.id;
-    return this.onboardingService.getAttachmentsForDownload(id, managerId);
-  }
-
-  @Get('test-token/:token')
-  @ApiOperation({ summary: 'Test token validation' })
-  @ApiResponse({ status: 200, description: 'Token validation result' })
-  async testToken(@Param('token') token: string): Promise<any> {
-    try {
-      const onboarding = await this.onboardingService.getOnboardingByToken(token);
-      return {
-        success: true,
-        onboardingId: onboarding.id,
-        accountName: onboarding.accountName,
-        tokenExpiry: onboarding.tokenExpiryDate,
-        isExpired: new Date() > onboarding.tokenExpiryDate
-      };
-    } catch (error) {
-      return {
-        success: false,
-        error: error.message
-      };
-    }
   }
 }
 
-// Public endpoint for merchant access using token
+// Separate controller for merchant-facing endpoints (no auth required)
 @ApiTags('merchant-onboarding')
 @Controller('merchant-onboarding')
 export class MerchantOnboardingController {
@@ -229,54 +123,45 @@ export class MerchantOnboardingController {
     private readonly termsConditionsService: TermsConditionsService,
   ) {}
 
-  @Get('access/:token')
-  @ApiOperation({ summary: 'Access onboarding record using token' })
+  @Get('details/:token')
+  @ApiOperation({ summary: 'Get onboarding details by token' })
   @ApiParam({ name: 'token', description: 'Access token' })
-  @ApiResponse({ status: 200, description: 'Onboarding record found', type: Onboarding })
-  @ApiResponse({ status: 404, description: 'Invalid or expired token' })
-  async getOnboardingByToken(@Param('token') token: string): Promise<Onboarding> {
-    return this.onboardingService.getOnboardingByToken(token);
+  @ApiResponse({ status: 200, description: 'Onboarding details', type: Onboarding })
+  async getOnboardingDetails(@Param('token') token: string): Promise<Onboarding> {
+    return this.onboardingService.findByToken(token);
   }
 
-  @Patch('update/:token')
-  @ApiOperation({ summary: 'Update onboarding schedule using access token' })
-  @ApiParam({ name: 'token', description: 'Access token' })
-  @ApiResponse({ status: 200, description: 'Onboarding schedule updated successfully', type: Onboarding })
-  @ApiResponse({ status: 404, description: 'Invalid or expired token' })
-  async updateOnboardingByToken(
-    @Param('token') token: string,
-    @Body() updateOnboardingDto: UpdateOnboardingDto,
-  ): Promise<Onboarding> {
-    return this.onboardingService.updateOnboardingByToken(token, updateOnboardingDto);
-  }
-
-  @Get('check-token/:token')
-  @ApiOperation({ summary: 'Check if token is expired' })
-  @ApiParam({ name: 'token', description: 'Access token' })
-  @ApiResponse({ status: 200, description: 'Token status', schema: { type: 'object', properties: { expired: { type: 'boolean' } } } })
-  async checkTokenExpiry(@Param('token') token: string): Promise<{ expired: boolean }> {
-    const expired = await this.onboardingService.isTokenExpired(token);
-    return { expired };
-  }
-
-  // Terms and Conditions for Merchants
-  @Get('terms-conditions/check/:token')
-  @ApiOperation({ summary: 'Check terms and conditions acknowledgment status' })
-  @ApiParam({ name: 'token', description: 'Access token' })
-  @ApiResponse({ status: 200, description: 'Terms acknowledgment status' })
-  async checkTermsAcknowledgment(@Param('token') token: string): Promise<{ acknowledged: boolean; currentTerms?: TermsConditions }> {
-    return this.onboardingService.checkTermsAcknowledgmentByToken(token);
-  }
-
-  @Post('terms-conditions/acknowledge/:token')
+  @Post('acknowledge-terms/:token')
   @ApiOperation({ summary: 'Acknowledge terms and conditions' })
   @ApiParam({ name: 'token', description: 'Access token' })
-  @ApiResponse({ status: 200, description: 'Terms and conditions acknowledged successfully', type: Onboarding })
+  @ApiResponse({ status: 200, description: 'Terms acknowledged successfully', type: Onboarding })
   async acknowledgeTerms(
     @Param('token') token: string,
     @Body() acknowledgeTermsDto: AcknowledgeTermsDto,
   ): Promise<Onboarding> {
-    return this.onboardingService.acknowledgeTermsByToken(token, acknowledgeTermsDto);
+    return this.onboardingService.acknowledgeTerms(token, acknowledgeTermsDto);
+  }
+
+  @Patch('training-status/:token')
+  @ApiOperation({ summary: 'Update training status' })
+  @ApiParam({ name: 'token', description: 'Access token' })
+  @ApiResponse({ status: 200, description: 'Training status updated', type: Onboarding })
+  async updateTrainingStatus(
+    @Param('token') token: string,
+    @Body() body: { status: 'completed' | 'pending' },
+  ): Promise<Onboarding> {
+    return this.onboardingService.updateTrainingStatus(token, body.status);
+  }
+
+  @Patch('product-setup-status/:token')
+  @ApiOperation({ summary: 'Update product setup status' })
+  @ApiParam({ name: 'token', description: 'Access token' })
+  @ApiResponse({ status: 200, description: 'Product setup status updated', type: Onboarding })
+  async updateProductSetupStatus(
+    @Param('token') token: string,
+    @Body() body: { status: 'completed' | 'pending' },
+  ): Promise<Onboarding> {
+    return this.onboardingService.updateProductSetupStatus(token, body.status);
   }
 
   @Get('terms-conditions/active')
@@ -286,51 +171,11 @@ export class MerchantOnboardingController {
     return this.termsConditionsService.getActiveTermsConditions();
   }
 
-  @Post('test-upload/:token')
-  @ApiOperation({ summary: 'Test upload without files' })
-  @ApiResponse({ status: 200, description: 'Test upload result' })
-  async testUpload(@Param('token') token: string): Promise<any> {
-    try {
-      // Test the service method without actual files
-      const mockFiles = [
-        {
-          originalname: 'test.pdf',
-          filename: 'test-123.pdf',
-          mimetype: 'application/pdf',
-          size: 1024,
-          path: '/tmp/test-123.pdf'
-        }
-      ] as Express.Multer.File[];
-      
-      const result = await this.onboardingService.uploadProductSetupAttachments(token, mockFiles);
-      return { success: true, onboardingId: result.id };
-    } catch (error) {
-      return { success: false, error: error.message };
-    }
-  }
-
   @Post('upload-attachments/:token')
-  @ApiOperation({ summary: 'Upload product setup attachments' })
+  @ApiOperation({ summary: 'Upload product setup attachments to Cloudinary' })
   @ApiConsumes('multipart/form-data')
   @ApiResponse({ status: 201, description: 'Files uploaded successfully' })
   @UseInterceptors(FilesInterceptor('files', 10, {
-    storage: diskStorage({
-      destination: (req, file, cb) => {
-        // Use system temp directory instead of ./uploads
-        const uploadDir = process.env.NODE_ENV === 'production' 
-          ? '/tmp/uploads' 
-          : join(process.cwd(), 'uploads');
-        
-        if (!existsSync(uploadDir)) {
-          mkdirSync(uploadDir, { recursive: true });
-        }
-        cb(null, uploadDir);
-      },
-      filename: (req, file, cb) => {
-        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-        cb(null, `${uniqueSuffix}${extname(file.originalname)}`);
-      },
-    }),
     fileFilter: (req, file, cb) => {
       const allowedMimes = [
         'image/jpeg',
@@ -356,4 +201,4 @@ export class MerchantOnboardingController {
   ): Promise<Onboarding> {
     return this.onboardingService.uploadProductSetupAttachments(token, files);
   }
-} 
+}

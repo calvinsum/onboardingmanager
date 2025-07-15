@@ -12,9 +12,13 @@ export class ProductSetupAttachment {
   @Column()
   originalName: string;
 
-  @ApiProperty({ description: 'Stored filename' })
+  @ApiProperty({ description: 'Cloudinary public ID' })
   @Column()
-  storedName: string;
+  cloudinaryPublicId: string;
+
+  @ApiProperty({ description: 'Cloudinary URL' })
+  @Column()
+  cloudinaryUrl: string;
 
   @ApiProperty({ description: 'File MIME type' })
   @Column()
@@ -23,10 +27,6 @@ export class ProductSetupAttachment {
   @ApiProperty({ description: 'File size in bytes' })
   @Column()
   fileSize: number;
-
-  @ApiProperty({ description: 'File path on server' })
-  @Column()
-  filePath: string;
 
   @ApiProperty({ description: 'Upload timestamp' })
   @CreateDateColumn()
@@ -40,4 +40,4 @@ export class ProductSetupAttachment {
 
   @Column()
   onboardingId: string;
-} 
+}

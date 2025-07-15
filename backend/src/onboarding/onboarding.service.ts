@@ -9,6 +9,7 @@ import { OnboardingManager } from '../onboarding-manager/entities/onboarding-man
 import { CreateOnboardingDto } from './dto/create-onboarding.dto';
 import { UpdateOnboardingDto } from './dto/update-onboarding.dto';
 import { AcknowledgeTermsDto } from './dto/acknowledge-terms.dto';
+import { CloudinaryService } from '../common/services/cloudinary.service';
 import * as crypto from 'crypto';
 
 @Injectable()
@@ -24,6 +25,7 @@ export class OnboardingService {
     private merchantRepository: Repository<Merchant>,
     @InjectRepository(OnboardingManager)
     private onboardingManagerRepository: Repository<OnboardingManager>,
+    private cloudinaryService: CloudinaryService,
   ) {}
 
   async createOnboarding(createOnboardingDto: CreateOnboardingDto, managerId: string): Promise<Onboarding> {
@@ -48,104 +50,21 @@ export class OnboardingService {
       status: OnboardingStatus.CREATED,
     });
     
-    if (createOnboardingDto.useSameAddressForTraining) {
-      onboarding.trainingAddress1 = createOnboardingDto.deliveryAddress1;
-      onboarding.trainingAddress2 = createOnboardingDto.deliveryAddress2;
-      onboarding.trainingCity = createOnboardingDto.deliveryCity;
-      onboarding.trainingState = createOnboardingDto.deliveryState;
-      onboarding.trainingPostalCode = createOnboardingDto.deliveryPostalCode;
-      onboarding.trainingCountry = createOnboardingDto.deliveryCountry;
-    }
-
-    return this.onboardingRepository.save(onboarding);
+    return await this.onboardingRepository.save(onboarding);
   }
 
-  async updateOnboarding(id: string, updateOnboardingDto: UpdateOnboardingDto): Promise<Onboarding> {
-    const onboarding = await this.getOnboardingById(id);
-
-    // Separate date fields from the rest of the DTO to handle type conversion
-    const { 
-      expectedGoLiveDate, 
-      hardwareDeliveryDate, 
-      hardwareInstallationDate, 
-      trainingDate,
-      deliveryConfirmedDate,
-      installationConfirmedDate,
-      trainingConfirmedDate,
-      productSetupConfirmedDate,
-      ...restOfDto 
-    } = updateOnboardingDto;
-    
-    const updatePayload: Partial<Onboarding> = { ...restOfDto };
-
-    // Handle date conversions
-    if (expectedGoLiveDate) {
-      updatePayload.expectedGoLiveDate = new Date(expectedGoLiveDate);
-    }
-
-    if (hardwareDeliveryDate) {
-      updatePayload.hardwareDeliveryDate = new Date(hardwareDeliveryDate);
-    }
-
-    if (hardwareInstallationDate) {
-      updatePayload.hardwareInstallationDate = new Date(hardwareInstallationDate);
-    }
-
-    if (trainingDate) {
-      updatePayload.trainingDate = new Date(trainingDate);
-    }
-
-    if (deliveryConfirmedDate) {
-      updatePayload.deliveryConfirmedDate = new Date(deliveryConfirmedDate);
-    }
-
-    if (installationConfirmedDate) {
-      updatePayload.installationConfirmedDate = new Date(installationConfirmedDate);
-    }
-
-    if (trainingConfirmedDate) {
-      updatePayload.trainingConfirmedDate = new Date(trainingConfirmedDate);
-    }
-
-    if (productSetupConfirmedDate) {
-      updatePayload.productSetupConfirmedDate = new Date(productSetupConfirmedDate);
-    }
-    // Auto-set delivery confirmation date if delivery is being confirmed and no date provided
-    if (updateOnboardingDto.deliveryConfirmed && !onboarding.deliveryConfirmed && !deliveryConfirmedDate) {
-      updatePayload.deliveryConfirmedDate = new Date();
-    }
-
-    // Auto-set installation confirmation date if installation is being confirmed and no date provided
-    if (updateOnboardingDto.installationConfirmed && !onboarding.installationConfirmed && !installationConfirmedDate) {
-      updatePayload.installationConfirmedDate = new Date();
-    }
-
-    // Auto-set training confirmation date if training is being confirmed and no date provided
-    if (updateOnboardingDto.trainingConfirmed && !onboarding.trainingConfirmed && !trainingConfirmedDate) {
-      updatePayload.trainingConfirmedDate = new Date();
-    }
-
-    // Auto-set product setup confirmation date if product setup is being confirmed and no date provided
-    if (updateOnboardingDto.productSetupConfirmed && !onboarding.productSetupConfirmed && !productSetupConfirmedDate) {
-      updatePayload.productSetupConfirmedDate = new Date();
-    }    
-    // `merge` will update the `onboarding` entity with the new values
-    const updatedOnboarding = this.onboardingRepository.merge(onboarding, updatePayload);
-
-    return this.onboardingRepository.save(updatedOnboarding);
-  }
-
-  async getAllOnboardings(): Promise<Onboarding[]> {
-    return this.onboardingRepository.find({
-      relations: ['createdByManager', 'merchant'],
+  async findAll(managerId: string): Promise<Onboarding[]> {
+    return await this.onboardingRepository.find({
+      where: { createdByManagerId: managerId },
+      relations: ['productSetupAttachments'],
       order: { createdAt: 'DESC' },
     });
   }
 
-  async getOnboardingById(id: string): Promise<Onboarding> {
+  async findOne(id: string, managerId: string): Promise<Onboarding> {
     const onboarding = await this.onboardingRepository.findOne({
-      where: { id },
-      relations: ['createdByManager', 'merchant'],
+      where: { id, createdByManagerId: managerId },
+      relations: ['productSetupAttachments'],
     });
 
     if (!onboarding) {
@@ -155,10 +74,10 @@ export class OnboardingService {
     return onboarding;
   }
 
-  async getOnboardingByToken(token: string): Promise<Onboarding> {
+  async findByToken(token: string): Promise<Onboarding> {
     const onboarding = await this.onboardingRepository.findOne({
       where: { accessToken: token },
-      relations: ['createdByManager', 'merchant'],
+      relations: ['productSetupAttachments'],
     });
 
     if (!onboarding) {
@@ -167,217 +86,76 @@ export class OnboardingService {
 
     // Check if token is expired
     if (new Date() > onboarding.tokenExpiryDate) {
-      // Regenerate token
-      const newToken = this.generateAccessToken();
-      const newExpiryDate = new Date();
-      newExpiryDate.setDate(newExpiryDate.getDate() + 30);
-
-      onboarding.accessToken = newToken;
-      onboarding.tokenExpiryDate = newExpiryDate;
-      
-      await this.onboardingRepository.save(onboarding);
+      throw new BadRequestException('Access token has expired');
     }
 
     return onboarding;
   }
 
-  async updateOnboardingByToken(token: string, updateOnboardingDto: UpdateOnboardingDto): Promise<Onboarding> {
-    const onboarding = await this.onboardingRepository.findOne({
-      where: { accessToken: token },
-      relations: ['createdByManager', 'merchant'],
-    });
+  async update(id: string, updateOnboardingDto: UpdateOnboardingDto, managerId: string): Promise<Onboarding> {
+    const onboarding = await this.findOne(id, managerId);
 
-    if (!onboarding) {
-      throw new NotFoundException('Invalid or expired token');
+    if (updateOnboardingDto.expectedGoLiveDate) {
+      // Convert string to Date if needed
+      updateOnboardingDto.expectedGoLiveDate = new Date(updateOnboardingDto.expectedGoLiveDate).toISOString();
     }
 
-    // Check if token is expired
-    if (new Date() > onboarding.tokenExpiryDate) {
-      throw new BadRequestException('Access token has expired');
-    }
-
-    // Separate date fields from the rest of the DTO to handle type conversion
-    const { 
-      expectedGoLiveDate, 
-      hardwareDeliveryDate, 
-      hardwareInstallationDate, 
-      trainingDate,
-      deliveryConfirmedDate,
-      installationConfirmedDate,
-      trainingConfirmedDate,
-      productSetupConfirmedDate,
-      ...restOfDto 
-    } = updateOnboardingDto;
-    
-    const updatePayload: Partial<Onboarding> = { ...restOfDto };
-
-    // Handle date conversions
-    if (expectedGoLiveDate) {
-      updatePayload.expectedGoLiveDate = new Date(expectedGoLiveDate);
-    }
-
-    if (hardwareDeliveryDate) {
-      updatePayload.hardwareDeliveryDate = new Date(hardwareDeliveryDate);
-    }
-
-    if (hardwareInstallationDate) {
-      updatePayload.hardwareInstallationDate = new Date(hardwareInstallationDate);
-    }
-
-    if (trainingDate) {
-      updatePayload.trainingDate = new Date(trainingDate);
-    }
-
-    if (deliveryConfirmedDate) {
-      updatePayload.deliveryConfirmedDate = new Date(deliveryConfirmedDate);
-    }
-
-    if (installationConfirmedDate) {
-      updatePayload.installationConfirmedDate = new Date(installationConfirmedDate);
-    }
-
-    if (trainingConfirmedDate) {
-      updatePayload.trainingConfirmedDate = new Date(trainingConfirmedDate);
-    }
-
-
-    if (productSetupConfirmedDate) {
-      updatePayload.productSetupConfirmedDate = new Date(productSetupConfirmedDate);
-    }    // Auto-set delivery confirmation date if delivery is being confirmed and no date provided
-    if (updateOnboardingDto.deliveryConfirmed && !onboarding.deliveryConfirmed && !deliveryConfirmedDate) {
-      updatePayload.deliveryConfirmedDate = new Date();
-    }
-
-    // Auto-set installation confirmation date if installation is being confirmed and no date provided
-    if (updateOnboardingDto.installationConfirmed && !onboarding.installationConfirmed && !installationConfirmedDate) {
-      updatePayload.installationConfirmedDate = new Date();
-    }
-
-    // Auto-set training confirmation date if training is being confirmed and no date provided
-    if (updateOnboardingDto.trainingConfirmed && !onboarding.trainingConfirmed && !trainingConfirmedDate) {
-      updatePayload.trainingConfirmedDate = new Date();
-    }
-
-    // Auto-set product setup confirmation date if product setup is being confirmed and no date provided
-    if (updateOnboardingDto.productSetupConfirmed && !onboarding.productSetupConfirmed && !productSetupConfirmedDate) {
-      updatePayload.productSetupConfirmedDate = new Date();
-    }    
-    // `merge` will update the `onboarding` entity with the new values
-    const updatedOnboarding = this.onboardingRepository.merge(onboarding, updatePayload);
-
-    return this.onboardingRepository.save(updatedOnboarding);
+    Object.assign(onboarding, updateOnboardingDto);
+    return await this.onboardingRepository.save(onboarding);
   }
 
-  async updateOnboardingStatus(id: string, status: OnboardingStatus): Promise<Onboarding> {
-    const onboarding = await this.getOnboardingById(id);
-    
-    onboarding.status = status;
-    await this.onboardingRepository.save(onboarding);
-
-    return this.getOnboardingById(id);
+  async remove(id: string, managerId: string): Promise<void> {
+    const onboarding = await this.findOne(id, managerId);
+    await this.onboardingRepository.remove(onboarding);
   }
 
-  async linkMerchant(onboardingId: string, merchantId: string): Promise<Onboarding> {
-    const onboarding = await this.getOnboardingById(onboardingId);
-    const merchant = await this.merchantRepository.findOne({
-      where: { id: merchantId }
-    });
+  async acknowledgeTerms(token: string, acknowledgeTermsDto: AcknowledgeTermsDto): Promise<Onboarding> {
+    const onboarding = await this.findByToken(token);
 
-    if (!merchant) {
-      throw new NotFoundException('Merchant not found');
-    }
-
-    onboarding.merchantId = merchantId;
-    await this.onboardingRepository.save(onboarding);
-
-    return this.getOnboardingById(onboardingId);
-  }
-
-  async regenerateToken(id: string): Promise<Onboarding> {
-    const onboarding = await this.getOnboardingById(id);
-    
-    // Generate new token
-    const newToken = this.generateAccessToken();
-    const newExpiryDate = new Date();
-    newExpiryDate.setDate(newExpiryDate.getDate() + 30);
-
-    onboarding.accessToken = newToken;
-    onboarding.tokenExpiryDate = newExpiryDate;
-    
-    await this.onboardingRepository.save(onboarding);
-
-    return this.getOnboardingById(id);
-  }
-
-  async acknowledgeTermsByToken(token: string, acknowledgeTermsDto: AcknowledgeTermsDto): Promise<Onboarding> {
-    const onboarding = await this.onboardingRepository.findOne({
-      where: { accessToken: token },
-      relations: ['createdByManager', 'merchant', 'acknowledgedTermsVersion'],
-    });
-
-    if (!onboarding) {
-      throw new NotFoundException('Invalid or expired token');
-    }
-
-    // Check if token is expired
-    if (new Date() > onboarding.tokenExpiryDate) {
-      throw new BadRequestException('Access token has expired');
-    }
-
-    // Verify the terms version exists
-    const termsVersion = await this.termsConditionsRepository.findOne({
-      where: { id: acknowledgeTermsDto.termsVersionId },
-    });
-
-    if (!termsVersion) {
-      throw new NotFoundException('Terms and conditions version not found');
-    }
-
-    // Update onboarding record with acknowledgment
-    onboarding.termsAccepted = true;
-    onboarding.termsAcknowledgmentName = acknowledgeTermsDto.name;
-    onboarding.termsAcknowledgedDate = new Date();
-    onboarding.acknowledgedTermsVersion = termsVersion;
-    onboarding.acknowledgedTermsVersionId = termsVersion.id;
-
-    return this.onboardingRepository.save(onboarding);
-  }
-
-  async checkTermsAcknowledgmentByToken(token: string): Promise<{ acknowledged: boolean; currentTerms?: TermsConditions }> {
-    const onboarding = await this.onboardingRepository.findOne({
-      where: { accessToken: token },
-      relations: ['acknowledgedTermsVersion'],
-    });
-
-    if (!onboarding) {
-      throw new NotFoundException('Invalid or expired token');
-    }
-
-    // Check if token is expired
-    if (new Date() > onboarding.tokenExpiryDate) {
-      throw new BadRequestException('Access token has expired');
-    }
-
-    // Get current active terms
-    const currentTerms = await this.termsConditionsRepository.findOne({
+    // Get the latest terms and conditions
+    const latestTerms = await this.termsConditionsRepository.findOne({
       where: { isActive: true },
+      order: { version: 'DESC' },
     });
 
-    // Check if terms have been acknowledged and if it's the current version
-    const acknowledged = onboarding.termsAccepted && 
-                        onboarding.acknowledgedTermsVersion && 
-                        currentTerms && 
-                        onboarding.acknowledgedTermsVersion.id === currentTerms.id;
+    if (!latestTerms) {
+      throw new NotFoundException('No active terms and conditions found');
+    }
 
-    return {
-      acknowledged,
-      currentTerms: currentTerms || undefined,
-    };
+    // Update onboarding with acknowledgment
+    onboarding.termsAccepted = true;
+    onboarding.status = OnboardingStatus.IN_PROGRESS;
+
+    return await this.onboardingRepository.save(onboarding);
+  }
+
+  async updateTrainingStatus(token: string, status: 'completed' | 'pending'): Promise<Onboarding> {
+    const onboarding = await this.findByToken(token);
+
+    onboarding.trainingConfirmed = status === 'completed';
+    if (status === 'completed') {
+      onboarding.trainingConfirmedDate = new Date();
+      onboarding.status = OnboardingStatus.IN_PROGRESS;
+    }
+
+    return await this.onboardingRepository.save(onboarding);
+  }
+
+  async updateProductSetupStatus(token: string, status: 'completed' | 'pending'): Promise<Onboarding> {
+    const onboarding = await this.findByToken(token);
+
+    onboarding.productSetupConfirmed = status === 'completed';
+    if (status === 'completed') {
+      onboarding.productSetupConfirmedDate = new Date();
+      onboarding.status = OnboardingStatus.IN_PROGRESS;
+    }
+
+    return await this.onboardingRepository.save(onboarding);
   }
 
   async uploadProductSetupAttachments(token: string, files: Express.Multer.File[]): Promise<Onboarding> {
     try {
-      console.log('📁 Starting file upload for token:', token);
+      console.log('📁 Starting Cloudinary file upload for token:', token);
       console.log('📄 Number of files:', files.length);
       
       const onboarding = await this.onboardingRepository.findOne({
@@ -398,46 +176,57 @@ export class OnboardingService {
         throw new BadRequestException('Access token has expired');
       }
 
-      console.log('✅ Token is valid, processing files...');
+      console.log('✅ Token is valid, uploading files to Cloudinary...');
 
-      // Create attachment records
-      const attachments = files.map(file => {
+      // Upload files to Cloudinary and create attachment records
+      const attachments = [];
+      
+      for (const file of files) {
         console.log('📎 Processing file:', file.originalname, 'Size:', file.size);
-        const attachment = new ProductSetupAttachment();
-        attachment.originalName = file.originalname;
-        attachment.storedName = file.filename;
-        attachment.mimeType = file.mimetype;
-        attachment.fileSize = file.size;
-        attachment.filePath = file.path;
-        attachment.onboardingId = onboarding.id;
-        return attachment;
-      });
+        
+        try {
+          // Upload to Cloudinary
+          const cloudinaryResult = await this.cloudinaryService.uploadFile(
+            file, 
+            `product-setup-attachments/${onboarding.id}`
+          );
+          
+          console.log('☁️ Cloudinary upload successful:', cloudinaryResult.public_id);
+          
+          // Create attachment record
+          const attachment = new ProductSetupAttachment();
+          attachment.originalName = file.originalname;
+          attachment.cloudinaryPublicId = cloudinaryResult.public_id;
+          attachment.cloudinaryUrl = cloudinaryResult.secure_url;
+          attachment.mimeType = file.mimetype;
+          attachment.fileSize = file.size;
+          attachment.onboardingId = onboarding.id;
+          
+          attachments.push(attachment);
+        } catch (uploadError) {
+          console.error('❌ Cloudinary upload failed for file:', file.originalname, uploadError);
+          throw new BadRequestException(`Failed to upload file: ${file.originalname}`);
+        }
+      }
 
-      console.log('💾 Saving attachments to database...');
-      
-      // Save attachments to database
-      await this.attachmentRepository.save(attachments);
-      
-      console.log('✅ Attachments saved successfully');
+      // Save all attachments to database
+      const savedAttachments = await this.attachmentRepository.save(attachments);
+      console.log('💾 Saved', savedAttachments.length, 'attachments to database');
 
-      // Update onboarding record to mark product setup as confirmed
+      // Update onboarding status
       onboarding.productSetupConfirmed = true;
       onboarding.productSetupConfirmedDate = new Date();
-      
-      console.log('💾 Updating onboarding record...');
-      await this.onboardingRepository.save(onboarding);
-      
-      console.log('✅ Onboarding record updated successfully');
+      onboarding.status = OnboardingStatus.COMPLETED;
+
+      const updatedOnboarding = await this.onboardingRepository.save(onboarding);
+      console.log('✅ Updated onboarding status to COMPLETED');
 
       // Return updated onboarding with attachments
-      const result = await this.onboardingRepository.findOne({
+      return await this.onboardingRepository.findOne({
         where: { id: onboarding.id },
-        relations: ['productSetupAttachments', 'createdByManager', 'merchant'],
+        relations: ['productSetupAttachments'],
       });
-      
-      console.log('✅ File upload completed successfully');
-      return result;
-      
+
     } catch (error) {
       console.error('❌ Error in uploadProductSetupAttachments:', error.message);
       console.error('❌ Stack trace:', error.stack);
@@ -471,53 +260,4 @@ export class OnboardingService {
     // Create a hash and take first 16 characters for readability
     return crypto.createHash('sha256').update(combined).digest('hex').substring(0, 16).toUpperCase();
   }
-
-  // Helper method to check if token is expired
-  async isTokenExpired(token: string): Promise<boolean> {
-    const onboarding = await this.onboardingRepository.findOne({
-      where: { accessToken: token }
-    });
-
-    if (!onboarding) {
-      return true;
-    }
-
-    return new Date() > onboarding.tokenExpiryDate;
-  }
-
-  // Get onboardings created by a specific manager
-  async getOnboardingsByManager(managerId: string): Promise<Onboarding[]> {
-    return this.onboardingRepository.find({
-      where: { createdByManagerId: managerId },
-      relations: ['createdByManager', 'merchant'],
-      order: { createdAt: 'DESC' },
-    });
-  }
-
-  async getMyOnboardings(managerId: string): Promise<Onboarding[]> {
-    return this.onboardingRepository.find({
-      where: { createdByManagerId: managerId },
-      relations: ['createdByManager', 'merchant', 'acknowledgedTermsVersion', 'productSetupAttachments'],
-    });
-  }
-
-  // Debug method to test manager lookup
-  async debugManagerLookup(managerId: string): Promise<{ found: boolean; manager?: any }> {
-    try {
-      const manager = await this.onboardingManagerRepository.findOne({
-        where: { id: managerId }
-      });
-      
-      return {
-        found: !!manager,
-        manager: manager ? { id: manager.id, email: manager.email } : null
-      };
-    } catch (error) {
-      console.error('Error in debugManagerLookup:', error);
-      return {
-        found: false,
-        manager: null
-      };
-    }
-  }
-} 
+}
