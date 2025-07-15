@@ -447,12 +447,12 @@ export const bookMerchantTrainingSlot = async (bookingData: {
 
 // Terms and Conditions API functions
 export const getActiveTermsConditions = async () => {
-  const response = await axios.get(`${API_BASE_URL}/merchant-onboarding/terms-conditions/active`);
+  const response = await api.get('/merchant-onboarding/terms-conditions/active');
   return response.data;
 };
 
 export const acknowledgeTerms = async (token: string, data: { name: string; termsVersionId: string }) => {
-  const response = await axios.post(`${API_BASE_URL}/merchant-onboarding/acknowledge-terms/${token}`, data);
+  const response = await api.post(`/merchant-onboarding/acknowledge-terms/${token}`, data);
   return response.data;
 };
 
