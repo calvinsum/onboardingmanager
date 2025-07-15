@@ -197,7 +197,7 @@ export const getOnboardingRecordById = async (id: string) => {
 };
 
 export const getOnboardingByToken = async (token: string) => {
-  const response = await api.get(`/merchant-onboarding/access/${token}`);
+  const response = await api.get(`/merchant-onboarding/details/${token}`);
   return response.data;
 };
 
@@ -457,7 +457,7 @@ export const checkTermsAcknowledgment = async (token: string) => {
 };
 
 export const acknowledgeTerms = async (token: string, data: { name: string; termsVersionId: string }) => {
-  const response = await axios.post(`${API_BASE_URL}/merchant-onboarding/terms-conditions/acknowledge/${token}`, data);
+  const response = await axios.post(`${API_BASE_URL}/merchant-onboarding/acknowledge-terms/${token}`, data);
   return response.data;
 };
 
