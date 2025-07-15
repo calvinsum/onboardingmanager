@@ -209,7 +209,7 @@ export class MerchantOnboardingController {
   async uploadAttachments(
     @Param('token') token: string,
     @UploadedFiles() files: Express.Multer.File[],
-  ): Promise<Onboarding> {
+  ): Promise<any> {
     return this.onboardingService.uploadProductSetupAttachments(token, files);
   }
 }

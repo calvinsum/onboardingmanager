@@ -186,7 +186,7 @@ export class OnboardingService {
     return await this.onboardingRepository.save(onboarding);
   }
 
-  async uploadProductSetupAttachments(token: string, files: Express.Multer.File[]): Promise<Onboarding> {
+  async uploadProductSetupAttachments(token: string, files: Express.Multer.File[]): Promise<any> {
     try {
       console.log('📁 Starting Cloudinary file upload for token:', token);
       console.log('📄 Number of files:', files.length);
@@ -263,20 +263,39 @@ export class OnboardingService {
       const updatedOnboarding = await this.onboardingRepository.save(onboarding);
       console.log('✅ Updated onboarding status to COMPLETED');
 
-      // Return updated onboarding with attachments
-      const finalOnboarding = await this.onboardingRepository.findOne({
-        where: { id: onboarding.id },
-        relations: ['productSetupAttachments'],
-      });
+      // Return a clean response without circular references
+      const responseData = {
+        id: updatedOnboarding.id,
+        accountName: updatedOnboarding.accountName,
+        productSetupConfirmed: updatedOnboarding.productSetupConfirmed,
+        productSetupConfirmedDate: updatedOnboarding.productSetupConfirmedDate,
+        status: updatedOnboarding.status,
+        attachmentCount: savedAttachments.length,
+        attachments: savedAttachments.map(attachment => ({
+          id: attachment.id,
+          originalName: attachment.originalName,
+          fileSize: attachment.fileSize,
+          mimeType: attachment.mimeType,
+          cloudinaryUrl: attachment.cloudinaryUrl,
+          uploadedAt: attachment.uploadedAt || new Date(),
+        }))
+      };
       
-      console.log('📋 Final onboarding record has', finalOnboarding.productSetupAttachments.length, 'attachments');
+      console.log('📋 Returning clean response with', responseData.attachments.length, 'attachments');
       
-      return finalOnboarding;
+      return responseData;
 
     } catch (error) {
       console.error('❌ Error in uploadProductSetupAttachments:', error.message);
       console.error('❌ Stack trace:', error.stack);
-      throw error;
+      
+      // If it's a known error, rethrow it
+      if (error instanceof NotFoundException || error instanceof BadRequestException) {
+        throw error;
+      }
+      
+      // For unknown errors, provide a more specific error message
+      throw new BadRequestException(`File upload failed: ${error.message}`);
     }
   }
 
