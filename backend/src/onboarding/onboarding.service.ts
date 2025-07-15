@@ -205,6 +205,9 @@ export class OnboardingService {
       console.log('📄 Number of files:', files.length);
       console.log('📊 Files details:', files.map(f => ({ name: f.originalname, size: f.size, type: f.mimetype })));
       
+      // Add comprehensive debugging for the onboarding lookup
+      console.log('🔍 Looking up onboarding record with token:', token);
+      
       const onboarding = await this.onboardingRepository.findOne({
         where: { accessToken: token },
         relations: ['productSetupAttachments'],
@@ -212,11 +215,29 @@ export class OnboardingService {
 
       if (!onboarding) {
         console.error('❌ Invalid token:', token);
+        
+        // Additional debugging: check if token exists with different casing or whitespace
+        const tokenVariants = await this.onboardingRepository.query(
+          'SELECT "accessToken", id, "accountName" FROM onboarding WHERE LOWER("accessToken") = LOWER($1) OR TRIM("accessToken") = $1',
+          [token]
+        );
+        console.log('🔍 Token variants found:', tokenVariants);
+        
         throw new NotFoundException('Invalid or expired token');
       }
 
       console.log('✅ Found onboarding record:', onboarding.id);
       console.log('📋 Existing attachments:', onboarding.productSetupAttachments?.length || 0);
+      
+      // Verify the onboarding record integrity
+      console.log('🔍 Onboarding record verification:', {
+        id: onboarding.id,
+        accountName: onboarding.accountName,
+        accessToken: onboarding.accessToken,
+        tokenMatch: onboarding.accessToken === token,
+        createdAt: onboarding.createdAt,
+        status: onboarding.status
+      });
 
       // Validate onboarding ID
       if (!onboarding.id) {
@@ -317,6 +338,37 @@ export class OnboardingService {
             isUndefined: onboarding.id === undefined
           });
           
+          // Test foreign key relationship before insert
+          console.log('🔍 Testing foreign key relationship...');
+          try {
+            const fkTest = await this.onboardingRepository.query(
+              'SELECT id, "accountName" FROM onboarding WHERE id = $1',
+              [onboarding.id]
+            );
+            console.log('🔍 Foreign key test result:', fkTest);
+            
+            if (fkTest.length === 0) {
+              console.error('❌ Foreign key test failed: onboarding ID not found in database!');
+              throw new BadRequestException('Onboarding record not found in database for foreign key');
+            }
+          } catch (fkError) {
+            console.error('❌ Foreign key test error:', fkError);
+            throw new BadRequestException(`Foreign key validation failed: ${fkError.message}`);
+          }
+          
+          // Test the product_setup_attachments table structure
+          console.log('🔍 Checking table schema...');
+          try {
+            const schemaCheck = await this.attachmentRepository.query(
+              `SELECT column_name, data_type, is_nullable, column_default 
+               FROM information_schema.columns 
+               WHERE table_name = 'product_setup_attachments' AND column_name = 'onboardingId'`
+            );
+            console.log('🔍 onboardingId column schema:', schemaCheck);
+          } catch (schemaError) {
+            console.error('❌ Schema check error:', schemaError);
+          }
+          
           // Use insert() with plain object to avoid entity management issues
           // Add retry logic for transient database issues
           let insertResult;
@@ -325,6 +377,28 @@ export class OnboardingService {
           
           while (retryCount < maxRetries) {
             try {
+              // First, try a direct SQL insert to bypass TypeORM entirely
+              if (retryCount === 0) {
+                console.log('🔍 Attempting direct SQL insert for debugging...');
+                const directInsert = await this.attachmentRepository.query(`
+                  INSERT INTO product_setup_attachments 
+                  (id, "originalName", "cloudinaryPublicId", "cloudinaryUrl", "mimeType", "fileSize", "onboardingId", "uploadedAt")
+                  VALUES (gen_random_uuid(), $1, $2, $3, $4, $5, $6, $7)
+                  RETURNING id, "onboardingId"
+                `, [
+                  insertData.originalName,
+                  insertData.cloudinaryPublicId,
+                  insertData.cloudinaryUrl,
+                  insertData.mimeType,
+                  insertData.fileSize,
+                  insertData.onboardingId,
+                  insertData.uploadedAt
+                ]);
+                console.log('✅ Direct SQL insert successful:', directInsert);
+                insertResult = { identifiers: [{ id: directInsert[0].id }] };
+                break;
+              }
+              
               insertResult = await this.attachmentRepository.insert(insertData);
               break; // Success, exit retry loop
             } catch (retryError) {
