@@ -218,7 +218,7 @@ export class OnboardingService {
         
         // Additional debugging: check if token exists with different casing or whitespace
         const tokenVariants = await this.onboardingRepository.query(
-          'SELECT "accessToken", id, "accountName" FROM onboarding WHERE LOWER("accessToken") = LOWER($1) OR TRIM("accessToken") = $1',
+          'SELECT "accessToken", id, "accountName" FROM onboardings WHERE LOWER("accessToken") = LOWER($1) OR TRIM("accessToken") = $1',
           [token]
         );
         console.log('🔍 Token variants found:', tokenVariants);
@@ -342,7 +342,7 @@ export class OnboardingService {
           console.log('🔍 Testing foreign key relationship...');
           try {
             const fkTest = await this.onboardingRepository.query(
-              'SELECT id, "accountName" FROM onboarding WHERE id = $1',
+              'SELECT id, "accountName" FROM onboardings WHERE id = $1',
               [onboarding.id]
             );
             console.log('🔍 Foreign key test result:', fkTest);
