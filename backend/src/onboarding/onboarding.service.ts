@@ -266,21 +266,14 @@ export class OnboardingService {
           attachment.cloudinaryUrl = cloudinaryResult.secure_url;
           attachment.mimeType = file.mimetype;
           attachment.fileSize = file.size;
-          attachment.onboarding = onboarding;  // Set the relationship
-          attachment.onboardingId = onboarding.id;  // Set the foreign key
-          
-          // Validate attachment before adding to array
-          if (!attachment.onboardingId) {
-            console.error('❌ Attachment onboardingId is null after assignment');
-            throw new BadRequestException('Failed to assign onboarding ID to attachment');
-          }
+          attachment.onboarding = onboarding;
+          attachment.onboardingId = onboarding.id;
           
           console.log('📝 Created attachment object:', {
             originalName: attachment.originalName,
             cloudinaryPublicId: attachment.cloudinaryPublicId,
             fileSize: attachment.fileSize,
-            onboardingId: attachment.onboardingId,
-            hasOnboardingRelation: !!attachment.onboarding
+            onboardingId: attachment.onboardingId
           });
           
           attachments.push(attachment);
@@ -291,14 +284,6 @@ export class OnboardingService {
       }
 
       console.log('💾 Saving', attachments.length, 'attachments to database...');
-      
-      // Validate all attachments before saving
-      attachments.forEach((attachment, index) => {
-        if (!attachment.onboardingId) {
-          console.error(`❌ Attachment ${index + 1} has null onboardingId:`, attachment);
-          throw new BadRequestException(`Attachment ${index + 1} missing onboarding ID`);
-        }
-      });
       
       // Save all attachments to database
       let savedAttachments;

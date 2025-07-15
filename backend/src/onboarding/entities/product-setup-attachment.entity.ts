@@ -32,12 +32,14 @@ export class ProductSetupAttachment {
   @CreateDateColumn()
   uploadedAt: Date;
 
+  // Foreign key column
+  @ApiProperty({ description: 'Onboarding ID' })
+  @Column({ nullable: false })
+  onboardingId: string;
+
   // Relationship
   @ApiProperty({ description: 'Associated onboarding record', type: () => Onboarding })
   @ManyToOne(() => Onboarding, (onboarding) => onboarding.productSetupAttachments)
   @JoinColumn({ name: 'onboardingId' })
   onboarding: Onboarding;
-
-  @Column()
-  onboardingId: string;
 }
