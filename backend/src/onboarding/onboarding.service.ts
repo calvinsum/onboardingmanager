@@ -155,9 +155,22 @@ export class OnboardingService {
       throw new NotFoundException('No active terms and conditions found');
     }
 
-    // Update onboarding with acknowledgment
+    // Verify the terms version matches what was sent
+    if (acknowledgeTermsDto.termsVersionId !== latestTerms.id) {
+      throw new BadRequestException('Terms version mismatch. Please reload the page and try again.');
+    }
+
+    // Update onboarding with complete acknowledgment details
     onboarding.termsAccepted = true;
+    onboarding.termsAcknowledgmentName = acknowledgeTermsDto.name;
+    onboarding.termsAcknowledgedDate = new Date();
+    onboarding.acknowledgedTermsVersion = latestTerms;
+    onboarding.acknowledgedTermsVersionId = latestTerms.id;
     onboarding.status = OnboardingStatus.IN_PROGRESS;
+
+    console.log('✅ Terms acknowledged by:', acknowledgeTermsDto.name);
+    console.log('✅ Terms version:', latestTerms.version);
+    console.log('✅ Acknowledgment date:', onboarding.termsAcknowledgedDate);
 
     return await this.onboardingRepository.save(onboarding);
   }
@@ -190,6 +203,7 @@ export class OnboardingService {
     try {
       console.log('📁 Starting Cloudinary file upload for token:', token);
       console.log('📄 Number of files:', files.length);
+      console.log('📊 Files details:', files.map(f => ({ name: f.originalname, size: f.size, type: f.mimetype })));
       
       const onboarding = await this.onboardingRepository.findOne({
         where: { accessToken: token },
@@ -202,6 +216,7 @@ export class OnboardingService {
       }
 
       console.log('✅ Found onboarding record:', onboarding.id);
+      console.log('📋 Existing attachments:', onboarding.productSetupAttachments?.length || 0);
 
       // Check if token is expired
       if (new Date() > onboarding.tokenExpiryDate) {
@@ -219,12 +234,14 @@ export class OnboardingService {
         
         try {
           // Upload to Cloudinary
+          console.log('☁️ Uploading to Cloudinary...');
           const cloudinaryResult = await this.cloudinaryService.uploadFile(
             file, 
             `product-setup-attachments/${onboarding.id}`
           );
           
           console.log('☁️ Cloudinary upload successful:', cloudinaryResult.public_id);
+          console.log('🔗 Cloudinary URL:', cloudinaryResult.secure_url);
           
           // Create attachment record
           const attachment = new ProductSetupAttachment();
@@ -235,6 +252,13 @@ export class OnboardingService {
           attachment.fileSize = file.size;
           attachment.onboardingId = onboarding.id;
           
+          console.log('📝 Created attachment object:', {
+            originalName: attachment.originalName,
+            cloudinaryPublicId: attachment.cloudinaryPublicId,
+            fileSize: attachment.fileSize,
+            onboardingId: attachment.onboardingId
+          });
+          
           attachments.push(attachment);
         } catch (uploadError) {
           console.error('❌ Cloudinary upload failed for file:', file.originalname, uploadError);
@@ -242,6 +266,8 @@ export class OnboardingService {
         }
       }
 
+      console.log('💾 Saving', attachments.length, 'attachments to database...');
+      
       // Save all attachments to database
       const savedAttachments = await this.attachmentRepository.save(attachments);
       console.log('💾 Saved', savedAttachments.length, 'attachments to database');
@@ -255,6 +281,8 @@ export class OnboardingService {
         });
       });
 
+      console.log('📝 Updating onboarding status...');
+      
       // Update onboarding status
       onboarding.productSetupConfirmed = true;
       onboarding.productSetupConfirmedDate = new Date();
@@ -263,6 +291,8 @@ export class OnboardingService {
       const updatedOnboarding = await this.onboardingRepository.save(onboarding);
       console.log('✅ Updated onboarding status to COMPLETED');
 
+      console.log('📋 Preparing response...');
+      
       // Return a clean response without circular references
       const responseData = {
         id: updatedOnboarding.id,
@@ -282,6 +312,7 @@ export class OnboardingService {
       };
       
       console.log('📋 Returning clean response with', responseData.attachments.length, 'attachments');
+      console.log('✅ Upload process completed successfully');
       
       return responseData;
 
