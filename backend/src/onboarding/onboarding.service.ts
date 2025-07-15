@@ -318,24 +318,11 @@ export class OnboardingService {
             onboardingIdType: typeof attachment.onboardingId
           });
           
-          // Prepare the insert data
-          const insertData = {
+          console.log('🔍 Direct SQL insert parameters:', {
             originalName: attachment.originalName,
             cloudinaryPublicId: attachment.cloudinaryPublicId,
-            cloudinaryUrl: attachment.cloudinaryUrl,
-            mimeType: attachment.mimeType,
-            fileSize: attachment.fileSize,
-            onboardingId: onboarding.id,  // Direct reference to the UUID
-            uploadedAt: new Date()
-          };
-          
-          console.log('🔍 Insert data:', insertData);
-          console.log('🔍 onboarding.id details:', {
-            value: onboarding.id,
-            type: typeof onboarding.id,
-            length: onboarding.id?.length,
-            isNull: onboarding.id === null,
-            isUndefined: onboarding.id === undefined
+            onboardingId: onboarding.id,
+            onboardingIdType: typeof onboarding.id
           });
           
           // Test foreign key relationship before insert
@@ -375,55 +362,28 @@ export class OnboardingService {
           let retryCount = 0;
           const maxRetries = 3;
           
-          while (retryCount < maxRetries) {
-            try {
-              // First, try a direct SQL insert to bypass TypeORM entirely
-              if (retryCount === 0) {
-                console.log('🔍 Attempting direct SQL insert for debugging...');
-                const directInsert = await this.attachmentRepository.query(`
-                  INSERT INTO product_setup_attachments 
-                  (id, "originalName", "cloudinaryPublicId", "cloudinaryUrl", "mimeType", "fileSize", "onboardingId", "uploadedAt")
-                  VALUES (gen_random_uuid(), $1, $2, $3, $4, $5, $6, $7)
-                  RETURNING id, "onboardingId"
-                `, [
-                  insertData.originalName,
-                  insertData.cloudinaryPublicId,
-                  insertData.cloudinaryUrl,
-                  insertData.mimeType,
-                  insertData.fileSize,
-                  insertData.onboardingId,
-                  insertData.uploadedAt
-                ]);
-                console.log('✅ Direct SQL insert successful:', directInsert);
-                insertResult = { identifiers: [{ id: directInsert[0].id }] };
-                break;
-              }
-              
-              insertResult = await this.attachmentRepository.insert(insertData);
-              break; // Success, exit retry loop
-            } catch (retryError) {
-              retryCount++;
-              console.warn(`⚠️ Insert attempt ${retryCount} failed:`, retryError.message);
-              
-              if (retryCount >= maxRetries) {
-                // Final fallback: try using the entity save method
-                console.warn('🔄 Falling back to entity save method...');
-                try {
-                  const fallbackAttachment = new ProductSetupAttachment();
-                  Object.assign(fallbackAttachment, insertData);
-                  const savedAttachment = await this.attachmentRepository.save(fallbackAttachment);
-                  insertResult = { identifiers: [{ id: savedAttachment.id }] };
-                  console.log('✅ Fallback save successful');
-                  break;
-                } catch (fallbackError) {
-                  console.error('❌ Fallback save also failed:', fallbackError.message);
-                  throw retryError; // Re-throw the original error
-                }
-              }
-              
-              // Wait a bit before retrying
-              await new Promise(resolve => setTimeout(resolve, 100 * retryCount));
-            }
+          // Use only direct SQL to completely bypass TypeORM entity management
+          console.log('🔍 Using direct SQL insert to bypass TypeORM...');
+          try {
+            const directInsert = await this.attachmentRepository.query(`
+              INSERT INTO product_setup_attachments 
+              (id, "originalName", "cloudinaryPublicId", "cloudinaryUrl", "mimeType", "fileSize", "onboardingId", "uploadedAt")
+              VALUES (gen_random_uuid(), $1, $2, $3, $4, $5, $6::uuid, $7)
+              RETURNING id, "onboardingId"
+            `, [
+              attachment.originalName,
+              attachment.cloudinaryPublicId,
+              attachment.cloudinaryUrl,
+              attachment.mimeType,
+              attachment.fileSize,
+              onboarding.id,
+              new Date()
+            ]);
+            console.log('✅ Direct SQL insert successful:', directInsert);
+            insertResult = { identifiers: [{ id: directInsert[0].id }] };
+          } catch (sqlError) {
+            console.error('❌ Direct SQL insert failed:', sqlError);
+            throw new BadRequestException(`Direct SQL insert failed for ${attachment.originalName}: ${sqlError.message}`);
           }
           
           console.log(`✅ Inserted attachment ${i + 1}:`, insertResult.identifiers[0]);
