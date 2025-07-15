@@ -218,6 +218,12 @@ export class OnboardingService {
       console.log('✅ Found onboarding record:', onboarding.id);
       console.log('📋 Existing attachments:', onboarding.productSetupAttachments?.length || 0);
 
+      // Validate onboarding ID
+      if (!onboarding.id) {
+        console.error('❌ Onboarding ID is null or undefined');
+        throw new BadRequestException('Invalid onboarding record - missing ID');
+      }
+
       // Check if token is expired
       if (new Date() > onboarding.tokenExpiryDate) {
         console.error('❌ Token expired:', onboarding.tokenExpiryDate);
@@ -243,6 +249,16 @@ export class OnboardingService {
           console.log('☁️ Cloudinary upload successful:', cloudinaryResult.public_id);
           console.log('🔗 Cloudinary URL:', cloudinaryResult.secure_url);
           
+          // Validate required data before creating attachment
+          if (!file.originalname || !cloudinaryResult.public_id || !cloudinaryResult.secure_url) {
+            console.error('❌ Missing required file data:', {
+              originalname: file.originalname,
+              public_id: cloudinaryResult.public_id,
+              secure_url: cloudinaryResult.secure_url
+            });
+            throw new BadRequestException('Missing required file data from Cloudinary');
+          }
+          
           // Create attachment record
           const attachment = new ProductSetupAttachment();
           attachment.originalName = file.originalname;
@@ -250,13 +266,21 @@ export class OnboardingService {
           attachment.cloudinaryUrl = cloudinaryResult.secure_url;
           attachment.mimeType = file.mimetype;
           attachment.fileSize = file.size;
-          attachment.onboardingId = onboarding.id;
+          attachment.onboarding = onboarding;  // Set the relationship
+          attachment.onboardingId = onboarding.id;  // Set the foreign key
+          
+          // Validate attachment before adding to array
+          if (!attachment.onboardingId) {
+            console.error('❌ Attachment onboardingId is null after assignment');
+            throw new BadRequestException('Failed to assign onboarding ID to attachment');
+          }
           
           console.log('📝 Created attachment object:', {
             originalName: attachment.originalName,
             cloudinaryPublicId: attachment.cloudinaryPublicId,
             fileSize: attachment.fileSize,
-            onboardingId: attachment.onboardingId
+            onboardingId: attachment.onboardingId,
+            hasOnboardingRelation: !!attachment.onboarding
           });
           
           attachments.push(attachment);
@@ -268,18 +292,25 @@ export class OnboardingService {
 
       console.log('💾 Saving', attachments.length, 'attachments to database...');
       
-      // Save all attachments to database
-      const savedAttachments = await this.attachmentRepository.save(attachments);
-      console.log('💾 Saved', savedAttachments.length, 'attachments to database');
-      savedAttachments.forEach((attachment, index) => {
-        console.log(`💾 Saved attachment ${index + 1}:`, {
-          id: attachment.id,
-          originalName: attachment.originalName,
-          fileSize: attachment.fileSize,
-          cloudinaryUrl: attachment.cloudinaryUrl,
-          onboardingId: attachment.onboardingId,
-        });
+      // Validate all attachments before saving
+      attachments.forEach((attachment, index) => {
+        if (!attachment.onboardingId) {
+          console.error(`❌ Attachment ${index + 1} has null onboardingId:`, attachment);
+          throw new BadRequestException(`Attachment ${index + 1} missing onboarding ID`);
+        }
       });
+      
+      // Save all attachments to database
+      let savedAttachments;
+      try {
+        savedAttachments = await this.attachmentRepository.save(attachments);
+        console.log('💾 Database save successful:', savedAttachments.length, 'attachments');
+      } catch (dbError) {
+        console.error('❌ Database save failed:', dbError);
+        throw new BadRequestException(`Database save failed: ${dbError.message}`);
+      }
+      
+      console.log('💾 Saved', savedAttachments.length, 'attachments to database');
 
       console.log('📝 Updating onboarding status...');
       
@@ -308,6 +339,7 @@ export class OnboardingService {
           mimeType: attachment.mimeType,
           cloudinaryUrl: attachment.cloudinaryUrl,
           uploadedAt: attachment.uploadedAt || new Date(),
+          createdAt: attachment.uploadedAt || new Date(),
         }))
       };
       
