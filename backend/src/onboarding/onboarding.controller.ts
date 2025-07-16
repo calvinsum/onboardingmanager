@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Param, Patch, UseGuards, Request, Query, UseInterceptors, UploadedFiles } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Patch, UseGuards, Request, Query, UseInterceptors, UploadedFiles, Res, SetMetadata } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiParam, ApiQuery, ApiConsumes } from '@nestjs/swagger';
 import { AuthGuard } from '@nestjs/passport';
 import { FilesInterceptor } from '@nestjs/platform-express';
@@ -64,6 +64,8 @@ export class OnboardingController {
   async getAttachments(@Param('id') id: string, @Request() req: any) {
     return this.onboardingService.getAttachmentsForDownload(id, req.user.id);
   }
+
+
 
   // Terms and Conditions Management
   @Post('terms-conditions')
@@ -211,5 +213,54 @@ export class MerchantOnboardingController {
     @UploadedFiles() files: Express.Multer.File[],
   ): Promise<any> {
     return this.onboardingService.uploadProductSetupAttachments(token, files);
+  }
+}
+
+// Public controller for file downloads (no JWT protection)
+@ApiTags('file-downloads')
+@Controller('files')
+export class FileDownloadController {
+  constructor(private readonly onboardingService: OnboardingService) {}
+
+  @Get('attachment/:attachmentId/download')
+  @ApiOperation({ summary: 'Download attachment file through proxy' })
+  @ApiParam({ name: 'attachmentId', description: 'Attachment ID' })
+  @ApiResponse({ status: 200, description: 'File content' })
+  async downloadAttachment(@Param('attachmentId') attachmentId: string, @Query('token') token: string, @Request() req: any, @Res() res: any) {
+    // Allow access via Bearer token (Authorization header) or query parameter token
+    let managerId = req.user?.id;
+    
+    // Try to get token from Authorization header first
+    const authHeader = req.headers.authorization;
+    if (!managerId && authHeader && authHeader.startsWith('Bearer ')) {
+      try {
+        const jwt = require('jsonwebtoken');
+        const decoded = jwt.verify(authHeader.split(' ')[1], process.env.JWT_SECRET || 'storehub-secret-key');
+        if (decoded.type === 'onboarding_manager') {
+          managerId = decoded.sub;
+        }
+      } catch (error) {
+        console.error('Invalid token in Authorization header');
+      }
+    }
+    
+    // Fallback to query parameter token for direct browser access
+    if (!managerId && token) {
+      try {
+        const jwt = require('jsonwebtoken');
+        const decoded = jwt.verify(token, process.env.JWT_SECRET || 'storehub-secret-key');
+        if (decoded.type === 'onboarding_manager') {
+          managerId = decoded.sub;
+        }
+      } catch (error) {
+        console.error('Invalid token provided via query parameter');
+      }
+    }
+    
+    if (!managerId) {
+      return res.status(401).json({ error: 'Authentication required' });
+    }
+    
+    return this.onboardingService.downloadAttachmentProxy(attachmentId, managerId, res);
   }
 }

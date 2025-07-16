@@ -155,17 +155,45 @@ StoreHub Onboarding Team`;
 
   const handleDownloadAttachment = (attachment: any) => {
     try {
+      // Use our backend proxy endpoint for downloading
+      const downloadUrl = `${process.env.REACT_APP_API_URL}/files/attachment/${attachment.id}/download`;
+      
       // Create a temporary link element and trigger download
       const link = document.createElement('a');
-      link.href = attachment.cloudinaryUrl;
+      link.href = downloadUrl;
       link.download = attachment.originalName;
       link.target = '_blank';
       link.rel = 'noopener noreferrer';
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
       
-      toast.success(`Downloading ${attachment.originalName}...`);
+      // Add authorization header by including it in the URL or using fetch
+      const token = localStorage.getItem('authToken');
+      if (token) {
+        // Use fetch to handle the download with authorization
+        fetch(downloadUrl, {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+          },
+        })
+        .then(response => response.blob())
+        .then(blob => {
+          const url = window.URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = attachment.originalName;
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          window.URL.revokeObjectURL(url);
+          toast.success(`Downloaded ${attachment.originalName}`);
+        })
+        .catch(error => {
+          console.error('Error downloading file:', error);
+          toast.error('Failed to download file. Please try again.');
+        });
+      } else {
+        toast.error('Authentication required for download.');
+      }
     } catch (error) {
       console.error('Error downloading file:', error);
       toast.error('Failed to download file. Please try again.');
@@ -174,8 +202,19 @@ StoreHub Onboarding Team`;
 
   const handleViewAttachment = (attachment: any) => {
     try {
-      // Open in new tab for viewing
-      window.open(attachment.cloudinaryUrl, '_blank', 'noopener,noreferrer');
+      // Use our backend proxy endpoint for viewing
+      const viewUrl = `${process.env.REACT_APP_API_URL}/files/attachment/${attachment.id}/download`;
+      const token = localStorage.getItem('authToken');
+      
+      if (token) {
+        // Open the proxy URL with authentication in a new tab
+        const newWindow = window.open('', '_blank');
+        if (newWindow) {
+          newWindow.location.href = `${viewUrl}?token=${token}`;
+        }
+      } else {
+        toast.error('Authentication required for viewing files.');
+      }
     } catch (error) {
       console.error('Error viewing file:', error);
       toast.error('Failed to open file. Please try again.');

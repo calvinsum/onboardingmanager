@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { OnboardingController, MerchantOnboardingController } from './onboarding.controller';
+import { OnboardingController, MerchantOnboardingController, FileDownloadController } from './onboarding.controller';
 import { OnboardingService } from './onboarding.service';
 import { TermsConditionsService } from './terms-conditions.service';
 import { Onboarding } from './entities/onboarding.entity';
@@ -15,7 +15,7 @@ import { CloudinaryConfig } from '../config/cloudinary.config';
   imports: [
     TypeOrmModule.forFeature([Onboarding, TermsConditions, Merchant, OnboardingManager, ProductSetupAttachment]),
   ],
-  controllers: [OnboardingController, MerchantOnboardingController],
+  controllers: [OnboardingController, MerchantOnboardingController, FileDownloadController],
   providers: [OnboardingService, TermsConditionsService, CloudinaryService, CloudinaryConfig],
   exports: [OnboardingService, TermsConditionsService],
 })

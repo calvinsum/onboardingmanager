@@ -483,6 +483,63 @@ export class OnboardingService {
     return onboarding.productSetupAttachments;
   }
 
+  async downloadAttachmentProxy(attachmentId: string, managerId: string, res: any): Promise<void> {
+    console.log('📥 Proxying attachment download:', attachmentId, 'for manager:', managerId);
+    
+    // Find the attachment and verify access
+    const attachment = await this.attachmentRepository.findOne({
+      where: { id: attachmentId },
+      relations: ['onboarding'],
+    });
+
+    if (!attachment) {
+      console.error('❌ Attachment not found:', attachmentId);
+      throw new NotFoundException('Attachment not found');
+    }
+
+    // Verify the manager has access to this attachment's onboarding record
+    if (attachment.onboarding.createdByManagerId !== managerId) {
+      console.error('❌ Access denied for manager:', managerId, 'to attachment:', attachmentId);
+      throw new NotFoundException('Access denied');
+    }
+
+    console.log('✅ Access verified for attachment:', attachment.originalName);
+
+    try {
+      // Generate a signed URL for authenticated access through Cloudinary
+      const fileUrl = this.cloudinaryService.getSecureFileUrl(attachment.cloudinaryPublicId, 3600);
+
+      console.log('🔗 Generated signed URL for download');
+
+      // Set proper headers for file download
+      res.setHeader('Content-Type', attachment.mimeType);
+      res.setHeader('Content-Disposition', `inline; filename="${attachment.originalName}"`);
+      res.setHeader('Access-Control-Allow-Origin', '*');
+      res.setHeader('Access-Control-Allow-Headers', '*');
+
+      // Stream the file from Cloudinary to the response
+      const https = require('https');
+      const request = https.get(fileUrl, (fileResponse) => {
+        if (fileResponse.statusCode === 200) {
+          console.log('✅ Successfully streaming file from Cloudinary');
+          fileResponse.pipe(res);
+        } else {
+          console.error('❌ Failed to fetch file from Cloudinary:', fileResponse.statusCode);
+          res.status(500).json({ error: 'Failed to fetch file from Cloudinary' });
+        }
+      });
+
+      request.on('error', (error) => {
+        console.error('❌ Error fetching file from Cloudinary:', error);
+        res.status(500).json({ error: 'Failed to fetch file from Cloudinary' });
+      });
+
+    } catch (error) {
+      console.error('❌ Error in downloadAttachmentProxy:', error);
+      res.status(500).json({ error: 'Failed to download attachment' });
+    }
+  }
+
   private generateAccessToken(): string {
     // Generate a secure random token
     const randomBytes = crypto.randomBytes(32);
