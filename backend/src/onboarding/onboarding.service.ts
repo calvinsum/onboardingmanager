@@ -307,6 +307,26 @@ export class OnboardingService {
 
       console.log('💾 Saving', attachments.length, 'attachments to database...');
       
+      // Re-verify onboarding record exists and is valid before proceeding
+      console.log('🔍 Re-verifying onboarding record before database operations...');
+      const freshOnboarding = await this.onboardingRepository.findOne({
+        where: { id: onboarding.id },
+      });
+      
+      if (!freshOnboarding || !freshOnboarding.id) {
+        console.error('❌ Fresh onboarding lookup failed:', {
+          originalId: onboarding.id,
+          freshLookupResult: freshOnboarding
+        });
+        throw new BadRequestException('Onboarding record became invalid during upload process');
+      }
+      
+      console.log('✅ Fresh onboarding verification passed:', {
+        id: freshOnboarding.id,
+        accountName: freshOnboarding.accountName,
+        status: freshOnboarding.status
+      });
+      
       // Use a more direct approach with insert() to bypass entity management issues
       const savedAttachments = [];
       for (let i = 0; i < attachments.length; i++) {
@@ -314,56 +334,12 @@ export class OnboardingService {
         try {
           console.log(`💾 Inserting attachment ${i + 1}/${attachments.length}:`, {
             originalName: attachment.originalName,
-            onboardingId: attachment.onboardingId,
-            onboardingIdType: typeof attachment.onboardingId
+            onboardingId: freshOnboarding.id,
+            onboardingIdType: typeof freshOnboarding.id
           });
-          
-          console.log('🔍 Direct SQL insert parameters:', {
-            originalName: attachment.originalName,
-            cloudinaryPublicId: attachment.cloudinaryPublicId,
-            onboardingId: onboarding.id,
-            onboardingIdType: typeof onboarding.id
-          });
-          
-          // Test foreign key relationship before insert
-          console.log('🔍 Testing foreign key relationship...');
-          try {
-            const fkTest = await this.onboardingRepository.query(
-              'SELECT id, "accountName" FROM onboardings WHERE id = $1',
-              [onboarding.id]
-            );
-            console.log('🔍 Foreign key test result:', fkTest);
-            
-            if (fkTest.length === 0) {
-              console.error('❌ Foreign key test failed: onboarding ID not found in database!');
-              throw new BadRequestException('Onboarding record not found in database for foreign key');
-            }
-          } catch (fkError) {
-            console.error('❌ Foreign key test error:', fkError);
-            throw new BadRequestException(`Foreign key validation failed: ${fkError.message}`);
-          }
-          
-          // Test the product_setup_attachments table structure
-          console.log('🔍 Checking table schema...');
-          try {
-            const schemaCheck = await this.attachmentRepository.query(
-              `SELECT column_name, data_type, is_nullable, column_default 
-               FROM information_schema.columns 
-               WHERE table_name = 'product_setup_attachments' AND column_name = 'onboardingId'`
-            );
-            console.log('🔍 onboardingId column schema:', schemaCheck);
-          } catch (schemaError) {
-            console.error('❌ Schema check error:', schemaError);
-          }
-          
-          // Use insert() with plain object to avoid entity management issues
-          // Add retry logic for transient database issues
-          let insertResult;
-          let retryCount = 0;
-          const maxRetries = 3;
           
           // Use only direct SQL to completely bypass TypeORM entity management
-          console.log('🔍 Using direct SQL insert to bypass TypeORM...');
+          console.log('🔍 Using direct SQL insert with fresh onboarding ID...');
           try {
             const directInsert = await this.attachmentRepository.query(`
               INSERT INTO product_setup_attachments 
@@ -376,43 +352,44 @@ export class OnboardingService {
               attachment.cloudinaryUrl,
               attachment.mimeType,
               attachment.fileSize,
-              onboarding.id,
+              freshOnboarding.id,  // Use fresh onboarding ID
               new Date()
             ]);
             console.log('✅ Direct SQL insert successful:', directInsert);
-            insertResult = { identifiers: [{ id: directInsert[0].id }] };
+            
+            // Fetch the saved attachment for the response
+            const savedAttachment = await this.attachmentRepository.findOne({
+              where: { id: directInsert[0].id }
+            });
+            
+            if (savedAttachment) {
+              savedAttachments.push(savedAttachment);
+            }
+            
+            console.log(`✅ Inserted attachment ${i + 1}:`, directInsert[0].id);
+            
           } catch (sqlError) {
             console.error('❌ Direct SQL insert failed:', sqlError);
+            console.error('❌ SQL Error details:', {
+              message: sqlError.message,
+              code: sqlError.code,
+              detail: sqlError.detail,
+              constraint: sqlError.constraint,
+              table: sqlError.table,
+              column: sqlError.column
+            });
+            console.error('❌ Insert parameters:', {
+              originalName: attachment.originalName,
+              cloudinaryPublicId: attachment.cloudinaryPublicId,
+              onboardingId: freshOnboarding.id,
+              onboardingIdType: typeof freshOnboarding.id,
+              onboardingIdLength: freshOnboarding.id?.length
+            });
             throw new BadRequestException(`Direct SQL insert failed for ${attachment.originalName}: ${sqlError.message}`);
-          }
-          
-          console.log(`✅ Inserted attachment ${i + 1}:`, insertResult.identifiers[0]);
-          
-          // Fetch the saved attachment for the response
-          const savedAttachment = await this.attachmentRepository.findOne({
-            where: { id: insertResult.identifiers[0].id }
-          });
-          
-          if (savedAttachment) {
-            savedAttachments.push(savedAttachment);
           }
           
         } catch (dbError) {
           console.error(`❌ Database insert failed for attachment ${i + 1}:`, attachment.originalName, dbError);
-          console.error('❌ Full error details:', {
-            message: dbError.message,
-            code: dbError.code,
-            detail: dbError.detail,
-            query: dbError.query,
-            parameters: dbError.parameters,
-            stack: dbError.stack
-          });
-          console.error('❌ Attachment data:', {
-            originalName: attachment.originalName,
-            onboardingId: onboarding.id,
-            onboardingExists: !!onboarding,
-            onboardingEntityId: onboarding?.id
-          });
           throw new BadRequestException(`Database insert failed for ${attachment.originalName}: ${dbError.message}`);
         }
       }
@@ -423,12 +400,12 @@ export class OnboardingService {
 
       console.log('📝 Updating onboarding status...');
       
-      // Update onboarding status
-      onboarding.productSetupConfirmed = true;
-      onboarding.productSetupConfirmedDate = new Date();
-      onboarding.status = OnboardingStatus.COMPLETED;
+      // Update onboarding status using fresh onboarding record
+      freshOnboarding.productSetupConfirmed = true;
+      freshOnboarding.productSetupConfirmedDate = new Date();
+      freshOnboarding.status = OnboardingStatus.COMPLETED;
 
-      const updatedOnboarding = await this.onboardingRepository.save(onboarding);
+      const updatedOnboarding = await this.onboardingRepository.save(freshOnboarding);
       console.log('✅ Updated onboarding status to COMPLETED');
 
       console.log('📋 Preparing response...');
