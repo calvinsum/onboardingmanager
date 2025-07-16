@@ -506,31 +506,32 @@ export class OnboardingService {
     console.log('✅ Access verified for attachment:', attachment.originalName);
 
     try {
-      // Use the stored cloudinaryUrl directly or generate a fresh public URL
-      let fileUrl = attachment.cloudinaryUrl;
-      
-      // If no stored URL, generate a public URL from the public ID
-      if (!fileUrl || fileUrl.includes('401')) {
-        console.log('🔄 Generating fresh public URL...');
-        fileUrl = this.cloudinaryService.getPublicFileUrl(attachment.cloudinaryPublicId);
-      }
-
-      console.log('🔗 Using Cloudinary URL:', fileUrl);
-
-      // Set proper headers for file download
+      // Set proper headers for file download first
       res.setHeader('Content-Type', attachment.mimeType);
       res.setHeader('Content-Disposition', `inline; filename="${attachment.originalName}"`);
       res.setHeader('Access-Control-Allow-Origin', '*');
       res.setHeader('Access-Control-Allow-Headers', '*');
 
-      // Simply fetch the public file without any authentication
+      // Use Cloudinary Admin API to generate a temporary signed URL
+      const cloudinary = require('cloudinary').v2;
+      
+      console.log('🔐 Generating temporary signed URL for:', attachment.cloudinaryPublicId);
+      
+      // Generate a signed URL that's valid for 1 hour
+      const signedUrl = cloudinary.utils.private_download_url(attachment.cloudinaryPublicId, 'auto', {
+        expires_at: Math.floor(Date.now() / 1000) + 3600, // 1 hour from now
+      });
+      
+      console.log('🔗 Generated signed URL (first 100 chars):', signedUrl.substring(0, 100) + '...');
+
+      // Fetch the file using the signed URL
       const https = require('https');
       const url = require('url');
       
-      const parsedUrl = url.parse(fileUrl);
+      const parsedUrl = url.parse(signedUrl);
       const protocol = parsedUrl.protocol === 'https:' ? https : require('http');
       
-      const request = protocol.get(fileUrl, (fileResponse) => {
+      const request = protocol.get(signedUrl, (fileResponse) => {
         console.log('📊 Cloudinary response status:', fileResponse.statusCode);
         console.log('📊 Cloudinary response headers:', fileResponse.headers);
         

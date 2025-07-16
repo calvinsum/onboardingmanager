@@ -19,13 +19,16 @@ export class CloudinaryService {
           resource_type: 'auto',
           use_filename: true,
           unique_filename: true,
-          type: 'upload', // Standard upload type
-          // Remove access_mode restriction - let files be publicly accessible by default
+          type: 'upload',
+          access_mode: 'public', // Explicitly set to public
+          invalidate: true, // Invalidate CDN cache
         },
         (error: UploadApiErrorResponse | undefined, result: UploadApiResponse | undefined) => {
           if (error) {
             reject(error);
           } else if (result) {
+            // Override the secure_url with a truly public URL without authentication
+            result.secure_url = this.getPublicFileUrl(result.public_id);
             resolve(result);
           } else {
             reject(new Error('Upload failed with no result'));
@@ -53,9 +56,12 @@ export class CloudinaryService {
   getPublicFileUrl(publicId: string): string {
     const cloudinary = this.cloudinaryConfig.getCloudinary();
     return cloudinary.url(publicId, {
+      resource_type: 'auto', // Handle PDFs, images, etc.
       type: 'upload',
       secure: true,
       sign_url: false, // Ensure no signing for public access
+      auth_token: false, // Disable auth tokens
+      version: false, // Don't include version number
     });
   }
 
