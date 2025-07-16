@@ -202,19 +202,50 @@ StoreHub Onboarding Team`;
 
   const handleViewAttachment = (attachment: any) => {
     try {
-      // Use our backend proxy endpoint for viewing
-      const viewUrl = `${process.env.REACT_APP_API_URL}/files/attachment/${attachment.id}/download`;
       const token = localStorage.getItem('authToken');
       
-      if (token) {
-        // Open the proxy URL with authentication in a new tab
-        const newWindow = window.open('', '_blank');
-        if (newWindow) {
-          newWindow.location.href = `${viewUrl}?token=${token}`;
-        }
-      } else {
+      if (!token) {
         toast.error('Authentication required for viewing files.');
+        return;
       }
+
+      // Use our backend proxy endpoint for viewing
+      const viewUrl = `${process.env.REACT_APP_API_URL || 'https://onboardingmanager.onrender.com/api'}/files/attachment/${attachment.id}/download?token=${token}`;
+      
+      console.log('🔗 Opening file:', attachment.originalName);
+      console.log('📋 View URL:', viewUrl);
+      
+      // Test the URL first before opening window
+      fetch(viewUrl, { 
+        method: 'HEAD',  // Just check if URL is valid
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        }
+      })
+      .then(response => {
+        console.log('📊 Pre-check response:', response.status, response.statusText);
+        
+        if (response.ok || response.status === 405) { // 405 is OK for HEAD request on download endpoint
+          // URL seems valid, open in new window
+          console.log('✅ URL seems valid, opening in new window...');
+          window.open(viewUrl, '_blank', 'noopener,noreferrer');
+        } else {
+          console.error('❌ Pre-check failed with status:', response.status);
+          
+          // Fallback: try to open anyway but warn user
+          toast.error(`File may not be accessible (status: ${response.status}). Trying to open anyway...`);
+          window.open(viewUrl, '_blank', 'noopener,noreferrer');
+        }
+      })
+      .catch(error => {
+        console.error('❌ Pre-check error:', error);
+        
+        // If pre-check fails, still try to open (network issues, CORS, etc.)
+        console.log('🔄 Pre-check failed, attempting direct open...');
+        toast.warning('Unable to verify file accessibility. Attempting to open...');
+        window.open(viewUrl, '_blank', 'noopener,noreferrer');
+      });
+      
     } catch (error) {
       console.error('Error viewing file:', error);
       toast.error('Failed to open file. Please try again.');
