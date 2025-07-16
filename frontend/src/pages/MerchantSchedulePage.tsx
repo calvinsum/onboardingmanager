@@ -972,7 +972,7 @@ const MerchantSchedulePage: React.FC = () => {
         formData.append('files', file);
       });
 
-      const response = await fetch(`${process.env.REACT_APP_API_URL || 'https://onboardingmanager-1.onrender.com/api'}/merchant-onboarding/upload-attachments/${accessToken}`, {
+      const response = await fetch(`${process.env.REACT_APP_API_URL || 'https://onboardingmanager.onrender.com/api'}/merchant-onboarding/upload-attachments/${accessToken}`, {
         method: 'POST',
         body: formData,
       });
