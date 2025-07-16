@@ -117,7 +117,7 @@ StoreHub Onboarding Team`;
     try {
       console.log('🔍 Fetching attachments for onboarding:', onboardingId);
       
-      const response = await fetch(`${process.env.REACT_APP_API_URL || 'https://onboardingmanager.onrender.com/api'}/onboarding/${onboardingId}/attachments`, {
+      const response = await fetch(`${process.env.REACT_APP_API_URL || 'https://onboardingmanager-1.onrender.com/api'}/onboarding/${onboardingId}/attachments`, {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('authToken')}`,
@@ -210,7 +210,7 @@ StoreHub Onboarding Team`;
       }
 
       // Use our backend proxy endpoint for viewing
-      const viewUrl = `${process.env.REACT_APP_API_URL || 'https://onboardingmanager.onrender.com/api'}/files/attachment/${attachment.id}/download?token=${token}`;
+      const viewUrl = `${process.env.REACT_APP_API_URL || 'https://onboardingmanager-1.onrender.com/api'}/files/attachment/${attachment.id}/download?token=${token}`;
       
       console.log('🔗 Opening file:', attachment.originalName);
       console.log('📋 View URL:', viewUrl);
@@ -242,7 +242,7 @@ StoreHub Onboarding Team`;
         
         // If pre-check fails, still try to open (network issues, CORS, etc.)
         console.log('🔄 Pre-check failed, attempting direct open...');
-        toast.warning('Unable to verify file accessibility. Attempting to open...');
+        toast('Unable to verify file accessibility. Attempting to open...', { icon: '⚠️' });
         window.open(viewUrl, '_blank', 'noopener,noreferrer');
       });
       
