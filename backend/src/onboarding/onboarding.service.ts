@@ -268,14 +268,18 @@ export class OnboardingService {
           );
           
           console.log('☁️ Cloudinary upload successful:', cloudinaryResult.public_id);
-          console.log('🔗 Cloudinary URL:', cloudinaryResult.secure_url);
+          console.log('🔗 Original Cloudinary URL:', cloudinaryResult.secure_url);
+          
+          // Generate a public URL
+          const publicUrl = this.cloudinaryService.getPublicFileUrl(cloudinaryResult.public_id);
+          console.log('🌐 Generated public URL:', publicUrl);
           
           // Validate required data before creating attachment
-          if (!file.originalname || !cloudinaryResult.public_id || !cloudinaryResult.secure_url) {
+          if (!file.originalname || !cloudinaryResult.public_id || !publicUrl) {
             console.error('❌ Missing required file data:', {
               originalname: file.originalname,
               public_id: cloudinaryResult.public_id,
-              secure_url: cloudinaryResult.secure_url
+              public_url: publicUrl
             });
             throw new BadRequestException('Missing required file data from Cloudinary');
           }
@@ -284,7 +288,7 @@ export class OnboardingService {
           const attachment = new ProductSetupAttachment();
           attachment.originalName = file.originalname;
           attachment.cloudinaryPublicId = cloudinaryResult.public_id;
-          attachment.cloudinaryUrl = cloudinaryResult.secure_url;
+          attachment.cloudinaryUrl = publicUrl; // Use the generated public URL
           attachment.mimeType = file.mimetype;
           attachment.fileSize = file.size;
           // We'll set the onboardingId during SQL insert using freshOnboarding.id

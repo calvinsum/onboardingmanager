@@ -19,8 +19,8 @@ export class CloudinaryService {
           resource_type: 'auto',
           use_filename: true,
           unique_filename: true,
-          access_mode: 'public', // Make files publicly accessible
-          type: 'upload', // Ensure upload type for public access
+          type: 'upload', // Standard upload type
+          // Remove access_mode restriction - let files be publicly accessible by default
         },
         (error: UploadApiErrorResponse | undefined, result: UploadApiResponse | undefined) => {
           if (error) {
@@ -42,7 +42,21 @@ export class CloudinaryService {
 
   getFileUrl(publicId: string): string {
     const cloudinary = this.cloudinaryConfig.getCloudinary();
-    return cloudinary.url(publicId);
+    // Force public URL generation
+    return cloudinary.url(publicId, {
+      type: 'upload',
+      secure: true,
+    });
+  }
+
+  // Generate public URL that should be accessible without authentication
+  getPublicFileUrl(publicId: string): string {
+    const cloudinary = this.cloudinaryConfig.getCloudinary();
+    return cloudinary.url(publicId, {
+      type: 'upload',
+      secure: true,
+      sign_url: false, // Ensure no signing for public access
+    });
   }
 
   // Generate a signed URL for secure access (if needed in future)
