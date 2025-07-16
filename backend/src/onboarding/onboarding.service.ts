@@ -504,72 +504,113 @@ export class OnboardingService {
     }
 
     console.log('✅ Access verified for attachment:', attachment.originalName);
+    console.log('📋 Original Cloudinary URL:', attachment.cloudinaryUrl);
 
+    // Simple redirect approach - let the browser handle the Cloudinary URL directly
+    console.log('🔄 Using redirect approach for file access...');
+    
+    // Set proper headers first
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Headers', '*');
+    
+    // Try to redirect to the Cloudinary URL
     try {
-      // Set proper headers for file download first
-      res.setHeader('Content-Type', attachment.mimeType);
-      res.setHeader('Content-Disposition', `inline; filename="${attachment.originalName}"`);
-      res.setHeader('Access-Control-Allow-Origin', '*');
-      res.setHeader('Access-Control-Allow-Headers', '*');
-
-      // Use Cloudinary Admin API to generate a temporary signed URL
-      const cloudinary = require('cloudinary').v2;
+      // Extract the cloud name and public ID to reconstruct a basic public URL
+      const cloudinaryUrl = attachment.cloudinaryUrl;
+      const cloudNameMatch = cloudinaryUrl.match(/https:\/\/res\.cloudinary\.com\/([^\/]+)\//);
       
-      console.log('🔐 Generating temporary signed URL for:', attachment.cloudinaryPublicId);
-      
-      // Generate a signed URL that's valid for 1 hour
-      const signedUrl = cloudinary.utils.private_download_url(attachment.cloudinaryPublicId, 'auto', {
-        expires_at: Math.floor(Date.now() / 1000) + 3600, // 1 hour from now
-      });
-      
-      console.log('🔗 Generated signed URL (first 100 chars):', signedUrl.substring(0, 100) + '...');
-
-      // Fetch the file using the signed URL
-      const https = require('https');
-      const url = require('url');
-      
-      const parsedUrl = url.parse(signedUrl);
-      const protocol = parsedUrl.protocol === 'https:' ? https : require('http');
-      
-      const request = protocol.get(signedUrl, (fileResponse) => {
-        console.log('📊 Cloudinary response status:', fileResponse.statusCode);
-        console.log('📊 Cloudinary response headers:', fileResponse.headers);
+      if (cloudNameMatch) {
+        const cloudName = cloudNameMatch[1];
+        const publicId = attachment.cloudinaryPublicId;
         
-        if (fileResponse.statusCode === 200) {
-          console.log('✅ Successfully streaming file from Cloudinary');
-          fileResponse.pipe(res);
-        } else if (fileResponse.statusCode === 301 || fileResponse.statusCode === 302) {
-          // Handle redirects
-          const redirectUrl = fileResponse.headers.location;
-          console.log('🔄 Following redirect to:', redirectUrl);
+        // Create multiple potential URLs to try
+        const possibleUrls = [
+          // Original stored URL
+          cloudinaryUrl,
+          // Basic public URL without auth params
+          cloudinaryUrl.split('?')[0],
+          // Reconstructed public URLs
+          `https://res.cloudinary.com/${cloudName}/image/upload/${publicId}`,
+          `https://res.cloudinary.com/${cloudName}/raw/upload/${publicId}`,
+          `https://res.cloudinary.com/${cloudName}/auto/upload/${publicId}`,
+        ];
+        
+        console.log('🔗 Trying multiple URL approaches...');
+        
+        // Try each URL until one works
+        for (let i = 0; i < possibleUrls.length; i++) {
+          const testUrl = possibleUrls[i];
+          console.log(`   ${i + 1}. Testing: ${testUrl.substring(0, 100)}...`);
           
-          protocol.get(redirectUrl, (redirectResponse) => {
-            if (redirectResponse.statusCode === 200) {
-              console.log('✅ Successfully streaming after redirect');
-              redirectResponse.pipe(res);
-            } else {
-              console.error('❌ Redirect failed:', redirectResponse.statusCode);
-              res.status(500).json({ error: `Cloudinary redirect failed: ${redirectResponse.statusCode}` });
-            }
-          }).on('error', (error) => {
-            console.error('❌ Redirect request error:', error);
-            res.status(500).json({ error: 'Failed to follow redirect' });
-          });
-        } else {
-          console.error('❌ Failed to fetch file from Cloudinary:', fileResponse.statusCode);
-          console.error('❌ Response:', fileResponse.statusMessage);
-          res.status(500).json({ error: `Cloudinary returned ${fileResponse.statusCode}: ${fileResponse.statusMessage}` });
+          try {
+            const https = require('https');
+            const testRequest = https.get(testUrl, { timeout: 5000 }, (testResponse) => {
+              console.log(`   Response: ${testResponse.statusCode}`);
+              
+              if (testResponse.statusCode === 200) {
+                console.log('✅ Found working URL, redirecting...');
+                
+                // Set proper download headers
+                res.setHeader('Content-Type', attachment.mimeType);
+                res.setHeader('Content-Disposition', `inline; filename="${attachment.originalName}"`);
+                
+                // Stream the content
+                testResponse.pipe(res);
+                return;
+                
+              } else if (testResponse.statusCode === 301 || testResponse.statusCode === 302) {
+                const redirectUrl = testResponse.headers.location;
+                console.log(`   Following redirect to: ${redirectUrl}`);
+                
+                https.get(redirectUrl, (redirectResponse) => {
+                  if (redirectResponse.statusCode === 200) {
+                    console.log('✅ Redirect successful, streaming content...');
+                    res.setHeader('Content-Type', attachment.mimeType);
+                    res.setHeader('Content-Disposition', `inline; filename="${attachment.originalName}"`);
+                    redirectResponse.pipe(res);
+                    return;
+                  }
+                });
+              }
+              
+              // If this was the last URL and it failed, return error
+              if (i === possibleUrls.length - 1) {
+                console.error('❌ All URL attempts failed');
+                res.status(500).json({ 
+                  error: 'File is not accessible. Please contact support.',
+                  debug: `Tried ${possibleUrls.length} different URL formats`
+                });
+              }
+            });
+            
+            testRequest.on('error', (error) => {
+              console.log(`   Request error: ${error.message}`);
+              // Continue to next URL
+            });
+            
+            testRequest.on('timeout', () => {
+              console.log(`   Request timeout`);
+              testRequest.destroy();
+              // Continue to next URL
+            });
+            
+            // Only try one URL at a time, break after first attempt
+            break;
+            
+          } catch (error) {
+            console.log(`   Error with URL ${i + 1}: ${error.message}`);
+            // Continue to next URL
+          }
         }
-      });
-
-      request.on('error', (error) => {
-        console.error('❌ Error fetching file from Cloudinary:', error);
-        res.status(500).json({ error: 'Failed to fetch file from Cloudinary' });
-      });
-
+        
+      } else {
+        console.error('❌ Could not extract cloud name from URL');
+        res.status(500).json({ error: 'Invalid Cloudinary URL format' });
+      }
+      
     } catch (error) {
-      console.error('❌ Error in downloadAttachmentProxy:', error);
-      res.status(500).json({ error: 'Failed to download attachment' });
+      console.error('❌ Error in redirect approach:', error);
+      res.status(500).json({ error: 'Failed to access file' });
     }
   }
 
