@@ -19,6 +19,8 @@ export class CloudinaryService {
           resource_type: 'auto',
           use_filename: true,
           unique_filename: true,
+          access_mode: 'public', // Make files publicly accessible
+          type: 'upload', // Ensure upload type for public access
         },
         (error: UploadApiErrorResponse | undefined, result: UploadApiResponse | undefined) => {
           if (error) {
@@ -41,5 +43,15 @@ export class CloudinaryService {
   getFileUrl(publicId: string): string {
     const cloudinary = this.cloudinaryConfig.getCloudinary();
     return cloudinary.url(publicId);
+  }
+
+  // Generate a signed URL for secure access (if needed in future)
+  getSecureFileUrl(publicId: string, expirationTime: number = 3600): string {
+    const cloudinary = this.cloudinaryConfig.getCloudinary();
+    return cloudinary.url(publicId, {
+      sign_url: true,
+      type: 'authenticated',
+      expires_at: Math.floor(Date.now() / 1000) + expirationTime, // Expires in 1 hour by default
+    });
   }
 }
