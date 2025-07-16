@@ -287,15 +287,14 @@ export class OnboardingService {
           attachment.cloudinaryUrl = cloudinaryResult.secure_url;
           attachment.mimeType = file.mimetype;
           attachment.fileSize = file.size;
-          // Only set the foreign key, not the relationship to avoid conflicts
-          attachment.onboardingId = onboarding.id;
+          // We'll set the onboardingId during SQL insert using freshOnboarding.id
+          // attachment.onboardingId will be set later
           
           console.log('📝 Created attachment object:', {
             originalName: attachment.originalName,
             cloudinaryPublicId: attachment.cloudinaryPublicId,
             fileSize: attachment.fileSize,
-            onboardingId: attachment.onboardingId,
-            onboardingIdType: typeof attachment.onboardingId
+            readyForInsert: true
           });
           
           attachments.push(attachment);
