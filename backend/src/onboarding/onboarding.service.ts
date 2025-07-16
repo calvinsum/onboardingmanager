@@ -506,10 +506,18 @@ export class OnboardingService {
     console.log('✅ Access verified for attachment:', attachment.originalName);
 
     try {
-      // Generate a signed URL for authenticated access through Cloudinary
-      const fileUrl = this.cloudinaryService.getSecureFileUrl(attachment.cloudinaryPublicId, 3600);
+      // Use Cloudinary Node.js SDK to fetch file directly with admin credentials
+      const cloudinary = require('cloudinary').v2;
+      
+      // Configure cloudinary (should already be configured via environment variables)
+      const cloudinaryUrl = cloudinary.url(attachment.cloudinaryPublicId, {
+        resource_type: 'auto',
+        type: 'upload',
+        secure: true,
+        sign_url: false // Use public URL but with admin access
+      });
 
-      console.log('🔗 Generated signed URL for download');
+      console.log('🔗 Generated Cloudinary URL:', cloudinaryUrl);
 
       // Set proper headers for file download
       res.setHeader('Content-Type', attachment.mimeType);
@@ -517,22 +525,55 @@ export class OnboardingService {
       res.setHeader('Access-Control-Allow-Origin', '*');
       res.setHeader('Access-Control-Allow-Headers', '*');
 
-      // Stream the file from Cloudinary to the response
+      // Try multiple approaches to fetch the file
       const https = require('https');
-      const request = https.get(fileUrl, (fileResponse) => {
+      
+      // First try: Direct URL with Cloudinary credentials in headers
+      const request = https.get(cloudinaryUrl, {
+        headers: {
+          'Authorization': `Basic ${Buffer.from(`${process.env.CLOUDINARY_API_KEY}:${process.env.CLOUDINARY_API_SECRET}`).toString('base64')}`,
+        }
+      }, (fileResponse) => {
+        console.log('📊 Cloudinary response status:', fileResponse.statusCode);
+        console.log('📊 Cloudinary response headers:', fileResponse.headers);
+        
         if (fileResponse.statusCode === 200) {
           console.log('✅ Successfully streaming file from Cloudinary');
           fileResponse.pipe(res);
+        } else if (fileResponse.statusCode === 401) {
+          console.log('🔄 401 error, trying alternative approach...');
+          // Fallback: Try without authentication (for public files)
+          tryPublicAccess();
         } else {
           console.error('❌ Failed to fetch file from Cloudinary:', fileResponse.statusCode);
-          res.status(500).json({ error: 'Failed to fetch file from Cloudinary' });
+          console.error('❌ Response:', fileResponse.statusMessage);
+          res.status(500).json({ error: `Cloudinary returned ${fileResponse.statusCode}: ${fileResponse.statusMessage}` });
         }
       });
 
       request.on('error', (error) => {
         console.error('❌ Error fetching file from Cloudinary:', error);
-        res.status(500).json({ error: 'Failed to fetch file from Cloudinary' });
+        tryPublicAccess();
       });
+
+      // Fallback function to try public access
+      function tryPublicAccess() {
+        console.log('🔄 Trying public access to Cloudinary file...');
+        const publicRequest = https.get(cloudinaryUrl, (publicResponse) => {
+          if (publicResponse.statusCode === 200) {
+            console.log('✅ Successfully accessing file via public URL');
+            publicResponse.pipe(res);
+          } else {
+            console.error('❌ Public access also failed:', publicResponse.statusCode);
+            res.status(500).json({ error: 'Unable to access file from Cloudinary' });
+          }
+        });
+
+        publicRequest.on('error', (error) => {
+          console.error('❌ Public access error:', error);
+          res.status(500).json({ error: 'Failed to fetch file from Cloudinary' });
+        });
+      }
 
     } catch (error) {
       console.error('❌ Error in downloadAttachmentProxy:', error);
