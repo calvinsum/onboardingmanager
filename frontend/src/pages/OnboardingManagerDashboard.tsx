@@ -215,36 +215,9 @@ StoreHub Onboarding Team`;
       console.log('🔗 Opening file:', attachment.originalName);
       console.log('📋 View URL:', viewUrl);
       
-      // Test the URL first before opening window
-      fetch(viewUrl, { 
-        method: 'HEAD',  // Just check if URL is valid
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        }
-      })
-      .then(response => {
-        console.log('📊 Pre-check response:', response.status, response.statusText);
-        
-        if (response.ok || response.status === 405) { // 405 is OK for HEAD request on download endpoint
-          // URL seems valid, open in new window
-          console.log('✅ URL seems valid, opening in new window...');
-          window.open(viewUrl, '_blank', 'noopener,noreferrer');
-        } else {
-          console.error('❌ Pre-check failed with status:', response.status);
-          
-          // Fallback: try to open anyway but warn user
-          toast.error(`File may not be accessible (status: ${response.status}). Trying to open anyway...`);
-          window.open(viewUrl, '_blank', 'noopener,noreferrer');
-        }
-      })
-      .catch(error => {
-        console.error('❌ Pre-check error:', error);
-        
-        // If pre-check fails, still try to open (network issues, CORS, etc.)
-        console.log('🔄 Pre-check failed, attempting direct open...');
-        toast('Unable to verify file accessibility. Attempting to open...', { icon: '⚠️' });
-        window.open(viewUrl, '_blank', 'noopener,noreferrer');
-      });
+      // Open the file directly - pre-check was causing CORS issues
+      console.log('🚀 Opening file directly...');
+      window.open(viewUrl, '_blank', 'noopener,noreferrer');
       
     } catch (error) {
       console.error('Error viewing file:', error);
