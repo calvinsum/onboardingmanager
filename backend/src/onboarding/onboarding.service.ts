@@ -483,10 +483,9 @@ export class OnboardingService {
     return onboarding.productSetupAttachments;
   }
 
-  async downloadAttachmentProxy(attachmentId: string, managerId: string, res: any, isDownload: boolean = false): Promise<void> {
-    console.log('📥 Proxying attachment download:', attachmentId, 'for manager:', managerId);
+  async downloadAttachmentProxy(attachmentId: string, managerId:string, res: any, isDownload: boolean = false): Promise<void> {
+    console.log('🔒 Securely proxying attachment download:', attachmentId);
     
-    // Find the attachment and verify access
     const attachment = await this.attachmentRepository.findOne({
       where: { id: attachmentId },
       relations: ['onboarding'],
@@ -497,124 +496,28 @@ export class OnboardingService {
       throw new NotFoundException('Attachment not found');
     }
 
-    // Verify the manager has access to this attachment's onboarding record
     if (attachment.onboarding.createdByManagerId !== managerId) {
       console.error('❌ Access denied for manager:', managerId, 'to attachment:', attachmentId);
       throw new NotFoundException('Access denied');
     }
 
-    console.log('✅ Access verified for attachment:', attachment.originalName);
-    console.log('📋 Original Cloudinary URL:', attachment.cloudinaryUrl);
+    console.log('✅ Access verified for:', attachment.originalName);
 
-    // Simple redirect approach - let the browser handle the Cloudinary URL directly
-    console.log('🔄 Using redirect approach for file access...');
-    
-    // Set proper headers first
-    res.setHeader('Access-Control-Allow-Origin', '*');
-    res.setHeader('Access-Control-Allow-Headers', '*');
-    
-    // Try to redirect to the Cloudinary URL
     try {
-      // Extract the cloud name and public ID to reconstruct a basic public URL
-      const cloudinaryUrl = attachment.cloudinaryUrl;
-      const cloudNameMatch = cloudinaryUrl.match(/https:\/\/res\.cloudinary\.com\/([^\/]+)\//);
+      const signedUrl = await this.cloudinaryService.generateSignedUrl(attachment.cloudinaryPublicId, {
+        isDownload,
+        filename: attachment.originalName
+      });
       
-      if (cloudNameMatch) {
-        const cloudName = cloudNameMatch[1];
-        const publicId = attachment.cloudinaryPublicId;
-        
-        // Create multiple potential URLs to try
-        const possibleUrls = [
-          // Original stored URL
-          cloudinaryUrl,
-          // Basic public URL without auth params
-          cloudinaryUrl.split('?')[0],
-          // Reconstructed public URLs
-          `https://res.cloudinary.com/${cloudName}/image/upload/${publicId}`,
-          `https://res.cloudinary.com/${cloudName}/raw/upload/${publicId}`,
-          `https://res.cloudinary.com/${cloudName}/auto/upload/${publicId}`,
-        ];
-        
-        console.log('🔗 Trying multiple URL approaches...');
-        
-        // Try each URL until one works
-        for (let i = 0; i < possibleUrls.length; i++) {
-          const testUrl = possibleUrls[i];
-          console.log(`   ${i + 1}. Testing: ${testUrl.substring(0, 100)}...`);
-          
-          try {
-            const https = require('https');
-            const testRequest = https.get(testUrl, { timeout: 5000 }, (testResponse) => {
-              console.log(`   Response: ${testResponse.statusCode}`);
-              
-              if (testResponse.statusCode === 200) {
-                console.log('✅ Found working URL, redirecting...');
-                
-                // Set proper headers based on view vs download
-                res.setHeader('Content-Type', attachment.mimeType);
-                const disposition = isDownload ? 'attachment' : 'inline';
-                res.setHeader('Content-Disposition', `${disposition}; filename="${attachment.originalName}"`);
-                console.log(`📋 Content-Disposition: ${disposition}; filename="${attachment.originalName}"`);
-                
-                // Stream the content
-                testResponse.pipe(res);
-                return;
-                
-              } else if (testResponse.statusCode === 301 || testResponse.statusCode === 302) {
-                const redirectUrl = testResponse.headers.location;
-                console.log(`   Following redirect to: ${redirectUrl}`);
-                
-                https.get(redirectUrl, (redirectResponse) => {
-                  if (redirectResponse.statusCode === 200) {
-                    console.log('✅ Redirect successful, streaming content...');
-                    res.setHeader('Content-Type', attachment.mimeType);
-                    const disposition = isDownload ? 'attachment' : 'inline';
-                    res.setHeader('Content-Disposition', `${disposition}; filename="${attachment.originalName}"`);
-                    console.log(`📋 Redirect Content-Disposition: ${disposition}; filename="${attachment.originalName}"`);
-                    redirectResponse.pipe(res);
-                    return;
-                  }
-                });
-              }
-              
-              // If this was the last URL and it failed, return error
-              if (i === possibleUrls.length - 1) {
-                console.error('❌ All URL attempts failed');
-                res.status(500).json({ 
-                  error: 'File is not accessible. Please contact support.',
-                  debug: `Tried ${possibleUrls.length} different URL formats`
-                });
-              }
-            });
-            
-            testRequest.on('error', (error) => {
-              console.log(`   Request error: ${error.message}`);
-              // Continue to next URL
-            });
-            
-            testRequest.on('timeout', () => {
-              console.log(`   Request timeout`);
-              testRequest.destroy();
-              // Continue to next URL
-            });
-            
-            // Only try one URL at a time, break after first attempt
-            break;
-            
-          } catch (error) {
-            console.log(`   Error with URL ${i + 1}: ${error.message}`);
-            // Continue to next URL
-          }
-        }
-        
-      } else {
-        console.error('❌ Could not extract cloud name from URL');
-        res.status(500).json({ error: 'Invalid Cloudinary URL format' });
-      }
-      
+      console.log('✅ Generated Cloudinary signed URL. Redirecting...');
+      res.redirect(302, signedUrl);
+
     } catch (error) {
-      console.error('❌ Error in redirect approach:', error);
-      res.status(500).json({ error: 'Failed to access file' });
+      console.error('❌ Failed to generate signed URL:', error);
+      res.status(500).json({ 
+        message: 'Could not generate a secure link for the file. Please try again.',
+        error: error.message 
+      });
     }
   }
 
