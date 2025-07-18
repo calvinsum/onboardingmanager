@@ -230,7 +230,7 @@ export class FileDownloadController {
   @ApiOperation({ summary: 'Download attachment file through proxy' })
   @ApiParam({ name: 'attachmentId', description: 'Attachment ID' })
   @ApiResponse({ status: 200, description: 'File content' })
-  async downloadAttachment(@Param('attachmentId') attachmentId: string, @Query('token') token: string, @Request() req: any, @Res() res: any) {
+  async downloadAttachment(@Param('attachmentId') attachmentId: string, @Query('token') token: string, @Query('download') download: string, @Request() req: any, @Res() res: any) {
     console.log('🔐 Download authentication attempt for attachment:', attachmentId);
     console.log('📝 Query token present:', !!token);
     console.log('📋 Auth header present:', !!req.headers.authorization);
@@ -282,6 +282,8 @@ export class FileDownloadController {
     }
     
     console.log('✅ Authentication successful for manager:', managerId);
-    return this.onboardingService.downloadAttachmentProxy(attachmentId, managerId, res);
+    const isDownload = download === 'true';
+    console.log('📥 Download mode:', isDownload);
+    return this.onboardingService.downloadAttachmentProxy(attachmentId, managerId, res, isDownload);
   }
 }

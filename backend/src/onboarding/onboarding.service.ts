@@ -483,7 +483,7 @@ export class OnboardingService {
     return onboarding.productSetupAttachments;
   }
 
-  async downloadAttachmentProxy(attachmentId: string, managerId: string, res: any): Promise<void> {
+  async downloadAttachmentProxy(attachmentId: string, managerId: string, res: any, isDownload: boolean = false): Promise<void> {
     console.log('📥 Proxying attachment download:', attachmentId, 'for manager:', managerId);
     
     // Find the attachment and verify access
@@ -550,9 +550,11 @@ export class OnboardingService {
               if (testResponse.statusCode === 200) {
                 console.log('✅ Found working URL, redirecting...');
                 
-                // Set proper download headers
+                // Set proper headers based on view vs download
                 res.setHeader('Content-Type', attachment.mimeType);
-                res.setHeader('Content-Disposition', `inline; filename="${attachment.originalName}"`);
+                const disposition = isDownload ? 'attachment' : 'inline';
+                res.setHeader('Content-Disposition', `${disposition}; filename="${attachment.originalName}"`);
+                console.log(`📋 Content-Disposition: ${disposition}; filename="${attachment.originalName}"`);
                 
                 // Stream the content
                 testResponse.pipe(res);
@@ -566,7 +568,9 @@ export class OnboardingService {
                   if (redirectResponse.statusCode === 200) {
                     console.log('✅ Redirect successful, streaming content...');
                     res.setHeader('Content-Type', attachment.mimeType);
-                    res.setHeader('Content-Disposition', `inline; filename="${attachment.originalName}"`);
+                    const disposition = isDownload ? 'attachment' : 'inline';
+                    res.setHeader('Content-Disposition', `${disposition}; filename="${attachment.originalName}"`);
+                    console.log(`📋 Redirect Content-Disposition: ${disposition}; filename="${attachment.originalName}"`);
                     redirectResponse.pipe(res);
                     return;
                   }

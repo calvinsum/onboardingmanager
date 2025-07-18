@@ -155,45 +155,28 @@ StoreHub Onboarding Team`;
 
   const handleDownloadAttachment = (attachment: any) => {
     try {
-      // Use our backend proxy endpoint for downloading
-      const downloadUrl = `${process.env.REACT_APP_API_URL}/files/attachment/${attachment.id}/download`;
-      
-      // Create a temporary link element and trigger download
-      const link = document.createElement('a');
-      link.href = downloadUrl;
-      link.download = attachment.originalName;
-      link.target = '_blank';
-      link.rel = 'noopener noreferrer';
-      
-      // Add authorization header by including it in the URL or using fetch
       const token = localStorage.getItem('authToken');
-      if (token) {
-        // Use fetch to handle the download with authorization
-        fetch(downloadUrl, {
-          method: 'GET',
-          headers: {
-            'Authorization': `Bearer ${token}`,
-          },
-        })
-        .then(response => response.blob())
-        .then(blob => {
-          const url = window.URL.createObjectURL(blob);
-          const a = document.createElement('a');
-          a.href = url;
-          a.download = attachment.originalName;
-          document.body.appendChild(a);
-          a.click();
-          document.body.removeChild(a);
-          window.URL.revokeObjectURL(url);
-          toast.success(`Downloaded ${attachment.originalName}`);
-        })
-        .catch(error => {
-          console.error('Error downloading file:', error);
-          toast.error('Failed to download file. Please try again.');
-        });
-      } else {
-        toast.error('Authentication required for download.');
+      
+      if (!token) {
+        toast.error('Authentication required for downloading files.');
+        return;
       }
+
+      // Use the same backend proxy endpoint as view, but with download behavior
+      const downloadUrl = `${process.env.REACT_APP_API_URL || 'https://onboardingmanager.onrender.com/api'}/files/attachment/${attachment.id}/download?token=${token}&download=true`;
+      
+      console.log('📥 Downloading file:', attachment.originalName);
+      console.log('📋 Download URL:', downloadUrl);
+      
+      // Open in new window/tab - browser will handle download automatically for attachments
+      console.log('🚀 Opening download directly...');
+      window.open(downloadUrl, '_blank', 'noopener,noreferrer');
+      
+      // Show success message after a short delay
+      setTimeout(() => {
+        toast.success(`Download started for ${attachment.originalName}`);
+      }, 500);
+      
     } catch (error) {
       console.error('Error downloading file:', error);
       toast.error('Failed to download file. Please try again.');
@@ -217,7 +200,30 @@ StoreHub Onboarding Team`;
       
       // Open the file directly - pre-check was causing CORS issues
       console.log('🚀 Opening file directly...');
-      window.open(viewUrl, '_blank', 'noopener,noreferrer');
+      const newWindow = window.open(viewUrl, '_blank', 'noopener,noreferrer');
+      
+      // Check if the window opened successfully
+      if (!newWindow) {
+        toast.error('Popup blocked. Please allow popups for this site and try again.');
+        return;
+      }
+      
+      // Add a timeout to detect blank page issues
+      setTimeout(() => {
+        try {
+          // Note: This might not work due to CORS, but it's worth trying
+          if (newWindow && !newWindow.closed && newWindow.location.href === 'about:blank') {
+            console.log('⚠️ Detected potential blank page, showing fallback message...');
+            toast('If the file doesn\'t open, try the Download button instead.', { 
+              icon: '💡',
+              duration: 5000 
+            });
+          }
+        } catch (e) {
+          // CORS will prevent access to newWindow.location, which is expected
+          console.log('🔒 CORS prevented window inspection (this is normal)');
+        }
+      }, 2000);
       
     } catch (error) {
       console.error('Error viewing file:', error);
