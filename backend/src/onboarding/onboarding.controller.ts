@@ -2,6 +2,7 @@ import { Controller, Get, Post, Body, Param, Patch, UseGuards, Request, Query, U
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiParam, ApiQuery, ApiConsumes } from '@nestjs/swagger';
 import { AuthGuard } from '@nestjs/passport';
 import { FilesInterceptor } from '@nestjs/platform-express';
+import { JwtService } from '@nestjs/jwt';
 import { OnboardingService } from './onboarding.service';
 import { TermsConditionsService } from './terms-conditions.service';
 import { CreateOnboardingDto } from './dto/create-onboarding.dto';
@@ -220,13 +221,20 @@ export class MerchantOnboardingController {
 @ApiTags('file-downloads')
 @Controller('files')
 export class FileDownloadController {
-  constructor(private readonly onboardingService: OnboardingService) {}
+  constructor(
+    private readonly onboardingService: OnboardingService,
+    private readonly jwtService: JwtService
+  ) {}
 
   @Get('attachment/:attachmentId/download')
   @ApiOperation({ summary: 'Download attachment file through proxy' })
   @ApiParam({ name: 'attachmentId', description: 'Attachment ID' })
   @ApiResponse({ status: 200, description: 'File content' })
   async downloadAttachment(@Param('attachmentId') attachmentId: string, @Query('token') token: string, @Request() req: any, @Res() res: any) {
+    console.log('🔐 Download authentication attempt for attachment:', attachmentId);
+    console.log('📝 Query token present:', !!token);
+    console.log('📋 Auth header present:', !!req.headers.authorization);
+    
     // Allow access via Bearer token (Authorization header) or query parameter token
     let managerId = req.user?.id;
     
@@ -234,33 +242,46 @@ export class FileDownloadController {
     const authHeader = req.headers.authorization;
     if (!managerId && authHeader && authHeader.startsWith('Bearer ')) {
       try {
-        const jwt = require('jsonwebtoken');
-        const decoded = jwt.verify(authHeader.split(' ')[1], process.env.JWT_SECRET || 'storehub-secret-key');
+        console.log('🔍 Verifying Bearer token from header...');
+        const bearerToken = authHeader.split(' ')[1];
+        const decoded = this.jwtService.verify(bearerToken);
+        console.log('✅ Bearer token decoded:', { type: decoded.type, sub: decoded.sub });
+        
         if (decoded.type === 'onboarding_manager') {
           managerId = decoded.sub;
+          console.log('✅ Manager ID from Bearer token:', managerId);
+        } else {
+          console.log('❌ Token type is not onboarding_manager:', decoded.type);
         }
       } catch (error) {
-        console.error('Invalid token in Authorization header');
+        console.error('❌ Invalid token in Authorization header:', error.message);
       }
     }
     
     // Fallback to query parameter token for direct browser access
     if (!managerId && token) {
       try {
-        const jwt = require('jsonwebtoken');
-        const decoded = jwt.verify(token, process.env.JWT_SECRET || 'storehub-secret-key');
+        console.log('🔍 Verifying query parameter token...');
+        const decoded = this.jwtService.verify(token);
+        console.log('✅ Query token decoded:', { type: decoded.type, sub: decoded.sub });
+        
         if (decoded.type === 'onboarding_manager') {
           managerId = decoded.sub;
+          console.log('✅ Manager ID from query token:', managerId);
+        } else {
+          console.log('❌ Token type is not onboarding_manager:', decoded.type);
         }
       } catch (error) {
-        console.error('Invalid token provided via query parameter');
+        console.error('❌ Invalid token provided via query parameter:', error.message);
       }
     }
     
     if (!managerId) {
+      console.error('❌ No valid manager ID found, authentication failed');
       return res.status(401).json({ error: 'Authentication required' });
     }
     
+    console.log('✅ Authentication successful for manager:', managerId);
     return this.onboardingService.downloadAttachmentProxy(attachmentId, managerId, res);
   }
 }
