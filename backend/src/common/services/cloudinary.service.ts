@@ -55,13 +55,11 @@ export class CloudinaryService {
   // Generate public URL that should be accessible without authentication
   getPublicFileUrl(publicId: string): string {
     const cloudinary = this.cloudinaryConfig.getCloudinary();
+    
+    // This is the simplest and most reliable way to get the URL for a public resource.
     return cloudinary.url(publicId, {
-      resource_type: 'auto', // Handle PDFs, images, etc.
-      type: 'upload',
+      resource_type: 'auto',
       secure: true,
-      sign_url: false, // Ensure no signing for public access
-      auth_token: false, // Disable auth tokens
-      version: false, // Don't include version number
     });
   }
 

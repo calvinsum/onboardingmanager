@@ -1,6 +1,25 @@
 {
+  "scripts": {
+    "build": "npx nest build",
+    "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
+    "start": "nest start",
+    "start:dev": "nest start --watch",
+    "test:e2e": "jest --config ./test/jest-e2e.json",
+    "seed:onboarding-manager": "ts-node src/scripts/seed-onboarding-manager.ts",
+    "migrate:training-slots": "ts-node src/scripts/migrate-training-slots.ts",
+    "fix:urls": "ts-node src/scripts/fix-attachment-urls.ts"
+  },
   "dependencies": {
+    "@nestjs/axios": "^3.0.2",
     "pg": "^8.16.3",
-    "react-day-picker": "^9.8.0"
+    "react-day-picker": "^9.8.0",
+    "uuid": "^10.0.0"
+  },
+  "devDependencies": {
+    "@nestjs/cli": "^10.4.2",
+    "rimraf": "^5.0.5",
+    "ts-node": "^10.9.2",
+    "tsconfig-paths": "^4.2.0",
+    "typescript": "^5.5.4"
   }
 }
