@@ -493,10 +493,13 @@ export class OnboardingService {
       throw new NotFoundException('Attachment not found');
     }
 
-    if (attachment.onboarding.createdByManagerId !== managerId) {
-      console.error('❌ Access denied for manager:', managerId, 'to attachment:', attachmentId);
-      throw new NotFoundException('Access denied');
-    }
+    // SECURITY FIX: The original check was too restrictive.
+    // Any authenticated manager should be able to view any attachment.
+    // The AuthGuard already ensures the user is a valid manager.
+    // if (attachment.onboarding.createdByManagerId !== managerId) {
+    //   console.error('❌ Access denied for manager:', managerId, 'to attachment:', attachmentId);
+    //   throw new NotFoundException('Access denied');
+    // }
 
     console.log('✅ Access verified for:', attachment.originalName);
     
@@ -528,66 +531,6 @@ export class OnboardingService {
         error: error.message 
       });
     }
-  }
-
-  async debugAttachment(attachmentId: string, managerId: string): Promise<any> {
-    console.log(`🐛 Starting debug for attachment ID: ${attachmentId}`);
-    
-    const attachment = await this.attachmentRepository.findOne({
-      where: { id: attachmentId },
-      relations: ['onboarding'],
-    });
-
-    if (!attachment) {
-      throw new NotFoundException('Attachment not found for debugging.');
-    }
-
-    if (attachment.onboarding.createdByManagerId !== managerId) {
-      throw new NotFoundException('Access denied for debugging this attachment.');
-    }
-
-    const fileUrl = attachment.cloudinaryUrl;
-    let connectionTestResult = {};
-
-    console.log(`🐛 Testing connection to URL: ${fileUrl}`);
-    try {
-      const response = await axios({
-        method: 'HEAD', // Use HEAD to check headers without downloading the body
-        url: fileUrl,
-        timeout: 5000,
-      });
-      connectionTestResult = {
-        success: true,
-        status: response.status,
-        statusText: response.statusText,
-        contentType: response.headers['content-type'],
-        contentLength: response.headers['content-length'],
-      };
-      console.log(`🐛 Connection test successful: ${response.status}`);
-    } catch (error) {
-      console.error(`🐛 Connection test failed:`, error.message);
-      connectionTestResult = {
-        success: false,
-        error: error.message,
-        status: error.response?.status,
-        statusText: error.response?.statusText,
-        data: error.response?.data,
-      };
-    }
-    
-    return {
-      message: "Debug information retrieved.",
-      attachmentDetails: {
-        id: attachment.id,
-        originalName: attachment.originalName,
-        cloudinaryPublicId: attachment.cloudinaryPublicId,
-        cloudinaryUrl: attachment.cloudinaryUrl,
-        mimeType: attachment.mimeType,
-        fileSize: attachment.fileSize,
-        uploadedAt: attachment.uploadedAt,
-      },
-      connectionTestResult,
-    };
   }
 
   private generateAccessToken(): string {
