@@ -87,20 +87,6 @@ export class CloudinaryService {
       expires_at: Math.floor(Date.now() / 1000) + 3600, // URL is valid for 1 hour
     });
 
-    // If it is a download, we need to append the filename ourselves for some browsers.
-    if (isDownload) {
-      try {
-        const url = new URL(signedUrl);
-        // A simple way to ensure the filename is part of the path for download prompts.
-        // This doesn't affect the signature.
-        url.pathname = `${url.pathname.substring(0, url.pathname.lastIndexOf('/'))}/${encodeURIComponent(filename)}`;
-        return url.toString();
-      } catch (e) {
-        console.error("Error creating download URL, returning original signed URL", e);
-        return signedUrl; // Fallback to the original signed URL
-      }
-    }
-    
     return signedUrl;
   }
 }
