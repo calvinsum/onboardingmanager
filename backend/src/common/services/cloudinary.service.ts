@@ -27,8 +27,9 @@ export class CloudinaryService {
           if (error) {
             reject(error);
           } else if (result) {
-            // Override the secure_url with a truly public URL without authentication
-            result.secure_url = this.getPublicFileUrl(result.public_id);
+            // DO NOT override the URL. Use the one provided by Cloudinary directly.
+            // It is the source of truth for the resource's location.
+            console.log('☁️ Upload successful. Using direct secure_url from Cloudinary:', result.secure_url);
             resolve(result);
           } else {
             reject(new Error('Upload failed with no result'));
