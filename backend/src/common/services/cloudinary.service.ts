@@ -17,8 +17,8 @@ export class CloudinaryService {
         {
           folder: folder,
           resource_type: 'auto',
-          use_filename: true,
-          unique_filename: true,
+          use_filename: false,      // DO NOT use the original filename
+          unique_filename: true,    // Generate a unique random string instead
           type: 'upload',
           access_mode: 'public', // Explicitly set to public
           invalidate: true, // Invalidate CDN cache
