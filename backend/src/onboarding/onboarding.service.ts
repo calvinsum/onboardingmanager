@@ -11,6 +11,7 @@ import { UpdateOnboardingDto } from './dto/update-onboarding.dto';
 import { AcknowledgeTermsDto } from './dto/acknowledge-terms.dto';
 import { CloudinaryService } from '../common/services/cloudinary.service';
 import * as crypto from 'crypto';
+import axios from 'axios';
 
 @Injectable()
 export class OnboardingService {
@@ -483,7 +484,7 @@ export class OnboardingService {
     return onboarding.productSetupAttachments;
   }
 
-  async downloadAttachmentProxy(attachmentId: string, managerId:string, res: any, isDownload: boolean = false): Promise<void> {
+  async downloadAttachmentProxy(attachmentId: string, managerId: string, res: any, isDownload: boolean = false): Promise<void> {
     console.log('🔒 Securely proxying attachment download:', attachmentId);
     
     const attachment = await this.attachmentRepository.findOne({
@@ -502,35 +503,31 @@ export class OnboardingService {
     }
 
     console.log('✅ Access verified for:', attachment.originalName);
-
+    
+    // The file is public, but the link is protected by our backend authentication.
+    const fileUrl = attachment.cloudinaryUrl;
+    console.log('☁️ Fetching from Cloudinary URL:', fileUrl);
+    
     try {
-      // Determine the resource type from the MIME type stored in our database.
-      let resourceType = 'raw'; // Default to 'raw' for non-image/video files
-      if (attachment.mimeType.startsWith('image/')) {
-        resourceType = 'image';
-      } else if (attachment.mimeType.startsWith('video/')) {
-        resourceType = 'video';
-      }
-      
-      console.log(`Determined resource_type: '${resourceType}' from MIME type: '${attachment.mimeType}'`);
-
-      // Use the full public_id from the database, which includes the folder path.
-      // This is the correct identifier for the resource.
-      console.log(`Using full Cloudinary public ID for signing: '${attachment.cloudinaryPublicId}'`);
-
-      const signedUrl = this.cloudinaryService.generateSignedUrl(attachment.cloudinaryPublicId, {
-        isDownload,
-        filename: attachment.originalName,
-        resourceType,
+      const response = await axios({
+        method: 'GET',
+        url: fileUrl,
+        responseType: 'stream',
       });
-      
-      console.log('✅ Generated Cloudinary signed URL. Redirecting...');
-      res.redirect(302, signedUrl);
+
+      // Set the correct headers to the client
+      const disposition = isDownload ? 'attachment' : 'inline';
+      res.setHeader('Content-Disposition', `${disposition}; filename="${attachment.originalName}"`);
+      res.setHeader('Content-Type', attachment.mimeType);
+      res.setHeader('Content-Length', response.headers['content-length']);
+
+      console.log('✅ Streaming file to client...');
+      response.data.pipe(res);
 
     } catch (error) {
-      console.error('❌ Failed to generate signed URL:', error);
+      console.error('❌ Failed to fetch file from Cloudinary:', error.message);
       res.status(500).json({ 
-        message: 'Could not generate a secure link for the file. Please try again.',
+        message: 'Could not fetch the file from storage. The file may have been moved or deleted.',
         error: error.message 
       });
     }
