@@ -289,18 +289,14 @@ export class OnboardingService {
           const attachment = new ProductSetupAttachment();
           attachment.originalName = file.originalname;
           attachment.cloudinaryPublicId = cloudinaryResult.public_id;
-          attachment.cloudinaryUrl = publicUrl; // Use the generated public URL
+          attachment.cloudinaryUrl = cloudinaryResult.secure_url; // Use the direct URL from Cloudinary's response
           attachment.mimeType = file.mimetype;
           attachment.fileSize = file.size;
           // We'll set the onboardingId during SQL insert using freshOnboarding.id
           // attachment.onboardingId will be set later
           
-          console.log('📝 Created attachment object:', {
-            originalName: attachment.originalName,
-            cloudinaryPublicId: attachment.cloudinaryPublicId,
-            fileSize: attachment.fileSize,
-            readyForInsert: true
-          });
+          console.log('📝✅ Attachment object created. URL to be saved:');
+          console.log(attachment.cloudinaryUrl);
           
           attachments.push(attachment);
         } catch (uploadError) {
@@ -506,7 +502,8 @@ export class OnboardingService {
     
     // The file is public, but the link is protected by our backend authentication.
     const fileUrl = attachment.cloudinaryUrl;
-    console.log('☁️ Fetching from Cloudinary URL:', fileUrl);
+    console.log('☁️✅ Preparing to fetch from this exact URL stored in the database:');
+    console.log(fileUrl);
     
     try {
       const response = await axios({
@@ -531,6 +528,66 @@ export class OnboardingService {
         error: error.message 
       });
     }
+  }
+
+  async debugAttachment(attachmentId: string, managerId: string): Promise<any> {
+    console.log(`🐛 Starting debug for attachment ID: ${attachmentId}`);
+    
+    const attachment = await this.attachmentRepository.findOne({
+      where: { id: attachmentId },
+      relations: ['onboarding'],
+    });
+
+    if (!attachment) {
+      throw new NotFoundException('Attachment not found for debugging.');
+    }
+
+    if (attachment.onboarding.createdByManagerId !== managerId) {
+      throw new NotFoundException('Access denied for debugging this attachment.');
+    }
+
+    const fileUrl = attachment.cloudinaryUrl;
+    let connectionTestResult = {};
+
+    console.log(`🐛 Testing connection to URL: ${fileUrl}`);
+    try {
+      const response = await axios({
+        method: 'HEAD', // Use HEAD to check headers without downloading the body
+        url: fileUrl,
+        timeout: 5000,
+      });
+      connectionTestResult = {
+        success: true,
+        status: response.status,
+        statusText: response.statusText,
+        contentType: response.headers['content-type'],
+        contentLength: response.headers['content-length'],
+      };
+      console.log(`🐛 Connection test successful: ${response.status}`);
+    } catch (error) {
+      console.error(`🐛 Connection test failed:`, error.message);
+      connectionTestResult = {
+        success: false,
+        error: error.message,
+        status: error.response?.status,
+        statusText: error.response?.statusText,
+        data: error.response?.data,
+      };
+    }
+    
+    return {
+      message: "Debug information retrieved.",
+      attachmentDetails: {
+        id: attachment.id,
+        originalName: attachment.originalName,
+        cloudinaryPublicId: attachment.cloudinaryPublicId,
+        cloudinaryUrl: attachment.cloudinaryUrl,
+        mimeType: attachment.mimeType,
+        fileSize: attachment.fileSize,
+        uploadedAt: attachment.uploadedAt,
+      },
+      connectionTestResult,
+    };
   }
 
   private generateAccessToken(): string {

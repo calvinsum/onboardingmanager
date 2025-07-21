@@ -25,13 +25,17 @@ export class CloudinaryService {
         },
         (error: UploadApiErrorResponse | undefined, result: UploadApiResponse | undefined) => {
           if (error) {
+            console.error('❌ Cloudinary upload stream error:', error);
             reject(error);
           } else if (result) {
+            console.log('✅☁️ Cloudinary upload successful. Full result object:');
+            console.log(JSON.stringify(result, null, 2));
             // DO NOT override the URL. Use the one provided by Cloudinary directly.
             // It is the source of truth for the resource's location.
             console.log('☁️ Upload successful. Using direct secure_url from Cloudinary:', result.secure_url);
             resolve(result);
           } else {
+            console.error('❌ Cloudinary upload failed with no result.');
             reject(new Error('Upload failed with no result'));
           }
         }

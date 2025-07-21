@@ -46,6 +46,14 @@ export class OnboardingController {
     return this.onboardingService.findOne(id, req.user.id);
   }
 
+  @Get('debug/attachment/:id')
+  @ApiOperation({ summary: 'Debug an attachment by ID' })
+  @ApiParam({ name: 'id', description: 'Attachment ID' })
+  @ApiResponse({ status: 200, description: 'Debug information retrieved.' })
+  async debugAttachment(@Param('id') id: string, @Request() req: any) {
+    return this.onboardingService.debugAttachment(id, req.user.id);
+  }
+
   @Patch(':id')
   @ApiOperation({ summary: 'Update an onboarding record' })
   @ApiParam({ name: 'id', description: 'Onboarding ID' })
