@@ -504,9 +504,20 @@ export class OnboardingService {
     console.log('✅ Access verified for:', attachment.originalName);
 
     try {
-      const signedUrl = await this.cloudinaryService.generateSignedUrl(attachment.cloudinaryPublicId, {
+      // Determine the resource type from the MIME type stored in our database.
+      let resourceType = 'raw'; // Default to 'raw' for non-image/video files
+      if (attachment.mimeType.startsWith('image/')) {
+        resourceType = 'image';
+      } else if (attachment.mimeType.startsWith('video/')) {
+        resourceType = 'video';
+      }
+      
+      console.log(`Determined resource_type: '${resourceType}' from MIME type: '${attachment.mimeType}'`);
+
+      const signedUrl = this.cloudinaryService.generateSignedUrl(attachment.cloudinaryPublicId, {
         isDownload,
-        filename: attachment.originalName
+        filename: attachment.originalName,
+        resourceType,
       });
       
       console.log('✅ Generated Cloudinary signed URL. Redirecting...');

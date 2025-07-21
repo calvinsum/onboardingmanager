@@ -75,14 +75,12 @@ export class CloudinaryService {
     });
   }
 
-  async generateSignedUrl(publicId: string, options: { isDownload: boolean, filename: string }): Promise<string> {
+  generateSignedUrl(publicId: string, options: { isDownload: boolean, filename: string, resourceType: string }): string {
     const cloudinary = this.cloudinaryConfig.getCloudinary();
-    const { isDownload, filename } = options;
+    const { isDownload, filename, resourceType } = options;
     
-    // Determine the resource type by fetching metadata
-    const resource = await cloudinary.api.resource(publicId, { resource_type: 'auto' });
-    const resourceType = resource.resource_type;
-    
+    // Cloudinary's 'private' type is for signed URLs, not related to the asset's access mode.
+    // The signing process uses the API Key and Secret, which must be available in the environment.
     const signedUrl = cloudinary.utils.private_download_url(publicId, '', {
       resource_type: resourceType,
       type: 'upload',
@@ -90,12 +88,18 @@ export class CloudinaryService {
       expires_at: Math.floor(Date.now() / 1000) + 3600, // URL is valid for 1 hour
     });
 
-    // If it is a download, we need to append the filename ourselves
-    // because Cloudinary doesn't support it directly in `private_download_url` with `attachment: true`
+    // If it is a download, we need to append the filename ourselves for some browsers.
     if (isDownload) {
-      const url = new URL(signedUrl);
-      url.pathname = `${url.pathname.substring(0, url.pathname.lastIndexOf('/'))}/${encodeURIComponent(filename)}`;
-      return url.toString();
+      try {
+        const url = new URL(signedUrl);
+        // A simple way to ensure the filename is part of the path for download prompts.
+        // This doesn't affect the signature.
+        url.pathname = `${url.pathname.substring(0, url.pathname.lastIndexOf('/'))}/${encodeURIComponent(filename)}`;
+        return url.toString();
+      } catch (e) {
+        console.error("Error creating download URL, returning original signed URL", e);
+        return signedUrl; // Fallback to the original signed URL
+      }
     }
     
     return signedUrl;
