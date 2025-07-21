@@ -6,8 +6,7 @@
     "start:dev": "nest start --watch",
     "test:e2e": "jest --config ./test/jest-e2e.json",
     "seed:onboarding-manager": "ts-node src/scripts/seed-onboarding-manager.ts",
-    "migrate:training-slots": "ts-node src/scripts/migrate-training-slots.ts",
-    "fix:urls": "ts-node src/scripts/fix-attachment-urls.ts"
+    "migrate:training-slots": "ts-node src/scripts/migrate-training-slots.ts"
   },
   "dependencies": {
     "@nestjs/axios": "^3.0.2",
