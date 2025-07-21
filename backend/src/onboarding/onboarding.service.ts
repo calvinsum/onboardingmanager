@@ -514,13 +514,18 @@ export class OnboardingService {
       
       console.log(`Determined resource_type: '${resourceType}' from MIME type: '${attachment.mimeType}'`);
 
+      // Also get the file format from the original filename
+      const fileFormat = attachment.originalName.split('.').pop() || '';
+      console.log(`Extracted file format: '${fileFormat}' from original name: '${attachment.originalName}'`);
+
       const signedUrl = this.cloudinaryService.generateSignedUrl(attachment.cloudinaryPublicId, {
         isDownload,
         filename: attachment.originalName,
         resourceType,
+        format: fileFormat,
       });
       
-      console.log('✅ Generated Cloudinary signed URL. Redirecting...');
+      console.log('✅ Generated Cloudinary signed URL with format. Redirecting...');
       res.redirect(302, signedUrl);
 
     } catch (error) {

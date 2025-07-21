@@ -75,13 +75,12 @@ export class CloudinaryService {
     });
   }
 
-  generateSignedUrl(publicId: string, options: { isDownload: boolean, filename: string, resourceType: string }): string {
+  generateSignedUrl(publicId: string, options: { isDownload: boolean, filename: string, resourceType: string, format: string }): string {
     const cloudinary = this.cloudinaryConfig.getCloudinary();
-    const { isDownload, filename, resourceType } = options;
+    const { isDownload, filename, resourceType, format } = options;
     
-    // Cloudinary's 'private' type is for signed URLs, not related to the asset's access mode.
-    // The signing process uses the API Key and Secret, which must be available in the environment.
-    const signedUrl = cloudinary.utils.private_download_url(publicId, '', {
+    // The signing process uses the API Key and Secret from the server's environment.
+    const signedUrl = cloudinary.utils.private_download_url(publicId, format, {
       resource_type: resourceType,
       type: 'upload',
       attachment: isDownload,
