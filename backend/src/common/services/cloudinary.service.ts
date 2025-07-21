@@ -82,8 +82,8 @@ export class CloudinaryService {
     const cloudinary = this.cloudinaryConfig.getCloudinary();
     const { isDownload, filename, resourceType } = options;
     
-    // For raw files, the format is part of the resource itself, not a transformation.
-    // Do not pass the format parameter to private_download_url.
+    // The signing process uses the API Key and Secret from the server's environment.
+    // We do not pass the 'format' for raw files as the public_id is the complete identifier.
     const signedUrl = cloudinary.utils.private_download_url(publicId, '', {
       resource_type: resourceType,
       type: 'upload',

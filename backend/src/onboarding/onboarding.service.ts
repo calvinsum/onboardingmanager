@@ -493,41 +493,33 @@ export class OnboardingService {
       throw new NotFoundException('Attachment not found');
     }
 
-    // SECURITY FIX: The original check was too restrictive.
     // Any authenticated manager should be able to view any attachment.
-    // The AuthGuard already ensures the user is a valid manager.
-    // if (attachment.onboarding.createdByManagerId !== managerId) {
-    //   console.error('❌ Access denied for manager:', managerId, 'to attachment:', attachmentId);
-    //   throw new NotFoundException('Access denied');
-    // }
-
     console.log('✅ Access verified for:', attachment.originalName);
     
-    // The file is public, but the link is protected by our backend authentication.
-    const fileUrl = attachment.cloudinaryUrl;
-    console.log('☁️✅ Preparing to fetch from this exact URL stored in the database:');
-    console.log(fileUrl);
-    
     try {
-      const response = await axios({
-        method: 'GET',
-        url: fileUrl,
-        responseType: 'stream',
+      // Determine the resource type from the MIME type stored in our database.
+      let resourceType = 'raw'; // Default for PDFs, etc.
+      if (attachment.mimeType.startsWith('image/')) {
+        resourceType = 'image';
+      } else if (attachment.mimeType.startsWith('video/')) {
+        resourceType = 'video';
+      }
+      
+      console.log(`Determined resource_type: '${resourceType}'`);
+
+      const signedUrl = this.cloudinaryService.generateSignedUrl(attachment.cloudinaryPublicId, {
+        isDownload,
+        filename: attachment.originalName,
+        resourceType,
       });
-
-      // Set the correct headers to the client
-      const disposition = isDownload ? 'attachment' : 'inline';
-      res.setHeader('Content-Disposition', `${disposition}; filename="${attachment.originalName}"`);
-      res.setHeader('Content-Type', attachment.mimeType);
-      res.setHeader('Content-Length', response.headers['content-length']);
-
-      console.log('✅ Streaming file to client...');
-      response.data.pipe(res);
+      
+      console.log('✅ Generated Cloudinary signed URL. Redirecting client...');
+      res.redirect(302, signedUrl);
 
     } catch (error) {
-      console.error('❌ Failed to fetch file from Cloudinary:', error.message);
+      console.error('❌ Failed to generate signed URL:', error);
       res.status(500).json({ 
-        message: 'Could not fetch the file from storage. The file may have been moved or deleted.',
+        message: 'Could not generate a secure link for the file. Please try again.',
         error: error.message 
       });
     }
