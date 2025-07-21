@@ -75,12 +75,13 @@ export class CloudinaryService {
     });
   }
 
-  generateSignedUrl(publicId: string, options: { isDownload: boolean, filename: string, resourceType: string, format: string }): string {
+  generateSignedUrl(publicId: string, options: { isDownload: boolean, filename: string, resourceType: string }): string {
     const cloudinary = this.cloudinaryConfig.getCloudinary();
-    const { isDownload, filename, resourceType, format } = options;
+    const { isDownload, filename, resourceType } = options;
     
-    // The signing process uses the API Key and Secret from the server's environment.
-    const signedUrl = cloudinary.utils.private_download_url(publicId, format, {
+    // For raw files, the format is part of the resource itself, not a transformation.
+    // Do not pass the format parameter to private_download_url.
+    const signedUrl = cloudinary.utils.private_download_url(publicId, '', {
       resource_type: resourceType,
       type: 'upload',
       attachment: isDownload,

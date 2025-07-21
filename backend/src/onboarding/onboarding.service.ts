@@ -514,10 +514,6 @@ export class OnboardingService {
       
       console.log(`Determined resource_type: '${resourceType}' from MIME type: '${attachment.mimeType}'`);
 
-      // Also get the file format from the original filename
-      const fileFormat = attachment.originalName.split('.').pop() || '';
-      console.log(`Extracted file format: '${fileFormat}' from original name: '${attachment.originalName}'`);
-
       // Use the full public_id from the database, which includes the folder path.
       // This is the correct identifier for the resource.
       console.log(`Using full Cloudinary public ID for signing: '${attachment.cloudinaryPublicId}'`);
@@ -526,10 +522,9 @@ export class OnboardingService {
         isDownload,
         filename: attachment.originalName,
         resourceType,
-        format: fileFormat,
       });
       
-      console.log('✅ Generated Cloudinary signed URL with format. Redirecting...');
+      console.log('✅ Generated Cloudinary signed URL. Redirecting...');
       res.redirect(302, signedUrl);
 
     } catch (error) {
