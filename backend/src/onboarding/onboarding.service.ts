@@ -518,15 +518,11 @@ export class OnboardingService {
       const fileFormat = attachment.originalName.split('.').pop() || '';
       console.log(`Extracted file format: '${fileFormat}' from original name: '${attachment.originalName}'`);
 
-      // CRITICAL FIX: Use only the last part of the public_id, which is the unique identifier.
-      // Cloudinary's folder is handled separately and should not be part of the ID in signing.
-      const uniqueFileId = attachment.cloudinaryPublicId.includes('/')
-        ? attachment.cloudinaryPublicId.split('/').pop()
-        : attachment.cloudinaryPublicId;
-      
-      console.log(`Using unique file ID for signing: '${uniqueFileId}'`);
+      // Use the full public_id from the database, which includes the folder path.
+      // This is the correct identifier for the resource.
+      console.log(`Using full Cloudinary public ID for signing: '${attachment.cloudinaryPublicId}'`);
 
-      const signedUrl = this.cloudinaryService.generateSignedUrl(uniqueFileId, {
+      const signedUrl = this.cloudinaryService.generateSignedUrl(attachment.cloudinaryPublicId, {
         isDownload,
         filename: attachment.originalName,
         resourceType,
