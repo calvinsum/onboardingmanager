@@ -194,7 +194,7 @@ const CreateMerchantForm: React.FC<CreateMerchantFormProps> = ({ onSubmit, initi
             {/* Training Preference Languages */}
             <div className="mb-6">
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Preferred Training Languages * (Select all that apply)
+                Preferred Training Languages (Select all that apply)
               </label>
               <div className="grid grid-cols-3 gap-4">
                 {TRAINER_LANGUAGES.map(language => (

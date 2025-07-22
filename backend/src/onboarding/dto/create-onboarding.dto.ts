@@ -76,37 +76,55 @@ export class CreateOnboardingDto {
   useSameAddressForTraining: boolean;
 
   @ApiProperty({ description: 'Training address line 1', required: false, example: '456 Training Street' })
-  @ValidateIf((o) => !o.useSameAddressForTraining)
+  @ValidateIf((o) => {
+    const hasTraining = o.onboardingTypes?.includes('remote_training') || o.onboardingTypes?.includes('onsite_training');
+    return hasTraining && !o.useSameAddressForTraining;
+  })
   @IsString()
   @IsNotEmpty()
   trainingAddress1?: string;
 
   @ApiProperty({ description: 'Training address line 2', required: false, example: 'Floor 2' })
-  @ValidateIf((o) => !o.useSameAddressForTraining)
+  @ValidateIf((o) => {
+    const hasTraining = o.onboardingTypes?.includes('remote_training') || o.onboardingTypes?.includes('onsite_training');
+    return hasTraining && !o.useSameAddressForTraining;
+  })
   @IsOptional()
   @IsString()
   trainingAddress2?: string;
 
   @ApiProperty({ description: 'Training city', required: false, example: 'Petaling Jaya' })
-  @ValidateIf((o) => !o.useSameAddressForTraining)
+  @ValidateIf((o) => {
+    const hasTraining = o.onboardingTypes?.includes('remote_training') || o.onboardingTypes?.includes('onsite_training');
+    return hasTraining && !o.useSameAddressForTraining;
+  })
   @IsString()
   @IsNotEmpty()
   trainingCity?: string;
 
   @ApiProperty({ description: 'Training state', required: false, example: 'Selangor' })
-  @ValidateIf((o) => !o.useSameAddressForTraining)
+  @ValidateIf((o) => {
+    const hasTraining = o.onboardingTypes?.includes('remote_training') || o.onboardingTypes?.includes('onsite_training');
+    return hasTraining && !o.useSameAddressForTraining;
+  })
   @IsString()
   @IsNotEmpty()
   trainingState?: string;
 
   @ApiProperty({ description: 'Training postal code', required: false, example: '47000' })
-  @ValidateIf((o) => !o.useSameAddressForTraining)
+  @ValidateIf((o) => {
+    const hasTraining = o.onboardingTypes?.includes('remote_training') || o.onboardingTypes?.includes('onsite_training');
+    return hasTraining && !o.useSameAddressForTraining;
+  })
   @IsString()
   @IsNotEmpty()
   trainingPostalCode?: string;
 
   @ApiProperty({ description: 'Training country', required: false, example: 'Malaysia' })
-  @ValidateIf((o) => !o.useSameAddressForTraining)
+  @ValidateIf((o) => {
+    const hasTraining = o.onboardingTypes?.includes('remote_training') || o.onboardingTypes?.includes('onsite_training');
+    return hasTraining && !o.useSameAddressForTraining;
+  })
   @IsString()
   @IsNotEmpty()
   trainingCountry?: string;
@@ -118,9 +136,13 @@ export class CreateOnboardingDto {
     example: ['English', 'Malay']
   })
   @IsOptional() // This allows the property to be entirely missing
+  @ValidateIf(o => {
+    // Only validate if training is selected AND the array is present
+    const hasTraining = o.onboardingTypes?.includes('remote_training') || o.onboardingTypes?.includes('onsite_training');
+    return hasTraining && o.trainingPreferenceLanguages !== undefined;
+  })
   @IsArray()
   @IsString({ each: true })
-  @ValidateIf(o => o.trainingPreferenceLanguages !== undefined) // Only validate if the array is present
   trainingPreferenceLanguages?: string[];
 
   // PIC Details
