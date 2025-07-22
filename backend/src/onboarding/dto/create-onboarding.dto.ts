@@ -117,9 +117,10 @@ export class CreateOnboardingDto {
     required: false,
     example: ['English', 'Malay']
   })
-  @IsOptional()
+  @IsOptional() // This allows the property to be entirely missing
   @IsArray()
   @IsString({ each: true })
+  @ValidateIf(o => o.trainingPreferenceLanguages !== undefined) // Only validate if the array is present
   trainingPreferenceLanguages?: string[];
 
   // PIC Details
