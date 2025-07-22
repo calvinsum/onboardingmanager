@@ -104,7 +104,7 @@ const ProductSetupConfirmation: React.FC<ProductSetupConfirmationProps> = ({
                 <h4 className="text-sm font-medium text-blue-800">Product Setup Documentation</h4>
                 <p className="text-sm text-blue-700 mt-1">
                   Please upload screenshots, configuration files, or any documentation related to your product setup.
-                  Accepted formats: PDF, PNG, JPG, JPEG, DOC, DOCX
+                  Accepted formats: PDF, PNG, JPG, DOC, DOCX, XLS, XLSX, CSV
                 </p>
               </div>
             </div>
@@ -135,12 +135,12 @@ const ProductSetupConfirmation: React.FC<ProductSetupConfirmationProps> = ({
                   type="file"
                   className="sr-only"
                   multiple
-                  accept=".pdf,.png,.jpg,.jpeg,.doc,.docx"
+                  accept=".pdf,.png,.jpg,.jpeg,.doc,.docx,.xls,.xlsx,.csv"
                   onChange={handleFileSelect}
                 />
               </label>
               <p className="mt-1 text-xs text-gray-500">
-                PDF, PNG, JPG, DOC, DOCX up to 10MB each
+                PDF, PNG, JPG, DOC, XLS, CSV up to 30MB each
               </p>
             </div>
           </div>

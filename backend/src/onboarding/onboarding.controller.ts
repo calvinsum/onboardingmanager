@@ -190,23 +190,23 @@ export class MerchantOnboardingController {
   @ApiConsumes('multipart/form-data')
   @ApiResponse({ status: 201, description: 'Files uploaded successfully' })
   @UseInterceptors(FilesInterceptor('files', 10, {
-    fileFilter: (req, file, cb) => {
-      const allowedMimes = [
+    limits: { fileSize: 30 * 1024 * 1024 }, // 30 MB
+    fileFilter: (req, file, callback) => {
+      const allowedMimeTypes = [
         'image/jpeg',
         'image/png',
-        'image/gif',
         'application/pdf',
         'application/msword',
-        'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+        'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        'application/vnd.ms-excel',
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        'text/csv',
       ];
-      if (allowedMimes.includes(file.mimetype)) {
-        cb(null, true);
+      if (allowedMimeTypes.includes(file.mimetype)) {
+        callback(null, true);
       } else {
-        cb(new Error('Invalid file type'), false);
+        callback(new Error('Unsupported file type. Only JPG, PNG, PDF, DOC, DOCX, XLS, XLSX, and CSV are allowed.'), false);
       }
-    },
-    limits: {
-      fileSize: 10 * 1024 * 1024, // 10MB limit
     },
   }))
   async uploadAttachments(
