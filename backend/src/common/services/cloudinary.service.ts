@@ -93,4 +93,16 @@ export class CloudinaryService {
 
     return signedUrl;
   }
+
+  async listRecentAssets(folder: string): Promise<any[]> {
+    const cloudinary = this.cloudinaryConfig.getCloudinary();
+    // This uses the Admin API and requires the API Key and Secret to be configured correctly.
+    const result = await cloudinary.api.resources({
+      type: 'upload',
+      prefix: folder,
+      max_results: 10,
+      direction: 'desc', // Most recent first
+    });
+    return result.resources;
+  }
 }

@@ -5,6 +5,7 @@ import { FilesInterceptor } from '@nestjs/platform-express';
 import { JwtService } from '@nestjs/jwt';
 import { OnboardingService } from './onboarding.service';
 import { TermsConditionsService } from './terms-conditions.service';
+import { CloudinaryService } from '../common/services/cloudinary.service';
 import { CreateOnboardingDto } from './dto/create-onboarding.dto';
 import { UpdateOnboardingDto } from './dto/update-onboarding.dto';
 import { AcknowledgeTermsDto, CreateTermsConditionsDto, UpdateTermsConditionsDto } from './dto/acknowledge-terms.dto';
@@ -19,7 +20,34 @@ export class OnboardingController {
   constructor(
     private readonly onboardingService: OnboardingService,
     private readonly termsConditionsService: TermsConditionsService,
+    private readonly cloudinaryService: CloudinaryService,
   ) {}
+
+  @Get('debug/list-assets')
+  @ApiOperation({ summary: 'List recent Cloudinary assets for debugging' })
+  async listRecentAssets() {
+    try {
+      const assets = await this.cloudinaryService.listRecentAssets('product-setup-attachments');
+      return {
+        message: "Successfully fetched recent assets from Cloudinary.",
+        assetCount: assets.length,
+        assets: assets.map(a => ({
+          public_id: a.public_id,
+          format: a.format,
+          resource_type: a.resource_type,
+          created_at: a.created_at,
+          secure_url: a.secure_url,
+        })),
+      };
+    } catch (error) {
+      console.error('❌ Failed to list Cloudinary assets:', error);
+      return {
+        message: "Failed to fetch assets from Cloudinary. This strongly indicates an API credential issue in the environment.",
+        error: error.message,
+        error_details: error,
+      }
+    }
+  }
 
   @Post()
   @ApiOperation({ summary: 'Create a new onboarding record' })
@@ -234,10 +262,10 @@ export class FileDownloadController {
     console.log('🔐 Download authentication attempt for attachment:', attachmentId);
     console.log('📝 Query token present:', !!token);
     console.log('📋 Auth header present:', !!req.headers.authorization);
-    
+
     // Allow access via Bearer token (Authorization header) or query parameter token
     let managerId = req.user?.id;
-    
+
     // Try to get token from Authorization header first
     const authHeader = req.headers.authorization;
     if (!managerId && authHeader && authHeader.startsWith('Bearer ')) {
@@ -246,7 +274,7 @@ export class FileDownloadController {
         const bearerToken = authHeader.split(' ')[1];
         const decoded = this.jwtService.verify(bearerToken);
         console.log('✅ Bearer token decoded:', { type: decoded.type, sub: decoded.sub });
-        
+
         if (decoded.type === 'onboarding_manager') {
           managerId = decoded.sub;
           console.log('✅ Manager ID from Bearer token:', managerId);
@@ -257,14 +285,14 @@ export class FileDownloadController {
         console.error('❌ Invalid token in Authorization header:', error.message);
       }
     }
-    
+
     // Fallback to query parameter token for direct browser access
     if (!managerId && token) {
       try {
         console.log('🔍 Verifying query parameter token...');
         const decoded = this.jwtService.verify(token);
         console.log('✅ Query token decoded:', { type: decoded.type, sub: decoded.sub });
-        
+
         if (decoded.type === 'onboarding_manager') {
           managerId = decoded.sub;
           console.log('✅ Manager ID from query token:', managerId);
@@ -275,12 +303,12 @@ export class FileDownloadController {
         console.error('❌ Invalid token provided via query parameter:', error.message);
       }
     }
-    
+
     if (!managerId) {
       console.error('❌ No valid manager ID found, authentication failed');
       return res.status(401).json({ error: 'Authentication required' });
     }
-    
+
     console.log('✅ Authentication successful for manager:', managerId);
     const isDownload = download === 'true';
     console.log('📥 Download mode:', isDownload);
