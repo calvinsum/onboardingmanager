@@ -480,6 +480,21 @@ export class OnboardingService {
     return onboarding.productSetupAttachments;
   }
 
+  async regenerateAccessToken(id: string, managerId: string): Promise<Onboarding> {
+    const onboarding = await this.findOne(id, managerId);
+
+    const newAccessToken = this.generateAccessToken();
+    const newExpiryDate = new Date();
+    newExpiryDate.setDate(newExpiryDate.getDate() + 30); // Set new 30-day expiry
+
+    onboarding.accessToken = newAccessToken;
+    onboarding.tokenExpiryDate = newExpiryDate;
+
+    console.log(`✅ Regenerated token for onboarding ID: ${id}. New token expires on ${newExpiryDate.toISOString()}`);
+    
+    return this.onboardingRepository.save(onboarding);
+  }
+
   async downloadAttachmentProxy(attachmentId: string, managerId: string, res: any, isDownload: boolean = false): Promise<void> {
     console.log('🔒 Securely proxying attachment download:', attachmentId);
     

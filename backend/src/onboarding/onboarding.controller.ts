@@ -58,6 +58,14 @@ export class OnboardingController {
     return this.onboardingService.update(id, updateOnboardingDto, req.user.id);
   }
 
+  @Post(':id/regenerate-token')
+  @ApiOperation({ summary: 'Regenerate the access token for an onboarding record' })
+  @ApiParam({ name: 'id', description: 'Onboarding ID' })
+  @ApiResponse({ status: 200, description: 'Token regenerated successfully', type: Onboarding })
+  async regenerateToken(@Param('id') id: string, @Request() req: any): Promise<Onboarding> {
+    return this.onboardingService.regenerateAccessToken(id, req.user.id);
+  }
+
   @Get(':id/attachments')
   @ApiOperation({ summary: 'Get attachments for download' })
   @ApiParam({ name: 'id', description: 'Onboarding ID' })
