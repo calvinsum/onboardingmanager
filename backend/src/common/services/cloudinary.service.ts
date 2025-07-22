@@ -13,15 +13,27 @@ export class CloudinaryService {
     return new Promise((resolve, reject) => {
       const cloudinary = this.cloudinaryConfig.getCloudinary();
       
+      // CRITICAL FIX: Manually determine resource_type to override Cloudinary's flawed 'auto' detection.
+      let resourceType: "image" | "video" | "raw" | "auto" = 'auto';
+      if (file.mimetype.startsWith('image')) {
+        resourceType = 'image';
+      } else if (file.mimetype.startsWith('video')) {
+        resourceType = 'video';
+      } else if (file.mimetype === 'application/pdf') {
+        resourceType = 'raw';
+      }
+
+      console.log(`Uploading with determined resource_type: '${resourceType}' for MIME type: '${file.mimetype}'`);
+      
       cloudinary.uploader.upload_stream(
         {
           folder: folder,
-          resource_type: 'auto',
-          use_filename: false,      // DO NOT use the original filename
-          unique_filename: true,    // Generate a unique random string instead
+          resource_type: resourceType,
+          use_filename: false,
+          unique_filename: true,
           type: 'upload',
-          access_mode: 'public', // Explicitly set to public
-          invalidate: true, // Invalidate CDN cache
+          access_mode: 'public',
+          invalidate: true,
         },
         (error: UploadApiErrorResponse | undefined, result: UploadApiResponse | undefined) => {
           if (error) {
@@ -30,9 +42,6 @@ export class CloudinaryService {
           } else if (result) {
             console.log('✅☁️ Cloudinary upload successful. Full result object:');
             console.log(JSON.stringify(result, null, 2));
-            // DO NOT override the URL. Use the one provided by Cloudinary directly.
-            // It is the source of truth for the resource's location.
-            console.log('☁️ Upload successful. Using direct secure_url from Cloudinary:', result.secure_url);
             resolve(result);
           } else {
             console.error('❌ Cloudinary upload failed with no result.');
