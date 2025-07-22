@@ -14,7 +14,7 @@ const CreateMerchantPage = () => {
         `Onboarding record created! Token: ${newRecord.accessToken}`,
         { duration: 6000 }
       );
-      navigate('/manager-dashboard');
+      navigate('/onboarding-manager');
     } catch (error) {
       toast.error('Failed to create onboarding record.');
       console.error(error);

@@ -74,9 +74,9 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex space-x-8">
               <Link
-                to="/onboarding-manager-dashboard"
+                to="/onboarding-manager"
                 className={`py-4 px-2 border-b-2 font-medium text-sm transition-colors duration-200 ${
-                  location.pathname === '/onboarding-manager-dashboard'
+                  location.pathname === '/onboarding-manager'
                     ? 'border-primary-500 text-primary-500'
                     : 'border-transparent text-text-muted hover:text-text-main hover:border-gray-300'
                 }`}
