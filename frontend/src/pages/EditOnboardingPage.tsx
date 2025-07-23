@@ -36,7 +36,7 @@ const EditOnboardingPage = () => {
     try {
       await updateOnboardingRecord(id, formData);
       toast.success('Onboarding record updated successfully!');
-      navigate('/manager-dashboard');
+      navigate('/onboarding-manager');
     } catch (error) {
       toast.error('Failed to update onboarding record.');
       console.error(error);
