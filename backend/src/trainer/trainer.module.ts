@@ -3,7 +3,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { TrainerService } from './trainer.service';
 import { TrainerController } from './trainer.controller';
 import { TrainingSlotService } from './training-slot.service';
-import { TrainingSlotController } from './training-slot.controller';
+import { TrainingSlotController, PublicTrainingSlotController } from './training-slot.controller';
 import { RoundRobinService } from './round-robin.service';
 import { TrainingScheduleService } from './training-schedule.service';
 import { TrainingScheduleController, MerchantTrainingScheduleController } from './training-schedule.controller';
@@ -19,6 +19,7 @@ import { Onboarding } from '../onboarding/entities/onboarding.entity';
   controllers: [
     TrainerController, 
     TrainingSlotController, 
+    PublicTrainingSlotController,
     TrainingScheduleController, 
     MerchantTrainingScheduleController
   ],

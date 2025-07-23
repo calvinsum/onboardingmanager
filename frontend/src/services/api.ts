@@ -289,6 +289,31 @@ export const getAvailableTrainingSlots = async (
   return response.data;
 };
 
+// Public API function for merchants (no authentication required)
+export const getAvailableTrainingSlotsPublic = async (
+  date: string,
+  trainingType: string,
+  location?: string,
+  languages?: string
+) => {
+  const params = new URLSearchParams({
+    date,
+    trainingType
+  });
+  if (location) params.append('location', location);
+  if (languages) params.append('languages', languages);
+  
+  // Use axios directly instead of the authenticated api instance
+  const baseURL = process.env.REACT_APP_API_URL || 'http://localhost:3000/api';
+  const response = await fetch(`${baseURL}/public-training-slots/availability?${params.toString()}`);
+  
+  if (!response.ok) {
+    throw new Error(`HTTP error! status: ${response.status}`);
+  }
+  
+  return response.json();
+};
+
 export const getTrainingAvailabilityRange = async (
   startDate: string,
   endDate: string,

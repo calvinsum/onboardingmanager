@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { DayPicker } from 'react-day-picker';
 import { toast } from 'react-hot-toast';
 import { format, isWeekend, set } from 'date-fns';
-import { updateOnboardingByToken, getPublicHolidays, getAvailableTrainingSlots } from '../services/api';
+import { updateOnboardingByToken, getPublicHolidays, getAvailableTrainingSlotsPublic } from '../services/api';
 import { DELIVERY_TIME_BY_STATE, calculateMinInstallationDate, calculateMinTrainingDate, addWorkingDays } from '../utils/constants';
 import { bookMerchantTrainingSlot } from '../services/api'; // Added import for booking training slot
 import ProductSetupConfirmation from '../components/ProductSetupConfirmation';
@@ -64,13 +64,13 @@ const MobileDatePicker = ({
       const languages = onboardingRecord?.trainingPreferenceLanguages?.join(',') || '';
 
       const dateStr = format(date, 'yyyy-MM-dd');
-      const slots = await getAvailableTrainingSlots(dateStr, trainingType, location, languages);
+      const slots = await getAvailableTrainingSlotsPublic(dateStr, trainingType, location, languages);
       
       setAvailableSlots(slots);
       
       if (slots.length === 0) {
         // Check if it's due to no trainers matching the criteria
-        const allSlots = await getAvailableTrainingSlots(dateStr, trainingType);
+        const allSlots = await getAvailableTrainingSlotsPublic(dateStr, trainingType);
         if (allSlots.length === 0) {
           setSlotError('No training slots available for the selected date. Please choose another date.');
         } else {

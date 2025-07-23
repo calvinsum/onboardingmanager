@@ -113,7 +113,7 @@ export class TrainingSlotController {
     return this.trainingSlotService.getSlotsByTrainer(trainerId, parsedStartDate, parsedEndDate);
   }
 
-  @Patch(':id/cancel')
+  @Delete(':id')
   @ApiOperation({ summary: 'Cancel a training slot' })
   @ApiResponse({ status: 200, description: 'Training slot cancelled successfully', type: TrainingSlot })
   async cancelTrainingSlot(@Param('id') id: string): Promise<TrainingSlot> {
@@ -125,5 +125,36 @@ export class TrainingSlotController {
   @ApiResponse({ status: 200, description: 'Training slot marked as completed', type: TrainingSlot })
   async completeTrainingSlot(@Param('id') id: string): Promise<TrainingSlot> {
     return this.trainingSlotService.completeTrainingSlot(id);
+  }
+}
+
+// Public endpoint for merchant access to training slot availability
+@ApiTags('public-training-slots')
+@Controller('public-training-slots')
+export class PublicTrainingSlotController {
+  constructor(private readonly trainingSlotService: TrainingSlotService) {}
+
+  @Get('availability')
+  @ApiOperation({ summary: 'Get available training slots for merchants (public access)' })
+  @ApiQuery({ name: 'date', description: 'Date in YYYY-MM-DD format' })
+  @ApiQuery({ name: 'trainingType', enum: TrainingType, description: 'Type of training' })
+  @ApiQuery({ name: 'location', required: false, description: 'Location (state) for onsite training' })
+  @ApiQuery({ name: 'languages', required: false, description: 'Comma-separated list of required languages' })
+  @ApiResponse({ status: 200, description: 'Available slots retrieved successfully' })
+  async getAvailableSlots(
+    @Query('date') date: string,
+    @Query('trainingType') trainingType: TrainingType,
+    @Query('location') location?: string,
+    @Query('languages') languagesStr?: string,
+  ): Promise<AvailableSlot[]> {
+    const parsedDate = new Date(date);
+    const languages = languagesStr ? languagesStr.split(',').map(lang => lang.trim()) : undefined;
+    
+    return this.trainingSlotService.getAvailableSlots(
+      parsedDate,
+      trainingType,
+      location,
+      languages
+    );
   }
 } 
