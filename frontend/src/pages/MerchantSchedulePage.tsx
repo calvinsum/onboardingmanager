@@ -761,6 +761,21 @@ const MerchantSchedulePage: React.FC = () => {
 
   // Calculate minimum training date (next working day after installation confirmation)
   const getMinTrainingDate = (): Date | undefined => {
+    // If hardware installation is not selected, base on delivery confirmation
+    if (!onboardingRecord?.onboardingTypes?.includes('hardware_installation')) {
+      if (onboardingRecord?.onboardingTypes?.includes('hardware_delivery')) {
+        // If delivery is required, training must be after delivery confirmation
+        if (!deliveryConfirmed || !deliveryConfirmedDate) {
+          return undefined;
+        }
+        return calculateMinTrainingDate(deliveryConfirmedDate, holidays);
+      } else {
+        // If neither delivery nor installation is required, training can be scheduled anytime from today
+        return new Date();
+      }
+    }
+    
+    // If hardware installation is selected, follow the original logic
     if (!installationConfirmed || !hardwareInstallationDate) {
       return undefined;
     }
@@ -770,7 +785,27 @@ const MerchantSchedulePage: React.FC = () => {
 
   // Additional validation to prevent training before installation
   const isTrainingDateValid = (trainingDate: Date | undefined): boolean => {
-    if (!trainingDate || !hardwareInstallationDate) {
+    if (!trainingDate) {
+      return true; // Let other validations handle this
+    }
+    
+    // If hardware installation is not selected, validate based on delivery or no dependency
+    if (!onboardingRecord?.onboardingTypes?.includes('hardware_installation')) {
+      if (onboardingRecord?.onboardingTypes?.includes('hardware_delivery')) {
+        // Validate against delivery date
+        if (!deliveryConfirmedDate) {
+          return true;
+        }
+        const minTrainingDate = calculateMinTrainingDate(deliveryConfirmedDate, holidays);
+        return trainingDate >= minTrainingDate;
+      } else {
+        // No dependency, always valid if it's not in the past
+        return trainingDate >= new Date();
+      }
+    }
+    
+    // If hardware installation is selected, validate against installation date
+    if (!hardwareInstallationDate) {
       return true; // Let other validations handle this
     }
     
@@ -859,7 +894,13 @@ const MerchantSchedulePage: React.FC = () => {
 
     // Validate training date before confirming
     if (!isTrainingDateValid(trainingDate)) {
-      toast.error('Training date must be at least one working day after the installation date.');
+      if (onboardingRecord?.onboardingTypes?.includes('hardware_installation')) {
+        toast.error('Training date must be at least one working day after the installation date.');
+      } else if (onboardingRecord?.onboardingTypes?.includes('hardware_delivery')) {
+        toast.error('Training date must be at least one working day after the delivery confirmation date.');
+      } else {
+        toast.error('Please select a valid training date.');
+      }
       return;
     }
 
@@ -1088,75 +1129,98 @@ const MerchantSchedulePage: React.FC = () => {
           </p>
 
           <div className="space-y-4">
-            <DeliveryConfirmation
-              onboardingRecord={onboardingRecord}
-              onConfirm={handleDeliveryConfirm}
-              isConfirmed={deliveryConfirmed}
-              holidays={holidays}
-            />
-            
-            {!installationConfirmed ? (
-              <MobileDatePicker
-                label="Hardware Installation Date & Time"
-                selectedDate={hardwareInstallationDate}
-                onDateChange={setHardwareInstallationDate}
-                minDate={deliveryConfirmed && deliveryConfirmedDate && onboardingRecord?.deliveryState 
-                  ? calculateMinInstallationDate(deliveryConfirmedDate, onboardingRecord.deliveryState)
-                  : undefined}
-                disabledDays={disabledDays}
-                disabled={!deliveryConfirmed}
-                includeTime={true}
+            {/* Hardware Delivery - Only show if hardware_delivery is selected */}
+            {onboardingRecord?.onboardingTypes?.includes('hardware_delivery') && (
+              <DeliveryConfirmation
+                onboardingRecord={onboardingRecord}
+                onConfirm={handleDeliveryConfirm}
+                isConfirmed={deliveryConfirmed}
+                holidays={holidays}
               />
-            ) : null}
+            )}
             
-            <InstallationConfirmation
-              onboardingRecord={onboardingRecord}
-              onConfirm={handleInstallationConfirm}
-              isConfirmed={installationConfirmed}
-              installationDate={hardwareInstallationDate}
-              disabled={saving}
-            />
-            
-            {!trainingConfirmed ? (
+            {/* Hardware Installation - Only show if hardware_installation is selected */}
+            {onboardingRecord?.onboardingTypes?.includes('hardware_installation') && (
               <>
-                <MobileDatePicker
-                  label="Training Date & Time"
-                  selectedDate={trainingDate}
-                  onDateChange={setTrainingDate}
-                  minDate={getMinTrainingDate()}
-                  disabledDays={getTrainingDisabledDays()}
-                  disabled={!installationConfirmed}
-                  includeTime={true}
+                {!installationConfirmed ? (
+                  <MobileDatePicker
+                    label="Hardware Installation Date & Time"
+                    selectedDate={hardwareInstallationDate}
+                    onDateChange={setHardwareInstallationDate}
+                    minDate={deliveryConfirmed && deliveryConfirmedDate && onboardingRecord?.deliveryState 
+                      ? calculateMinInstallationDate(deliveryConfirmedDate, onboardingRecord.deliveryState)
+                      : undefined}
+                    disabledDays={disabledDays}
+                    disabled={onboardingRecord?.onboardingTypes?.includes('hardware_delivery') ? !deliveryConfirmed : false}
+                    includeTime={true}
+                  />
+                ) : null}
+                
+                <InstallationConfirmation
                   onboardingRecord={onboardingRecord}
-                  checkAvailability={true}
+                  onConfirm={handleInstallationConfirm}
+                  isConfirmed={installationConfirmed}
+                  installationDate={hardwareInstallationDate}
+                  disabled={saving}
                 />
-                {trainingDate && !isTrainingDateValid(trainingDate) && (
-                  <div className="mt-2 p-3 bg-red-50 border border-red-200 rounded-lg">
-                    <div className="flex items-center">
-                      <span className="text-red-500 mr-2">⚠️</span>
-                      <span className="text-sm text-red-700">
-                        Training date must be at least one working day after the installation date ({hardwareInstallationDate ? format(hardwareInstallationDate, 'PPP') : 'TBD'}).
-                      </span>
-                    </div>
-                  </div>
-                )}
               </>
-            ) : null}
+            )}
             
-            <TrainingConfirmation
-              onboardingRecord={onboardingRecord}
-              onConfirm={handleTrainingConfirm}
-              isConfirmed={trainingConfirmed}
-              trainingDate={trainingDate}
-              disabled={saving}
-            />
+            {/* Training - Only show if remote_training or onsite_training is selected */}
+            {(onboardingRecord?.onboardingTypes?.includes('remote_training') || 
+              onboardingRecord?.onboardingTypes?.includes('onsite_training')) && (
+              <>
+                {!trainingConfirmed ? (
+                  <>
+                    <MobileDatePicker
+                      label="Training Date & Time"
+                      selectedDate={trainingDate}
+                      onDateChange={setTrainingDate}
+                      minDate={getMinTrainingDate()}
+                      disabledDays={getTrainingDisabledDays()}
+                      disabled={onboardingRecord?.onboardingTypes?.includes('hardware_installation') ? !installationConfirmed : false}
+                      includeTime={true}
+                      onboardingRecord={onboardingRecord}
+                      checkAvailability={true}
+                    />
+                    {trainingDate && !isTrainingDateValid(trainingDate) && (
+                      <div className="mt-2 p-3 bg-red-50 border border-red-200 rounded-lg">
+                        <div className="flex items-center">
+                          <span className="text-red-500 mr-2">⚠️</span>
+                          <span className="text-sm text-red-700">
+                            {onboardingRecord?.onboardingTypes?.includes('hardware_installation') 
+                              ? `Training date must be at least one working day after the installation date (${hardwareInstallationDate ? format(hardwareInstallationDate, 'PPP') : 'TBD'}).`
+                              : onboardingRecord?.onboardingTypes?.includes('hardware_delivery')
+                                ? `Training date must be at least one working day after the delivery confirmation date (${deliveryConfirmedDate ? format(deliveryConfirmedDate, 'PPP') : 'TBD'}).`
+                                : 'Please select a valid training date.'
+                            }
+                          </span>
+                        </div>
+                      </div>
+                    )}
+                  </>
+                ) : null}
+                
+                <TrainingConfirmation
+                  onboardingRecord={onboardingRecord}
+                  onConfirm={handleTrainingConfirm}
+                  isConfirmed={trainingConfirmed}
+                  trainingDate={trainingDate}
+                  disabled={saving}
+                />
+              </>
+            )}
             
-            <ProductSetupConfirmation
-              onboardingRecord={onboardingRecord}
-              onConfirm={handleProductSetupConfirm}
-              isConfirmed={productSetupConfirmed}
-              disabled={saving}
-            />          </div>
+            {/* Product Setup - Only show if product_setup is selected */}
+            {onboardingRecord?.onboardingTypes?.includes('product_setup') && (
+              <ProductSetupConfirmation
+                onboardingRecord={onboardingRecord}
+                onConfirm={handleProductSetupConfirm}
+                isConfirmed={productSetupConfirmed}
+                disabled={saving}
+              />
+            )}
+          </div>
 
           <div className="mt-6 text-xs text-gray-500">
             <p>• Weekends and public holidays are not available</p>
