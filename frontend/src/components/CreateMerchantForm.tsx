@@ -340,7 +340,19 @@ const CreateMerchantForm: React.FC<CreateMerchantFormProps> = ({ onSubmit, initi
         {/* EGLD */}
         <div className="border-t pt-6">
           <h3 className="text-lg font-semibold text-gray-700 mb-2">Expected Go-Live Date (EGLD)</h3>
-          <input type="date" name="expectedGoLiveDate" value={formData.expectedGoLiveDate} onChange={handleChange} required className="p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 max-w-xs" />
+          <input 
+            type="date" 
+            name="expectedGoLiveDate" 
+            value={formData.expectedGoLiveDate} 
+            onChange={handleChange} 
+            min={
+              isEditMode && formData.expectedGoLiveDate && formData.expectedGoLiveDate < new Date().toISOString().split('T')[0]
+                ? formData.expectedGoLiveDate  // Allow existing past date in edit mode
+                : new Date().toISOString().split('T')[0]  // Restrict to today onwards
+            }
+            required 
+            className="p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 max-w-xs" 
+          />
         </div>
 
         <div className="flex justify-end">
