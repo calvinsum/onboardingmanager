@@ -48,6 +48,35 @@ const OnboardingManagerDashboard = () => {
     return `${diffDays} days left`;
   };
 
+  const formatConfirmationStatus = (isConfirmed: boolean, confirmedDate?: string) => {
+    if (!isConfirmed) {
+      return (
+        <span className="status-badge status-pending">
+          Pending
+        </span>
+      );
+    }
+    
+    return (
+      <div className="space-y-1">
+        <span className="status-badge status-confirmed">
+          Confirmed
+        </span>
+        {confirmedDate && (
+          <div className="text-xs text-text-muted">
+            {new Date(confirmedDate).toLocaleString('en-US', {
+              year: 'numeric',
+              month: 'short',
+              day: 'numeric',
+              hour: '2-digit',
+              minute: '2-digit',
+              hour12: true
+            })}
+          </div>
+        )}
+      </div>
+    );
+  };
 
 
   const handleRegenerateToken = async (id: string) => {
@@ -435,32 +464,16 @@ StoreHub Onboarding Team`;
                         )}
                       </td>
                       <td className="py-4 px-4">
-                        <span className={`status-badge ${
-                          record.deliveryConfirmed ? 'status-confirmed' : 'status-pending'
-                        }`}>
-                          {record.deliveryConfirmed ? 'Confirmed' : 'Pending'}
-                        </span>
+                        {formatConfirmationStatus(record.deliveryConfirmed, record.deliveryConfirmedDate)}
                       </td>
                       <td className="py-4 px-4">
-                        <span className={`status-badge ${
-                          record.installationConfirmed ? 'status-confirmed' : 'status-pending'
-                        }`}>
-                          {record.installationConfirmed ? 'Confirmed' : 'Pending'}
-                        </span>
+                        {formatConfirmationStatus(record.installationConfirmed, record.installationConfirmedDate)}
                       </td>
                       <td className="py-4 px-4">
-                        <span className={`status-badge ${
-                          record.trainingConfirmed ? 'status-confirmed' : 'status-pending'
-                        }`}>
-                          {record.trainingConfirmed ? 'Confirmed' : 'Pending'}
-                        </span>
+                        {formatConfirmationStatus(record.trainingConfirmed, record.trainingConfirmedDate)}
                       </td>
                       <td className="py-4 px-4">
-                        <span className={`status-badge ${
-                          record.productSetupConfirmed ? 'status-confirmed' : 'status-pending'
-                        }`}>
-                          {record.productSetupConfirmed ? 'Confirmed' : 'Pending'}
-                        </span>
+                        {formatConfirmationStatus(record.productSetupConfirmed, record.productSetupConfirmedDate)}
                       </td>
                       <td className="py-4 px-4">
                         <div className="text-text-main text-sm">
