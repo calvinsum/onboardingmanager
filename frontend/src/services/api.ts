@@ -303,9 +303,9 @@ export const getAvailableTrainingSlotsPublic = async (
   if (location) params.append('location', location);
   if (languages) params.append('languages', languages);
   
-  // Use axios directly instead of the authenticated api instance
+  // Use the existing merchant training schedules endpoint (no authentication required)
   const baseURL = process.env.REACT_APP_API_URL || 'http://localhost:3000/api';
-  const response = await fetch(`${baseURL}/public-training-slots/availability?${params.toString()}`);
+  const response = await fetch(`${baseURL}/merchant-training-schedules/availability?${params.toString()}`);
   
   if (!response.ok) {
     throw new Error(`HTTP error! status: ${response.status}`);

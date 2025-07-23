@@ -12,6 +12,7 @@ import {
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
 import { AuthGuard } from '@nestjs/passport';
 import { TrainingScheduleService } from './training-schedule.service';
+import { TrainingSlotService } from './training-slot.service';
 import {
   MerchantTrainingSlotDto,
   ManagerTrainingSlotDto,
@@ -139,7 +140,34 @@ export class TrainingScheduleController {
 @ApiTags('merchant-training-schedules')
 @Controller('merchant-training-schedules')
 export class MerchantTrainingScheduleController {
-  constructor(private readonly trainingScheduleService: TrainingScheduleService) {}
+  constructor(
+    private readonly trainingScheduleService: TrainingScheduleService,
+    private readonly trainingSlotService: TrainingSlotService,
+  ) {}
+
+  @Get('availability')
+  @ApiOperation({ summary: 'Get available training slots for merchants (no authentication required)' })
+  @ApiQuery({ name: 'date', description: 'Date in YYYY-MM-DD format' })
+  @ApiQuery({ name: 'trainingType', description: 'Type of training (remote_training or onsite_training)' })
+  @ApiQuery({ name: 'location', required: false, description: 'Location (state) for onsite training' })
+  @ApiQuery({ name: 'languages', required: false, description: 'Comma-separated list of required languages' })
+  @ApiResponse({ status: 200, description: 'Available slots retrieved successfully' })
+  async getAvailableSlots(
+    @Query('date') date: string,
+    @Query('trainingType') trainingType: string,
+    @Query('location') location?: string,
+    @Query('languages') languagesStr?: string,
+  ) {
+    const parsedDate = new Date(date);
+    const languages = languagesStr ? languagesStr.split(',').map(lang => lang.trim()) : undefined;
+    
+    return this.trainingSlotService.getAvailableSlots(
+      parsedDate,
+      trainingType as any,
+      location,
+      languages
+    );
+  }
 
   @Get('debug/onboarding/:accountName')
   @ApiOperation({ summary: 'Debug endpoint to check onboarding record and training slots by account name' })
