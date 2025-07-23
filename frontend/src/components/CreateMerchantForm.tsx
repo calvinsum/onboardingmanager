@@ -100,7 +100,40 @@ const CreateMerchantForm: React.FC<CreateMerchantFormProps> = ({ onSubmit, initi
       const newOnboardingTypes = checked
         ? [...prev.onboardingTypes, value]
         : prev.onboardingTypes.filter(type => type !== value);
-      return { ...prev, onboardingTypes: newOnboardingTypes };
+      
+      // Create updated form data
+      let updatedFormData = { ...prev, onboardingTypes: newOnboardingTypes };
+      
+      // Clear delivery address fields if hardware_delivery is unchecked
+      if (value === 'hardware_delivery' && !checked) {
+        updatedFormData = {
+          ...updatedFormData,
+          deliveryAddress1: '',
+          deliveryAddress2: '',
+          deliveryCity: '',
+          deliveryState: '',
+          deliveryPostalCode: '',
+          deliveryCountry: 'Malaysia', // Reset to default
+        };
+      }
+      
+      // Clear training fields if both training options are unchecked
+      const hasTraining = newOnboardingTypes.includes('remote_training') || newOnboardingTypes.includes('onsite_training');
+      if (!hasTraining) {
+        updatedFormData = {
+          ...updatedFormData,
+          trainingAddress1: '',
+          trainingAddress2: '',
+          trainingCity: '',
+          trainingState: '',
+          trainingPostalCode: '',
+          trainingCountry: 'Malaysia', // Reset to default
+          trainingPreferenceLanguages: [],
+          useSameAddressForTraining: false,
+        };
+      }
+      
+      return updatedFormData;
     });
   };
 
@@ -117,6 +150,9 @@ const CreateMerchantForm: React.FC<CreateMerchantFormProps> = ({ onSubmit, initi
   // Check if training is selected (remote or onsite)
   const isTrainingSelected = formData.onboardingTypes.includes('remote_training') || 
                              formData.onboardingTypes.includes('onsite_training');
+
+  // Check if hardware delivery is selected
+  const isHardwareDeliverySelected = formData.onboardingTypes.includes('hardware_delivery');
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -169,22 +205,24 @@ const CreateMerchantForm: React.FC<CreateMerchantFormProps> = ({ onSubmit, initi
         </div>
 
         {/* Delivery Address */}
-        <div className="border-t pt-6">
-          <h3 className="text-lg font-semibold text-gray-700 mb-4">Delivery Address</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <input type="text" name="deliveryAddress1" value={formData.deliveryAddress1} onChange={handleChange} placeholder="Address Line 1" required className="p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" />
-            <input type="text" name="deliveryAddress2" value={formData.deliveryAddress2} onChange={handleChange} placeholder="Address Line 2" className="p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" />
-            <input type="text" name="deliveryCity" value={formData.deliveryCity} onChange={handleChange} placeholder="City" required className="p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" />
-            <select name="deliveryState" value={formData.deliveryState} onChange={handleChange} required className="p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
-              <option value="">Select State</option>
-              {MALAYSIA_STATES.map(state => (
-                <option key={state} value={state}>{state}</option>
-              ))}
-            </select>
-            <input type="text" name="deliveryPostalCode" value={formData.deliveryPostalCode} onChange={handleChange} placeholder="Postal Code" required className="p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" />
-            <input type="text" name="deliveryCountry" value={formData.deliveryCountry} onChange={handleChange} placeholder="Country" required className="p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" />
+        {isHardwareDeliverySelected && (
+          <div className="border-t pt-6">
+            <h3 className="text-lg font-semibold text-gray-700 mb-4">Delivery Address</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <input type="text" name="deliveryAddress1" value={formData.deliveryAddress1} onChange={handleChange} placeholder="Address Line 1" required className="p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" />
+              <input type="text" name="deliveryAddress2" value={formData.deliveryAddress2} onChange={handleChange} placeholder="Address Line 2" className="p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" />
+              <input type="text" name="deliveryCity" value={formData.deliveryCity} onChange={handleChange} placeholder="City" required className="p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" />
+              <select name="deliveryState" value={formData.deliveryState} onChange={handleChange} required className="p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
+                <option value="">Select State</option>
+                {MALAYSIA_STATES.map(state => (
+                  <option key={state} value={state}>{state}</option>
+                ))}
+              </select>
+              <input type="text" name="deliveryPostalCode" value={formData.deliveryPostalCode} onChange={handleChange} placeholder="Postal Code" required className="p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" />
+              <input type="text" name="deliveryCountry" value={formData.deliveryCountry} onChange={handleChange} placeholder="Country" required className="p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" />
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Training Preferences - Only show if training is selected */}
         {isTrainingSelected && (

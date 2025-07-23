@@ -41,34 +41,40 @@ export class CreateOnboardingDto {
 
   // Delivery Address
   @ApiProperty({ description: 'Delivery address line 1', example: '123 Main Street' })
+  @ValidateIf((o) => o.onboardingTypes?.includes('hardware_delivery'))
   @IsString()
   @IsNotEmpty()
-  deliveryAddress1: string;
+  deliveryAddress1?: string;
 
   @ApiProperty({ description: 'Delivery address line 2', required: false, example: 'Unit 5A' })
+  @ValidateIf((o) => o.onboardingTypes?.includes('hardware_delivery'))
   @IsOptional()
   @IsString()
   deliveryAddress2?: string;
 
   @ApiProperty({ description: 'Delivery city', example: 'Kuala Lumpur' })
+  @ValidateIf((o) => o.onboardingTypes?.includes('hardware_delivery'))
   @IsString()
   @IsNotEmpty()
-  deliveryCity: string;
+  deliveryCity?: string;
 
   @ApiProperty({ description: 'Delivery state', example: 'Selangor' })
+  @ValidateIf((o) => o.onboardingTypes?.includes('hardware_delivery'))
   @IsString()
   @IsNotEmpty()
-  deliveryState: string;
+  deliveryState?: string;
 
   @ApiProperty({ description: 'Delivery postal code', example: '50000' })
+  @ValidateIf((o) => o.onboardingTypes?.includes('hardware_delivery'))
   @IsString()
   @IsNotEmpty()
-  deliveryPostalCode: string;
+  deliveryPostalCode?: string;
 
   @ApiProperty({ description: 'Delivery country', example: 'Malaysia' })
+  @ValidateIf((o) => o.onboardingTypes?.includes('hardware_delivery'))
   @IsString()
   @IsNotEmpty()
-  deliveryCountry: string;
+  deliveryCountry?: string;
 
   // Training Address
   @ApiProperty({ description: 'Use same address for training', example: true })
