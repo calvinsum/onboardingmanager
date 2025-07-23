@@ -107,11 +107,16 @@ const MobileDatePicker = ({
         const [hours, minutes] = selectedTime.split(':').map(Number);
         const dateWithTime = set(date, { hours, minutes, seconds: 0, milliseconds: 0 });
         onDateChange(dateWithTime);
+        // Don't close the picker when includeTime is true - let user select time first
       } else {
         onDateChange(date);
+        // Only close automatically when time selection is not needed
+        setIsOpen(false);
       }
+    } else {
+      // Close if date is cleared
+      setIsOpen(false);
     }
-    setIsOpen(false);
   };
 
   const handleTimeChange = (time: string) => {
@@ -224,13 +229,32 @@ const MobileDatePicker = ({
             </div>
             
             <div className="p-4 border-t border-gray-200">
-              <button
-                type="button"
-                onClick={() => setIsOpen(false)}
-                className="w-full px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-500"
-              >
-                Close
-              </button>
+              {includeTime && selectedDate && selectedTime ? (
+                <div className="space-y-2">
+                  <button
+                    type="button"
+                    onClick={() => setIsOpen(false)}
+                    className="w-full px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    Done - {format(selectedDate, 'MMM d, yyyy')} at {selectedTime}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setIsOpen(false)}
+                    className="w-full px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-500"
+                  >
+                    Close
+                  </button>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => setIsOpen(false)}
+                  className="w-full px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-500"
+                >
+                  Close
+                </button>
+              )}
             </div>
           </div>
         </div>
