@@ -73,6 +73,12 @@ export class ManagerTrainingSlotDto extends BaseTrainingSlotDto {
     trainingCity?: string;
     trainingPostalCode?: string;
     trainingCountry?: string;
+    // Delivery address fields (for when useSameAddressForTraining is true)
+    deliveryAddress1?: string;
+    deliveryAddress2?: string;
+    deliveryCity?: string;
+    deliveryPostalCode?: string;
+    deliveryCountry?: string;
   };
 }
 

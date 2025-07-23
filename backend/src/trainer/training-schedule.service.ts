@@ -316,6 +316,12 @@ export class TrainingScheduleService {
         trainingCity: slot.onboarding.trainingCity,
         trainingPostalCode: slot.onboarding.trainingPostalCode,
         trainingCountry: slot.onboarding.trainingCountry,
+        // Delivery address fields (for when useSameAddressForTraining is true)
+        deliveryAddress1: slot.onboarding.deliveryAddress1,
+        deliveryAddress2: slot.onboarding.deliveryAddress2,
+        deliveryCity: slot.onboarding.deliveryCity,
+        deliveryPostalCode: slot.onboarding.deliveryPostalCode,
+        deliveryCountry: slot.onboarding.deliveryCountry,
       }
     };
   }

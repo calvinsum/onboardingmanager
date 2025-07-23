@@ -32,6 +32,12 @@ interface TrainingSlot {
     trainingCity?: string;
     trainingPostalCode?: string;
     trainingCountry?: string;
+    // Delivery address fields (for when useSameAddressForTraining is true)
+    deliveryAddress1?: string;
+    deliveryAddress2?: string;
+    deliveryCity?: string;
+    deliveryPostalCode?: string;
+    deliveryCountry?: string;
   };
 }
 
@@ -154,12 +160,21 @@ const TrainingScheduleListPage: React.FC = () => {
   const formatTrainingAddress = (slot: TrainingSlot) => {
     const { onboarding } = slot;
     
-    // If using same address for training, show delivery address
+    // If using same address for training, show complete delivery address
     if (onboarding.useSameAddressForTraining) {
+      const deliveryAddressParts = [
+        onboarding.deliveryAddress1,
+        onboarding.deliveryAddress2,
+        onboarding.deliveryCity,
+        onboarding.deliveryState,
+        onboarding.deliveryPostalCode,
+        onboarding.deliveryCountry
+      ].filter(Boolean);
+      
       return (
         <div className="text-xs text-text-muted">
-          <div className="text-sm font-medium text-text-primary mb-1">Same as Delivery Address</div>
-          <div>{onboarding.deliveryState}</div>
+          <div className="text-sm font-medium text-text-primary mb-1">Training Address (Same as Delivery)</div>
+          <div>{deliveryAddressParts.join(', ')}</div>
         </div>
       );
     }
