@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { DayPicker } from 'react-day-picker';
 import { toast } from 'react-hot-toast';
 import { format, isWeekend, set } from 'date-fns';
-import { updateOnboardingByToken, getPublicHolidays, getAvailableTrainingSlotsPublic } from '../services/api';
+import { updateOnboardingByToken, getPublicHolidays, getAvailableTrainingSlotsPublic, getOnboardingByToken } from '../services/api';
 import { DELIVERY_TIME_BY_STATE, calculateMinInstallationDate, calculateMinTrainingDate, addWorkingDays } from '../utils/constants';
 import { bookMerchantTrainingSlot } from '../services/api'; // Added import for booking training slot
 import ProductSetupConfirmation from '../components/ProductSetupConfirmation';
@@ -698,6 +698,44 @@ const MerchantSchedulePage: React.FC = () => {
   const [productSetupConfirmed, setProductSetupConfirmed] = useState(false);
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [productSetupConfirmedDate, setProductSetupConfirmedDate] = useState<Date | undefined>();
+  
+  // Function to refresh onboarding record from API
+  const refreshOnboardingRecord = async () => {
+    if (!accessToken) return;
+    
+    try {
+      const updatedRecord = await getOnboardingByToken(accessToken);
+      localStorage.setItem('onboardingRecord', JSON.stringify(updatedRecord));
+      setOnboardingRecord(updatedRecord);
+      
+      // Update state with latest data
+      if (updatedRecord.hardwareInstallationDate) {
+        setHardwareInstallationDate(new Date(updatedRecord.hardwareInstallationDate));
+      }
+      if (updatedRecord.trainingDate) {
+        setTrainingDate(new Date(updatedRecord.trainingDate));
+      }
+      if (updatedRecord.deliveryConfirmed) {
+        setDeliveryConfirmed(true);
+        setDeliveryConfirmedDate(updatedRecord.deliveryConfirmedDate ? new Date(updatedRecord.deliveryConfirmedDate) : new Date());
+      }
+      if (updatedRecord.installationConfirmed) {
+        setInstallationConfirmed(true);
+        setInstallationConfirmedDate(updatedRecord.installationConfirmedDate ? new Date(updatedRecord.installationConfirmedDate) : new Date());
+      }
+      if (updatedRecord.trainingConfirmed) {
+        setTrainingConfirmed(true);
+        setTrainingConfirmedDate(updatedRecord.trainingConfirmedDate ? new Date(updatedRecord.trainingConfirmedDate) : new Date());
+      }
+      if (updatedRecord.productSetupConfirmed) {
+        setProductSetupConfirmed(true);
+        setProductSetupConfirmedDate(updatedRecord.productSetupConfirmedDate ? new Date(updatedRecord.productSetupConfirmedDate) : new Date());
+      }
+    } catch (error) {
+      console.error('Error refreshing onboarding record:', error);
+    }
+  };
+
   useEffect(() => {
     const fetchData = async () => {
       const token = localStorage.getItem('merchantAccessToken');
@@ -714,6 +752,7 @@ const MerchantSchedulePage: React.FC = () => {
 
       try {
         setLoading(true);
+        
         const fetchedHolidays = await getPublicHolidays(new Date().getFullYear(), '10');
         setHolidays(fetchedHolidays.map((h: any) => new Date(h.date)));
 
@@ -761,6 +800,14 @@ const MerchantSchedulePage: React.FC = () => {
 
     fetchData();
   }, [navigate]);
+
+  // Refresh onboarding record when accessToken is available
+  useEffect(() => {
+    if (accessToken) {
+      refreshOnboardingRecord();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [accessToken]);
 
   const disabledDays = [
     (date: Date) => isWeekend(date),
@@ -861,6 +908,9 @@ const MerchantSchedulePage: React.FC = () => {
       setDeliveryConfirmed(true);
       setDeliveryConfirmedDate(confirmationDate);
       
+      // Refresh to get latest complete record
+      await refreshOnboardingRecord();
+      
       toast.success('Delivery confirmed successfully!');
     } catch (error: any) {
       console.error('Error confirming delivery:', error);
@@ -896,6 +946,9 @@ const MerchantSchedulePage: React.FC = () => {
       setOnboardingRecord(updatedRecord);
       setInstallationConfirmed(true);
       setInstallationConfirmedDate(confirmationDate);
+      
+      // Refresh to get latest complete record
+      await refreshOnboardingRecord();
       
       toast.success('Installation confirmed successfully!');
     } catch (error: any) {
@@ -969,6 +1022,9 @@ const MerchantSchedulePage: React.FC = () => {
           localStorage.setItem('onboardingRecord', JSON.stringify(updatedRecord));
           setOnboardingRecord(updatedRecord);
           setTrainingConfirmed(true);
+          
+          // Refresh to get latest complete record
+          await refreshOnboardingRecord();
           
         } catch (bookingError: any) {
           console.error('Error booking training slot:', bookingError);
@@ -1055,6 +1111,9 @@ const MerchantSchedulePage: React.FC = () => {
       setProductSetupConfirmed(true);
       setProductSetupConfirmedDate(new Date(updatedRecord.productSetupConfirmedDate));
       
+      // Refresh to get latest complete record
+      await refreshOnboardingRecord();
+      
       toast.success(`Product setup confirmed successfully! ${attachments.length} file(s) uploaded.`);
     } catch (error: any) {
       console.error('Error confirming product setup:', error);
@@ -1128,19 +1187,19 @@ const MerchantSchedulePage: React.FC = () => {
           <div className="space-y-2 text-sm">
             <div>
               <span className="font-medium text-gray-700">Account Name:</span>
-              <span className="ml-2 text-gray-900">{onboardingRecord.accountName}</span>
+              <span className="ml-2 text-gray-900">{onboardingRecord?.accountName || 'N/A'}</span>
             </div>
             <div>
               <span className="font-medium text-gray-700">Name:</span>
-              <span className="ml-2 text-gray-900">{onboardingRecord.picName}</span>
+              <span className="ml-2 text-gray-900">{onboardingRecord?.picName || 'N/A'}</span>
             </div>
             <div>
               <span className="font-medium text-gray-700">Email:</span>
-              <span className="ml-2 text-gray-900">{onboardingRecord.picEmail}</span>
+              <span className="ml-2 text-gray-900">{onboardingRecord?.picEmail || 'N/A'}</span>
             </div>
             <div>
               <span className="font-medium text-gray-700">Phone:</span>
-              <span className="ml-2 text-gray-900">{onboardingRecord.picPhone}</span>
+              <span className="ml-2 text-gray-900">{onboardingRecord?.picPhone || 'N/A'}</span>
             </div>
           </div>
         </div>
@@ -1255,6 +1314,92 @@ const MerchantSchedulePage: React.FC = () => {
             <p>• Complete product setup and upload documentation before finishing onboarding</p>            <p>• Confirm training before completing the onboarding</p>
           </div>
         </div>
+
+        {/* Completion Summary */}
+        <div className="bg-white rounded-lg shadow-sm p-4 mb-6">
+          <h2 className="text-lg font-semibold text-gray-900 mb-4">Onboarding Progress Summary</h2>
+          <div className="space-y-4">
+            {/* Hardware Delivery */}
+            {onboardingRecord?.onboardingTypes?.includes('hardware_delivery') && (
+              <div className="border-l-4 border-gray-200 pl-4">
+                <div className="flex items-center justify-between mb-2">
+                  <h3 className="font-medium text-gray-800">Hardware Delivery</h3>
+                  <span className={`px-3 py-1 rounded-full text-xs font-medium ${
+                    deliveryConfirmed ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-600'
+                  }`}>
+                    {deliveryConfirmed ? '✓ Confirmed' : 'Pending'}
+                  </span>
+                </div>
+                {deliveryConfirmed && deliveryConfirmedDate && (
+                  <p className="text-sm text-gray-600">
+                    Confirmed on: {format(deliveryConfirmedDate, 'PPP p')}
+                  </p>
+                )}
+              </div>
+            )}
+
+            {/* Hardware Installation */}
+            {onboardingRecord?.onboardingTypes?.includes('hardware_installation') && (
+              <div className="border-l-4 border-gray-200 pl-4">
+                <div className="flex items-center justify-between mb-2">
+                  <h3 className="font-medium text-gray-800">Hardware Installation</h3>
+                  <span className={`px-3 py-1 rounded-full text-xs font-medium ${
+                    installationConfirmed ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-600'
+                  }`}>
+                    {installationConfirmed ? '✓ Confirmed' : 'Pending'}
+                  </span>
+                </div>
+                {installationConfirmed && hardwareInstallationDate && (
+                  <p className="text-sm text-gray-600">
+                    Scheduled for: {format(hardwareInstallationDate, 'PPP p')}
+                  </p>
+                )}
+              </div>
+            )}
+
+            {/* Training */}
+            {(onboardingRecord?.onboardingTypes?.includes('remote_training') || onboardingRecord?.onboardingTypes?.includes('onsite_training')) && (
+              <div className="border-l-4 border-gray-200 pl-4">
+                <div className="flex items-center justify-between mb-2">
+                  <h3 className="font-medium text-gray-800">Training</h3>
+                  <span className={`px-3 py-1 rounded-full text-xs font-medium ${
+                    trainingConfirmed ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-600'
+                  }`}>
+                    {trainingConfirmed ? '✓ Confirmed' : 'Pending'}
+                  </span>
+                </div>
+                {trainingConfirmed && trainingDate && (
+                  <div className="text-sm text-gray-600">
+                    <p>Scheduled for: {format(trainingDate, 'PPP p')}</p>
+                    {onboardingRecord?.trainingPreferenceLanguages?.length > 0 && (
+                      <p>Languages: {onboardingRecord.trainingPreferenceLanguages.join(', ')}</p>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Product Setup */}
+            {onboardingRecord?.onboardingTypes?.includes('product_setup') && (
+              <div className="border-l-4 border-gray-200 pl-4">
+                <div className="flex items-center justify-between mb-2">
+                  <h3 className="font-medium text-gray-800">Product Setup</h3>
+                  <span className={`px-3 py-1 rounded-full text-xs font-medium ${
+                    productSetupConfirmed ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-600'
+                  }`}>
+                    {productSetupConfirmed ? '✓ Confirmed' : 'Pending'}
+                  </span>
+                </div>
+                {productSetupConfirmed && productSetupConfirmedDate && (
+                  <p className="text-sm text-gray-600">
+                    Completed on: {format(productSetupConfirmedDate, 'PPP p')}
+                  </p>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+        
       </div>
     </div>
   );
