@@ -25,6 +25,13 @@ interface TrainingSlot {
     trainingConfirmed: boolean;
     deliveryState: string;
     trainingState: string;
+    // Training address fields
+    useSameAddressForTraining: boolean;
+    trainingAddress1?: string;
+    trainingAddress2?: string;
+    trainingCity?: string;
+    trainingPostalCode?: string;
+    trainingCountry?: string;
   };
 }
 
@@ -142,6 +149,47 @@ const TrainingScheduleListPage: React.FC = () => {
       ONSITE: 'bg-orange-100 text-orange-800'
     };
     return typeColors[type as keyof typeof typeColors] || 'bg-gray-100 text-gray-800';
+  };
+
+  const formatTrainingAddress = (slot: TrainingSlot) => {
+    const { onboarding } = slot;
+    
+    // If using same address for training, show delivery address
+    if (onboarding.useSameAddressForTraining) {
+      return (
+        <div className="text-xs text-text-muted">
+          <div className="text-sm font-medium text-text-primary mb-1">Same as Delivery Address</div>
+          <div>{onboarding.deliveryState}</div>
+        </div>
+      );
+    }
+    
+    // Show training address if available
+    if (onboarding.trainingAddress1 || onboarding.trainingCity) {
+      const addressParts = [
+        onboarding.trainingAddress1,
+        onboarding.trainingAddress2,
+        onboarding.trainingCity,
+        onboarding.trainingState,
+        onboarding.trainingPostalCode,
+        onboarding.trainingCountry
+      ].filter(Boolean);
+      
+      return (
+        <div className="text-xs text-text-muted">
+          <div className="text-sm font-medium text-text-primary mb-1">Training Address</div>
+          <div>{addressParts.join(', ')}</div>
+        </div>
+      );
+    }
+    
+    // Fallback to just the state
+    return (
+      <div className="text-xs text-text-muted">
+        <div className="text-sm font-medium text-text-primary mb-1">Location</div>
+        <div>{slot.location || onboarding.trainingState || 'N/A'}</div>
+      </div>
+    );
   };
 
   if (loading) {
@@ -276,7 +324,7 @@ const TrainingScheduleListPage: React.FC = () => {
                   <th className="table-header">Date & Time</th>
                   <th className="table-header">Merchant</th>
                   <th className="table-header">Trainer</th>
-                  <th className="table-header">Type & Location</th>
+                  <th className="table-header">Type & Training Address</th>
                   <th className="table-header">Languages</th>
                   <th className="table-header">Status</th>
                   <th className="table-header">Training Confirmed</th>
@@ -332,11 +380,7 @@ const TrainingScheduleListPage: React.FC = () => {
                         <div className={`inline-flex px-2 py-1 rounded-full text-xs font-medium mb-1 ${getTrainingTypeBadge(slot.trainingType)}`}>
                           {slot.trainingType}
                         </div>
-                        {slot.location && (
-                          <div className="text-xs text-text-muted">
-                            {slot.location}
-                          </div>
-                        )}
+                        {formatTrainingAddress(slot)}
                       </td>
                       <td className="px-6 py-4">
                         <div className="text-sm text-text-primary">

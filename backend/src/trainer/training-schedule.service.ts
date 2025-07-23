@@ -308,7 +308,14 @@ export class TrainingScheduleService {
         picPhone: slot.onboarding.picPhone,
         trainingConfirmed: slot.onboarding.trainingConfirmed,
         deliveryState: slot.onboarding.deliveryState,
-        trainingState: slot.onboarding.trainingState
+        trainingState: slot.onboarding.trainingState,
+        // Training address fields
+        useSameAddressForTraining: slot.onboarding.useSameAddressForTraining,
+        trainingAddress1: slot.onboarding.trainingAddress1,
+        trainingAddress2: slot.onboarding.trainingAddress2,
+        trainingCity: slot.onboarding.trainingCity,
+        trainingPostalCode: slot.onboarding.trainingPostalCode,
+        trainingCountry: slot.onboarding.trainingCountry,
       }
     };
   }
