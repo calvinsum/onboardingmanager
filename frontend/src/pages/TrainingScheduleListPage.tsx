@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { getAllTrainingSchedules, getTrainerWorkloadStats } from '../services/api';
+import { getAllTrainingSchedules, getTrainerWorkloadStats, getAllTrainers } from '../services/api';
 
 interface TrainingSlot {
   id: string;
@@ -50,9 +50,18 @@ interface TrainerWorkload {
   status: string;
 }
 
+interface Trainer {
+  id: string;
+  name: string;
+  languages: string[];
+  locations: string[];
+  status: string;
+}
+
 const TrainingScheduleListPage: React.FC = () => {
   const [trainingSlots, setTrainingSlots] = useState<TrainingSlot[]>([]);
   const [trainerWorkload, setTrainerWorkload] = useState<TrainerWorkload[]>([]);
+  const [trainers, setTrainers] = useState<Trainer[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
@@ -110,10 +119,20 @@ const TrainingScheduleListPage: React.FC = () => {
     }
   }, []);
 
+  const fetchTrainers = useCallback(async () => {
+    try {
+      const response = await getAllTrainers();
+      setTrainers(response);
+    } catch (err) {
+      console.error('Error fetching trainers:', err);
+    }
+  }, []);
+
   useEffect(() => {
     fetchTrainingSchedules(1);
     fetchTrainerWorkload();
-  }, [fetchTrainingSchedules, fetchTrainerWorkload]);
+    fetchTrainers();
+  }, [fetchTrainingSchedules, fetchTrainerWorkload, fetchTrainers]);
 
   const handleFilterChange = (key: string, value: string) => {
     setFilters(prev => ({
@@ -283,6 +302,23 @@ const TrainingScheduleListPage: React.FC = () => {
                 <option value="">All Types</option>
                 <option value="remote_training">Online</option>
                 <option value="onsite_training">Onsite</option>
+              </select>
+            </div>
+            <div className="flex-1 min-w-48">
+              <label className="block text-sm font-medium text-text-primary mb-2">
+                Trainer
+              </label>
+              <select
+                value={filters.trainerId}
+                onChange={(e) => handleFilterChange('trainerId', e.target.value)}
+                className="input-field"
+              >
+                <option value="">All Trainers</option>
+                {trainers.map(trainer => (
+                  <option key={trainer.id} value={trainer.id}>
+                    {trainer.name}
+                  </option>
+                ))}
               </select>
             </div>
           </div>
