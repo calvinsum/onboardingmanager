@@ -75,4 +75,12 @@ export class TrainingSlot {
   @ApiProperty({ description: 'Updated timestamp' })
   @UpdateDateColumn()
   updatedAt: Date;
+
+  @ApiProperty({ description: 'Completed timestamp', nullable: true })
+  @Column({ type: 'timestamp', nullable: true })
+  completedAt: Date | null;
+
+  @ApiProperty({ description: 'Cancelled timestamp', nullable: true })
+  @Column({ type: 'timestamp', nullable: true })
+  cancelledAt: Date | null;
 } 

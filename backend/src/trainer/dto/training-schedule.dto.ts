@@ -31,6 +31,12 @@ export class BaseTrainingSlotDto {
 
   @ApiProperty({ description: 'Updated timestamp' })
   updatedAt: Date;
+
+  @ApiProperty({ description: 'Completed timestamp', nullable: true })
+  completedAt: Date | null;
+
+  @ApiProperty({ description: 'Cancelled timestamp', nullable: true })
+  cancelledAt: Date | null;
 }
 
 // Merchant view - NO trainer information exposed

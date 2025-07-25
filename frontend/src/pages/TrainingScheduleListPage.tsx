@@ -9,6 +9,8 @@ interface TrainingSlot {
   location: string;
   languages: string[];
   status: string;
+  completedAt?: string | null;
+  cancelledAt?: string | null;
   trainer: {
     id: string;
     name: string;
@@ -158,11 +160,27 @@ const TrainingScheduleListPage: React.FC = () => {
       
       // Update the local state to reflect the change
       setTrainingSlots(prevSlots => 
-        prevSlots.map(slot => 
-          slot.id === slotId 
-            ? { ...slot, status: newStatus }
-            : slot
-        )
+        prevSlots.map(slot => {
+          if (slot.id === slotId) {
+            const now = new Date().toISOString();
+            const updatedSlot = { ...slot, status: newStatus };
+            
+            // Set appropriate timestamps based on new status
+            if (newStatus === 'completed') {
+              updatedSlot.completedAt = now;
+              updatedSlot.cancelledAt = null;
+            } else if (newStatus === 'cancelled') {
+              updatedSlot.cancelledAt = now;
+              updatedSlot.completedAt = null;
+            } else if (newStatus === 'booked') {
+              updatedSlot.completedAt = null;
+              updatedSlot.cancelledAt = null;
+            }
+            
+            return updatedSlot;
+          }
+          return slot;
+        })
       );
       
       // Optional: Show success message (you can add toast notifications if available)
@@ -484,6 +502,30 @@ const TrainingScheduleListPage: React.FC = () => {
                         </select>
                         {statusUpdateLoading === slot.id && (
                           <div className="mt-1 text-xs text-gray-500">Updating...</div>
+                        )}
+                        {slot.status === 'completed' && slot.completedAt && (
+                          <div className="mt-1 text-xs text-green-600">
+                            Completed: {new Date(slot.completedAt).toLocaleString('en-US', {
+                              year: 'numeric',
+                              month: 'short',
+                              day: 'numeric',
+                              hour: '2-digit',
+                              minute: '2-digit',
+                              hour12: true
+                            })}
+                          </div>
+                        )}
+                        {slot.status === 'cancelled' && slot.cancelledAt && (
+                          <div className="mt-1 text-xs text-red-600">
+                            Cancelled: {new Date(slot.cancelledAt).toLocaleString('en-US', {
+                              year: 'numeric',
+                              month: 'short',
+                              day: 'numeric',
+                              hour: '2-digit',
+                              minute: '2-digit',
+                              hour12: true
+                            })}
+                          </div>
                         )}
                       </td>
                       <td className="px-6 py-4">

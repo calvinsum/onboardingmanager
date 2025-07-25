@@ -273,6 +273,8 @@ export class TrainingScheduleService {
       status: slot.status,
       createdAt: slot.createdAt,
       updatedAt: slot.updatedAt,
+      completedAt: slot.completedAt,
+      cancelledAt: slot.cancelledAt,
       isAssigned: true, // If slot exists, trainer is assigned
       accountName: slot.onboarding?.accountName,
       trainingConfirmed: slot.onboarding?.trainingConfirmed || false
@@ -293,6 +295,8 @@ export class TrainingScheduleService {
       status: slot.status,
       createdAt: slot.createdAt,
       updatedAt: slot.updatedAt,
+      completedAt: slot.completedAt,
+      cancelledAt: slot.cancelledAt,
       trainer: {
         id: slot.trainer.id,
         name: slot.trainer.name,
@@ -414,6 +418,21 @@ export class TrainingScheduleService {
 
     // Update the status
     trainingSlot.status = status;
+    
+    // Set appropriate timestamps based on status
+    const now = new Date();
+    if (status === SlotStatus.COMPLETED) {
+      trainingSlot.completedAt = now;
+      trainingSlot.cancelledAt = null; // Clear cancelled timestamp if previously set
+    } else if (status === SlotStatus.CANCELLED) {
+      trainingSlot.cancelledAt = now;
+      trainingSlot.completedAt = null; // Clear completed timestamp if previously set
+    } else if (status === SlotStatus.BOOKED) {
+      // Clear both timestamps when returning to booked status
+      trainingSlot.completedAt = null;
+      trainingSlot.cancelledAt = null;
+    }
+    
     const updatedSlot = await this.trainingSlotRepository.save(trainingSlot);
 
     // Return the updated slot in manager DTO format
