@@ -190,9 +190,9 @@ const TrainingScheduleListPage: React.FC = () => {
 
   const getStatusBadge = (status: string) => {
     const statusColors = {
-      BOOKED: 'bg-blue-100 text-blue-800',
-      COMPLETED: 'bg-green-100 text-green-800',
-      CANCELLED: 'bg-red-100 text-red-800'
+      booked: 'bg-blue-100 text-blue-800',
+      completed: 'bg-green-100 text-green-800',
+      cancelled: 'bg-red-100 text-red-800'
     };
     return statusColors[status as keyof typeof statusColors] || 'bg-gray-100 text-gray-800';
   };
@@ -313,9 +313,9 @@ const TrainingScheduleListPage: React.FC = () => {
                 className="input-field"
               >
                 <option value="">All Statuses</option>
-                <option value="BOOKED">Booked</option>
-                <option value="COMPLETED">Completed</option>
-                <option value="CANCELLED">Cancelled</option>
+                <option value="booked">Booked</option>
+                <option value="completed">Completed</option>
+                <option value="cancelled">Cancelled</option>
               </select>
             </div>
             <div className="flex-1 min-w-48">
@@ -478,9 +478,9 @@ const TrainingScheduleListPage: React.FC = () => {
                               : 'cursor-pointer'
                           } ${getStatusBadge(slot.status)}`}
                         >
-                          <option value="BOOKED">Booked</option>
-                          <option value="COMPLETED">Completed</option>
-                          <option value="CANCELLED">Cancelled</option>
+                          <option value="booked">Booked</option>
+                          <option value="completed">Completed</option>
+                          <option value="cancelled">Cancelled</option>
                         </select>
                         {statusUpdateLoading === slot.id && (
                           <div className="mt-1 text-xs text-gray-500">Updating...</div>
