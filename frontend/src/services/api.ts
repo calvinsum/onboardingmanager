@@ -452,6 +452,11 @@ export const getTrainerWorkloadStats = async (startDate?: string, endDate?: stri
   return response.data;
 };
 
+export const updateTrainingSlotStatus = async (slotId: string, status: string) => {
+  const response = await api.put(`/training-schedules/slot/${slotId}/status`, { status });
+  return response.data;
+};
+
 // Merchant Training Schedule API functions (privacy-focused)
 export const getMerchantTrainingSchedule = async (onboardingId: string) => {
   const response = await api.get(`/merchant-training-schedules/onboarding/${onboardingId}`);

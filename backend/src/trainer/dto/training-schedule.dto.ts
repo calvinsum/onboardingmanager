@@ -193,4 +193,11 @@ export class TrainingScheduleFiltersDto {
   @IsInt()
   @Min(1)
   limit?: number;
+}
+
+// Update training slot status DTO
+export class UpdateTrainingSlotStatusDto {
+  @ApiProperty({ description: 'New training slot status', enum: SlotStatus })
+  @IsEnum(SlotStatus)
+  status: SlotStatus;
 } 

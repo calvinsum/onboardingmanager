@@ -7,7 +7,8 @@ import {
   Query, 
   UseGuards, 
   Request,
-  BadRequestException 
+  BadRequestException,
+  Put
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
 import { AuthGuard } from '@nestjs/passport';
@@ -19,7 +20,8 @@ import {
   TrainingScheduleListDto,
   AutoAssignTrainingSlotDto,
   TrainerWorkloadDto,
-  TrainingScheduleFiltersDto
+  TrainingScheduleFiltersDto,
+  UpdateTrainingSlotStatusDto
 } from './dto/training-schedule.dto';
 
 @ApiTags('training-schedules')
@@ -133,6 +135,32 @@ export class TrainingScheduleController {
     const end = endDate ? new Date(endDate) : undefined;
     
     return this.trainingScheduleService.getTrainerWorkloadStats(start, end);
+  }
+
+  @Put('slot/:slotId/status')
+  @ApiOperation({ summary: 'Update training slot status (onboarding managers only)' })
+  @ApiResponse({ 
+    status: 200, 
+    description: 'Training slot status updated successfully', 
+    type: ManagerTrainingSlotDto 
+  })
+  @ApiResponse({ status: 400, description: 'Invalid request or unauthorized' })
+  @ApiResponse({ status: 404, description: 'Training slot not found' })
+  async updateTrainingSlotStatus(
+    @Param('slotId') slotId: string,
+    @Body() updateDto: UpdateTrainingSlotStatusDto,
+    @Request() req: any
+  ): Promise<ManagerTrainingSlotDto> {
+    const managerId = req.user.sub;
+    if (!managerId) {
+      throw new BadRequestException('Manager ID not found in authentication token');
+    }
+    
+    return this.trainingScheduleService.updateTrainingSlotStatus(
+      slotId, 
+      updateDto.status, 
+      managerId
+    );
   }
 }
 

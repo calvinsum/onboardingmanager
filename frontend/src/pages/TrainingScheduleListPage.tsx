@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { getAllTrainingSchedules, getTrainerWorkloadStats, getAllTrainers } from '../services/api';
+import { getAllTrainingSchedules, getTrainerWorkloadStats, getAllTrainers, updateTrainingSlotStatus, getMyTrainingSchedules } from '../services/api';
 
 interface TrainingSlot {
   id: string;
@@ -80,6 +80,9 @@ const TrainingScheduleListPage: React.FC = () => {
     limit: 10
   });
 
+  // Status update state
+  const [statusUpdateLoading, setStatusUpdateLoading] = useState<string | null>(null);
+
   const fetchTrainingSchedules = useCallback(async (page: number = 1) => {
     try {
       setLoading(true);
@@ -96,7 +99,7 @@ const TrainingScheduleListPage: React.FC = () => {
         ...(filters.location && { location: filters.location })
       };
 
-      const response = await getAllTrainingSchedules(filterParams);
+      const response = await getMyTrainingSchedules(filterParams);
 
       setTrainingSlots(response.trainingSlots);
       setTotal(response.total);
@@ -145,6 +148,32 @@ const TrainingScheduleListPage: React.FC = () => {
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
     fetchTrainingSchedules(page);
+  };
+
+  const handleStatusChange = async (slotId: string, newStatus: string) => {
+    try {
+      setStatusUpdateLoading(slotId);
+      
+      await updateTrainingSlotStatus(slotId, newStatus);
+      
+      // Update the local state to reflect the change
+      setTrainingSlots(prevSlots => 
+        prevSlots.map(slot => 
+          slot.id === slotId 
+            ? { ...slot, status: newStatus }
+            : slot
+        )
+      );
+      
+      // Optional: Show success message (you can add toast notifications if available)
+      console.log(`Training slot status updated to ${newStatus}`);
+      
+    } catch (error) {
+      console.error('Error updating training slot status:', error);
+      // Optional: Show error message
+    } finally {
+      setStatusUpdateLoading(null);
+    }
   };
 
   const formatDate = (dateString: string) => {
@@ -243,9 +272,9 @@ const TrainingScheduleListPage: React.FC = () => {
       <div className="container mx-auto px-4 py-8">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-text-primary mb-2">Training Schedules</h1>
+          <h1 className="text-3xl font-bold text-text-primary mb-2">My Training Schedules</h1>
           <p className="text-text-muted">
-            Manage and monitor training sessions with automatic trainer assignments
+            Manage and monitor your training sessions with status updates
           </p>
         </div>
 
@@ -439,9 +468,23 @@ const TrainingScheduleListPage: React.FC = () => {
                         </div>
                       </td>
                       <td className="px-6 py-4">
-                        <span className={`inline-flex px-2 py-1 rounded-full text-xs font-medium ${getStatusBadge(slot.status)}`}>
-                          {slot.status}
-                        </span>
+                        <select
+                          value={slot.status}
+                          onChange={(e) => handleStatusChange(slot.id, e.target.value)}
+                          disabled={statusUpdateLoading === slot.id}
+                          className={`text-xs font-medium rounded px-2 py-1 border-0 focus:ring-2 focus:ring-primary-500 ${
+                            statusUpdateLoading === slot.id 
+                              ? 'opacity-50 cursor-not-allowed' 
+                              : 'cursor-pointer'
+                          } ${getStatusBadge(slot.status)}`}
+                        >
+                          <option value="BOOKED">Booked</option>
+                          <option value="COMPLETED">Completed</option>
+                          <option value="CANCELLED">Cancelled</option>
+                        </select>
+                        {statusUpdateLoading === slot.id && (
+                          <div className="mt-1 text-xs text-gray-500">Updating...</div>
+                        )}
                       </td>
                       <td className="px-6 py-4">
                         <div className="flex items-center">

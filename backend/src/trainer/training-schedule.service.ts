@@ -388,4 +388,35 @@ export class TrainingScheduleService {
       totalTrainingSlots: trainingSlots.length
     };
   }
+
+  /**
+   * Update training slot status (for onboarding managers)
+   */
+  async updateTrainingSlotStatus(
+    slotId: string, 
+    status: SlotStatus, 
+    managerId: string
+  ): Promise<ManagerTrainingSlotDto> {
+    // Find the training slot with related data
+    const trainingSlot = await this.trainingSlotRepository.findOne({
+      where: { id: slotId },
+      relations: ['trainer', 'onboarding']
+    });
+
+    if (!trainingSlot) {
+      throw new NotFoundException('Training slot not found');
+    }
+
+    // Verify that the manager who created the onboarding record is making the update
+    if (trainingSlot.onboarding.createdByManagerId !== managerId) {
+      throw new BadRequestException('You can only update training slots for onboarding records you created');
+    }
+
+    // Update the status
+    trainingSlot.status = status;
+    const updatedSlot = await this.trainingSlotRepository.save(trainingSlot);
+
+    // Return the updated slot in manager DTO format
+    return this.mapToManagerDto(updatedSlot);
+  }
 } 
