@@ -48,6 +48,17 @@ const OnboardingManagerDashboard = () => {
     return `${diffDays} days left`;
   };
 
+  const formatCreatedTimestamp = (createdAt: string) => {
+    return new Date(createdAt).toLocaleString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: true
+    });
+  };
+
   const formatConfirmationStatus = (isConfirmed: boolean, confirmedDate?: string) => {
     if (!isConfirmed) {
       return (
@@ -412,6 +423,7 @@ StoreHub Onboarding Team`;
                     <th className="py-3 px-4 text-left text-xs font-semibold uppercase tracking-wider">Attachments</th>
                     <th className="py-3 px-4 text-left text-xs font-semibold uppercase tracking-wider">Access Token</th>
                     <th className="py-3 px-4 text-left text-xs font-semibold uppercase tracking-wider">Expiry</th>
+                    <th className="py-3 px-4 text-left text-xs font-semibold uppercase tracking-wider">Created</th>
                     <th className="py-3 px-4 text-left text-xs font-semibold uppercase tracking-wider">Actions</th>
                   </tr>
                 </thead>
@@ -517,6 +529,11 @@ StoreHub Onboarding Team`;
                       <td className="py-4 px-4">
                         <div className="text-text-main text-sm">
                           {calculateExpiry(record.tokenExpiryDate)}
+                        </div>
+                      </td>
+                      <td className="py-4 px-4">
+                        <div className="text-text-muted text-sm">
+                          {formatCreatedTimestamp(record.createdAt)}
                         </div>
                       </td>
                       <td className="py-4 px-4">
