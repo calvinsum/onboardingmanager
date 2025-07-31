@@ -59,6 +59,95 @@ const OnboardingManagerDashboard = () => {
     });
   };
 
+  const calculateAgingDays = (record: any) => {
+    const today = new Date();
+    const createdAt = new Date(record.createdAt);
+    
+    // Get required services based on onboarding types
+    const requiredServices = [];
+    if (record.onboardingTypes?.includes('hardware_delivery')) {
+      requiredServices.push({
+        confirmed: record.deliveryConfirmed,
+        confirmedDate: record.deliveryConfirmedDate
+      });
+    }
+    if (record.onboardingTypes?.includes('hardware_installation')) {
+      requiredServices.push({
+        confirmed: record.installationConfirmed,
+        confirmedDate: record.installationConfirmedDate
+      });
+    }
+    if (record.onboardingTypes?.includes('remote_training') || record.onboardingTypes?.includes('onsite_training')) {
+      requiredServices.push({
+        confirmed: record.trainingConfirmed,
+        confirmedDate: record.trainingConfirmedDate
+      });
+    }
+    if (record.onboardingTypes?.includes('product_setup')) {
+      requiredServices.push({
+        confirmed: record.productSetupConfirmed,
+        confirmedDate: record.productSetupConfirmedDate
+      });
+    }
+
+    // If no required services, return 0 aging days
+    if (requiredServices.length === 0) {
+      return 0;
+    }
+
+    // Check if all required services are confirmed
+    const allConfirmed = requiredServices.every(service => service.confirmed);
+    if (allConfirmed) {
+      return 0;
+    }
+
+    // Find the latest confirmation date among confirmed services
+    const confirmedServices = requiredServices.filter(service => service.confirmed && service.confirmedDate);
+    
+    let referenceDate = createdAt;
+    if (confirmedServices.length > 0) {
+      // Use the latest confirmation date
+      const latestConfirmationDate = confirmedServices
+        .map(service => new Date(service.confirmedDate))
+        .reduce((latest, current) => current > latest ? current : latest);
+      referenceDate = latestConfirmationDate;
+    }
+
+    // Calculate aging days
+    const diffTime = today.getTime() - referenceDate.getTime();
+    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+    
+    return Math.max(0, diffDays);
+  };
+
+  const formatAgingDays = (agingDays: number) => {
+    if (agingDays === 0) {
+      return (
+        <span className="inline-flex px-2 py-1 text-xs font-medium rounded-full bg-green-100 text-green-800">
+          Completed
+        </span>
+      );
+    } else if (agingDays <= 3) {
+      return (
+        <span className="inline-flex px-2 py-1 text-xs font-medium rounded-full bg-yellow-100 text-yellow-800">
+          {agingDays} {agingDays === 1 ? 'day' : 'days'}
+        </span>
+      );
+    } else if (agingDays <= 7) {
+      return (
+        <span className="inline-flex px-2 py-1 text-xs font-medium rounded-full bg-orange-100 text-orange-800">
+          {agingDays} days
+        </span>
+      );
+    } else {
+      return (
+        <span className="inline-flex px-2 py-1 text-xs font-medium rounded-full bg-red-100 text-red-800">
+          {agingDays} days
+        </span>
+      );
+    }
+  };
+
   const formatConfirmationStatus = (
     isConfirmed: boolean, 
     confirmedDate?: string, 
@@ -453,6 +542,7 @@ StoreHub Onboarding Team`;
                     <th className="py-3 px-4 text-left text-xs font-semibold uppercase tracking-wider">Access Token</th>
                     <th className="py-3 px-4 text-left text-xs font-semibold uppercase tracking-wider">Expiry</th>
                     <th className="py-3 px-4 text-left text-xs font-semibold uppercase tracking-wider">Created</th>
+                    <th className="py-3 px-4 text-left text-xs font-semibold uppercase tracking-wider">Aging Days</th>
                     <th className="py-3 px-4 text-left text-xs font-semibold uppercase tracking-wider">Actions</th>
                   </tr>
                 </thead>
@@ -564,6 +654,9 @@ StoreHub Onboarding Team`;
                         <div className="text-text-muted text-sm">
                           {formatCreatedTimestamp(record.createdAt)}
                         </div>
+                      </td>
+                      <td className="py-4 px-4">
+                        {formatAgingDays(calculateAgingDays(record))}
                       </td>
                       <td className="py-4 px-4">
                         <div className="flex flex-wrap gap-2">
