@@ -59,7 +59,35 @@ const OnboardingManagerDashboard = () => {
     });
   };
 
-  const formatConfirmationStatus = (isConfirmed: boolean, confirmedDate?: string) => {
+  const formatConfirmationStatus = (
+    isConfirmed: boolean, 
+    confirmedDate?: string, 
+    onboardingTypes?: string[], 
+    requiredType?: string | string[]
+  ) => {
+    // Check if this service is required based on onboarding types
+    const isRequired = () => {
+      if (!onboardingTypes || !requiredType) return true; // Default to required if data missing
+      
+      if (Array.isArray(requiredType)) {
+        // For training, check if either remote_training or onsite_training is selected
+        return requiredType.some(type => onboardingTypes.includes(type));
+      } else {
+        // For other services, check if the specific type is selected
+        return onboardingTypes.includes(requiredType);
+      }
+    };
+
+    // If service is not required, show "Not Required"
+    if (!isRequired()) {
+      return (
+        <span className="inline-flex px-2 py-1 text-xs font-medium rounded-full bg-gray-100 text-gray-600">
+          Not Required
+        </span>
+      );
+    }
+
+    // If required but not confirmed, show "Pending"
     if (!isConfirmed) {
       return (
         <span className="status-badge status-pending">
@@ -68,6 +96,7 @@ const OnboardingManagerDashboard = () => {
       );
     }
     
+    // If confirmed, show "Confirmed" with date
     return (
       <div className="space-y-1">
         <span className="status-badge status-confirmed">
@@ -475,18 +504,18 @@ StoreHub Onboarding Team`;
                           </div>
                         )}
                       </td>
-                      <td className="py-4 px-4">
-                        {formatConfirmationStatus(record.deliveryConfirmed, record.deliveryConfirmedDate)}
-                      </td>
-                      <td className="py-4 px-4">
-                        {formatConfirmationStatus(record.installationConfirmed, record.installationConfirmedDate)}
-                      </td>
-                      <td className="py-4 px-4">
-                        {formatConfirmationStatus(record.trainingConfirmed, record.trainingConfirmedDate)}
-                      </td>
-                      <td className="py-4 px-4">
-                        {formatConfirmationStatus(record.productSetupConfirmed, record.productSetupConfirmedDate)}
-                      </td>
+                                              <td className="py-4 px-4">
+                          {formatConfirmationStatus(record.deliveryConfirmed, record.deliveryConfirmedDate, record.onboardingTypes, 'hardware_delivery')}
+                        </td>
+                        <td className="py-4 px-4">
+                          {formatConfirmationStatus(record.installationConfirmed, record.installationConfirmedDate, record.onboardingTypes, 'hardware_installation')}
+                        </td>
+                        <td className="py-4 px-4">
+                          {formatConfirmationStatus(record.trainingConfirmed, record.trainingConfirmedDate, record.onboardingTypes, ['remote_training', 'onsite_training'])}
+                        </td>
+                        <td className="py-4 px-4">
+                          {formatConfirmationStatus(record.productSetupConfirmed, record.productSetupConfirmedDate, record.onboardingTypes, 'product_setup')}
+                        </td>
                       <td className="py-4 px-4">
                         <div className="text-text-main text-sm">
                           {new Date(record.expectedGoLiveDate).toLocaleDateString()}
