@@ -18,6 +18,7 @@ import MerchantSchedulePage from './pages/MerchantSchedulePage';
 import TrainerManagementPage from './pages/TrainerManagementPage';
 import TrainingScheduleListPage from './pages/TrainingScheduleListPage';
 import TermsAndConditionsPage from './pages/TermsAndConditionsPage';
+import ReportPage from './pages/ReportPage';
 import './App.css';
 
 // Force frontend redeployment to pick up new API URL environment variables
@@ -111,6 +112,17 @@ function App() {
                 <ProtectedRoute userType="onboarding_manager">
                   <Layout>
                     <TrainingScheduleListPage />
+                  </Layout>
+                </ProtectedRoute>
+              }
+            />
+            
+            <Route
+              path="/reports"
+              element={
+                <ProtectedRoute userType="onboarding_manager">
+                  <Layout>
+                    <ReportPage />
                   </Layout>
                 </ProtectedRoute>
               }

@@ -436,6 +436,12 @@ StoreHub Onboarding Team`;
             >
               Trainer Management
             </Link>
+            <Link
+              to="/reports"
+              className="btn-secondary"
+            >
+              📊 Reports
+            </Link>
           </div>
         </div>
       </div>
