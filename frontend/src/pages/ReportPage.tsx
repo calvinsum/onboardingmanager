@@ -3,6 +3,11 @@ import { Link } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
 import { getMyOnboardingRecords } from '../services/api';
 import { useAuth } from '../hooks/useAuth';
+import { 
+  TableCellsIcon, 
+  PresentationChartLineIcon, 
+  DocumentIcon 
+} from '../components/Icons';
 
 interface OnboardingRecord {
   id: string;
@@ -473,24 +478,24 @@ const ReportPage = () => {
           <div className="flex space-x-2">
             <button
               onClick={exportToCSV}
-              className="btn-secondary"
+              className="btn-secondary flex items-center gap-2"
               title="Download as CSV"
             >
-              📊 CSV
+              <TableCellsIcon size={16} /> CSV
             </button>
             <button
               onClick={exportToExcel}
-              className="btn-secondary"
+              className="btn-secondary flex items-center gap-2"
               title="Download as Excel"
             >
-              📈 Excel
+              <PresentationChartLineIcon size={16} /> Excel
             </button>
             <button
               onClick={exportToPDF}
-              className="btn-secondary"
+              className="btn-secondary flex items-center gap-2"
               title="Export as PDF"
             >
-              📄 PDF
+              <DocumentIcon size={16} /> PDF
             </button>
           </div>
         </div>

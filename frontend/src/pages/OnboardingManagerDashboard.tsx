@@ -3,6 +3,19 @@ import { Link, useNavigate } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
 import { getMyOnboardingRecords, regenerateOnboardingToken } from '../services/api';
 import { useAuth } from '../hooks/useAuth';
+import { 
+  ChartBarIcon, 
+  CheckCircleIcon, 
+  ClockIcon, 
+  DocumentIcon,
+  EyeIcon,
+  ArrowDownTrayIcon,
+  ClipboardDocumentIcon,
+  FolderOpenIcon,
+  getFileTypeIcon,
+  LightBulbIcon,
+  DocumentChartBarIcon
+} from '../components/Icons';
 
 const OnboardingManagerDashboard = () => {
   const { user } = useAuth();
@@ -373,7 +386,7 @@ StoreHub Onboarding Team`;
           if (newWindow && !newWindow.closed && newWindow.location.href === 'about:blank') {
             console.log('⚠️ Detected potential blank page, showing fallback message...');
             toast('If the file doesn\'t open, try the Download button instead.', { 
-              icon: '💡',
+              icon: React.createElement(LightBulbIcon, { size: 16 }),
               duration: 5000 
             });
           }
@@ -438,9 +451,9 @@ StoreHub Onboarding Team`;
             </Link>
             <Link
               to="/reports"
-              className="btn-secondary"
+              className="btn-secondary flex items-center gap-2"
             >
-              📊 Reports
+              <DocumentChartBarIcon size={16} /> Reports
             </Link>
           </div>
         </div>
@@ -452,7 +465,7 @@ StoreHub Onboarding Team`;
           <div className="flex items-center">
             <div className="flex-shrink-0">
               <div className="w-8 h-8 bg-primary-100 rounded-lg flex items-center justify-center">
-                <span className="text-primary-600 font-bold">📊</span>
+                <ChartBarIcon className="text-primary-600 font-bold" />
               </div>
             </div>
             <div className="ml-4">
@@ -466,7 +479,7 @@ StoreHub Onboarding Team`;
           <div className="flex items-center">
             <div className="flex-shrink-0">
               <div className="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center">
-                <span className="text-green-600 font-bold">✅</span>
+                <CheckCircleIcon className="text-green-600 font-bold" />
               </div>
             </div>
             <div className="ml-4">
@@ -480,7 +493,7 @@ StoreHub Onboarding Team`;
           <div className="flex items-center">
             <div className="flex-shrink-0">
               <div className="w-8 h-8 bg-yellow-100 rounded-lg flex items-center justify-center">
-                <span className="text-yellow-600 font-bold">⏳</span>
+                <ClockIcon className="text-yellow-600 font-bold" />
               </div>
             </div>
             <div className="ml-4">
@@ -494,7 +507,7 @@ StoreHub Onboarding Team`;
           <div className="flex items-center">
             <div className="flex-shrink-0">
               <div className="w-8 h-8 bg-gray-100 rounded-lg flex items-center justify-center">
-                <span className="text-gray-600 font-bold">📋</span>
+                <DocumentIcon className="text-gray-600 font-bold" />
               </div>
             </div>
             <div className="ml-4">
@@ -521,7 +534,7 @@ StoreHub Onboarding Team`;
           ) : records.length === 0 ? (
             <div className="text-center py-12">
               <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <span className="text-gray-400 text-2xl">📋</span>
+                <DocumentIcon className="text-gray-400 text-2xl" />
               </div>
               <h3 className="text-lg font-medium text-text-main mb-2">No records found</h3>
               <p className="text-text-muted mb-6">Get started by creating your first merchant onboarding record</p>
@@ -626,10 +639,10 @@ StoreHub Onboarding Team`;
                               </span>
                               <button
                                 onClick={() => handleViewAttachments(record.id)}
-                                className="text-blue-500 hover:text-blue-700 text-xs"
+                                className="text-blue-500 hover:text-blue-700 text-xs flex items-center gap-1"
                                 title="View all attachments"
                               >
-                                👁️ View All
+                                <EyeIcon size={14} /> View All
                               </button>
                             </>
                           ) : (
@@ -644,10 +657,10 @@ StoreHub Onboarding Team`;
                           </span>
                           <button
                             onClick={() => handleCopyToken(record.accessToken)}
-                            className="text-blue-500 hover:text-blue-700 text-xs"
+                            className="text-blue-500 hover:text-blue-700 text-xs flex items-center gap-1"
                             title="Copy token"
                           >
-                            📋 Copy
+                            <ClipboardDocumentIcon size={14} /> Copy
                           </button>
                         </div>
                       </td>
@@ -725,7 +738,7 @@ StoreHub Onboarding Team`;
               {attachmentModal.attachments.length === 0 ? (
                 <div className="text-center py-8">
                   <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <span className="text-gray-400 text-2xl">📁</span>
+                    <FolderOpenIcon className="text-gray-400 text-2xl" />
                   </div>
                   <h3 className="text-lg font-medium text-gray-800 mb-2">No Files Found</h3>
                   <p className="text-gray-500">No attachments have been uploaded for this onboarding record.</p>
@@ -737,13 +750,9 @@ StoreHub Onboarding Team`;
                     className="border rounded-lg p-4 flex items-center justify-between hover:bg-gray-50 transition-colors"
                   >
                     <div className="flex items-center space-x-4">
-                      <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
-                        <span className="text-blue-600 font-bold">
-                          {attachment.mimeType?.includes('image') ? '🖼️' : 
-                           attachment.mimeType?.includes('pdf') ? '📄' : 
-                           attachment.mimeType?.includes('word') ? '📝' : '📎'}
-                        </span>
-                      </div>
+                                              <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+                          {React.createElement(getFileTypeIcon(attachment.mimeType), { className: "text-blue-600 font-bold" })}
+                        </div>
                       <div className="flex-1">
                         <h3 className="font-medium text-gray-800">{attachment.originalName}</h3>
                         <p className="text-sm text-gray-500">
@@ -757,20 +766,20 @@ StoreHub Onboarding Team`;
                       </div>
                     </div>
                     <div className="flex items-center space-x-2">
-                      <button
-                        onClick={() => handleViewAttachment(attachment)}
-                        className="px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600 text-sm transition-colors"
-                        title="View file in new tab"
-                      >
-                        👁️ View
-                      </button>
-                      <button
-                        onClick={() => handleDownloadAttachment(attachment)}
-                        className="px-3 py-1 bg-green-500 text-white rounded hover:bg-green-600 text-sm transition-colors"
-                        title="Download file"
-                      >
-                        📥 Download
-                      </button>
+                                              <button
+                          onClick={() => handleViewAttachment(attachment)}
+                          className="px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600 text-sm transition-colors flex items-center gap-1"
+                          title="View file in new tab"
+                        >
+                          <EyeIcon size={14} /> View
+                        </button>
+                        <button
+                          onClick={() => handleDownloadAttachment(attachment)}
+                          className="px-3 py-1 bg-green-500 text-white rounded hover:bg-green-600 text-sm transition-colors flex items-center gap-1"
+                          title="Download file"
+                        >
+                          <ArrowDownTrayIcon size={14} /> Download
+                        </button>
                     </div>
                   </div>
                 ))

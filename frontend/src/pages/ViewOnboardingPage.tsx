@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
 import { getOnboardingRecordById } from '../services/api';
+import { getFileTypeIcon } from '../components/Icons';
 
 const DetailItem = ({ label, value }: { label: string, value: React.ReactNode }) => (
   <div className="py-2">
@@ -364,13 +365,9 @@ const ViewOnboardingPage = () => {
                   className="border rounded-lg p-4 flex items-center justify-between hover:bg-gray-50 transition-colors"
                 >
                   <div className="flex items-center space-x-4">
-                    <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
-                      <span className="text-blue-600 font-bold">
-                        {attachment.mimeType?.includes('image') ? '🖼️' : 
-                         attachment.mimeType?.includes('pdf') ? '📄' : 
-                         attachment.mimeType?.includes('word') ? '📝' : '📎'}
-                      </span>
-                    </div>
+                                          <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+                        {React.createElement(getFileTypeIcon(attachment.mimeType), { className: "text-blue-600 font-bold" })}
+                      </div>
                     <div className="flex-1">
                       <h4 className="font-medium text-gray-800">{attachment.originalName}</h4>
                       <p className="text-sm text-gray-500">
